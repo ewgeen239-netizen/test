@@ -6,634 +6,684 @@
 <title>AutoDoc Tracker</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Teko:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --bg:       #0c0d0e;
-  --surface:  #131416;
-  --card:     #191b1e;
-  --border:   #252729;
-  --border-hi:#333639;
-  --text:     #d8dde5;
-  --muted:    #52575f;
-  --faint:    #1e2022;
-  --yellow:   #f5c400;
-  --yellow2:  #ffda44;
-  --orange:   #e8720c;
-  --green:    #2ecc71;
-  --red:      #e74c3c;
-  --blue:     #3498db;
-  --mono:     'Share Tech Mono', monospace;
-  --raj:      'Rajdhani', sans-serif;
-  --teko:     'Teko', sans-serif;
+  --bg:      #0a0a0a;
+  --s1:      #111111;
+  --s2:      #161616;
+  --s3:      #1c1c1c;
+  --border:  #242424;
+  --border2: #2e2e2e;
+  --text:    #f0f0f0;
+  --sub:     #888888;
+  --faint:   #444444;
+  --green:   #00d084;
+  --green2:  #00ff9d;
+  --yellow:  #f5c400;
+  --orange:  #ff6b35;
+  --blue:    #4d9ef5;
+  --purple:  #9b6dff;
+  --red:     #ff4757;
+  --inter:   'Inter', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
 }
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--raj);overflow-x:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--inter);overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
-/* hazard stripes top */
-.hazard-bar{
-  height:6px;width:100%;
-  background:repeating-linear-gradient(
-    -45deg,
-    var(--yellow) 0px, var(--yellow) 8px,
-    #111 8px, #111 16px
-  );
-}
+/* ── PAGES ── */
+.page{display:none}
+.page.on{display:block}
+.app{min-height:100vh;padding-bottom:80px}
 
-/* ── HEADER ── */
-.header{
-  background:var(--surface);
-  border-bottom:2px solid var(--yellow);
-  padding:14px 16px 12px;
-  position:relative;
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px 12px;
+  position:sticky;top:0;z-index:10;
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
 }
-.header-inner{display:flex;justify-content:space-between;align-items:flex-start}
-.brand-tag{
-  font-family:var(--mono);font-size:8px;letter-spacing:3px;
-  color:var(--yellow);text-transform:uppercase;margin-bottom:4px;
-  display:flex;align-items:center;gap:6px;
+.topbar-left{}
+.topbar-brand{font-size:11px;font-weight:500;color:var(--sub);letter-spacing:.5px;margin-bottom:1px}
+.topbar-title{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px;line-height:1}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.date-pill{font-family:var(--mono);font-size:10px;color:var(--sub);background:var(--s2);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+.name-pill{font-size:12px;font-weight:600;color:var(--green);cursor:pointer}
+
+/* ── SECTIONS ── */
+.pad{padding:0 16px}
+.mt{margin-top:20px}
+.sec-label{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--sub);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+
+/* ── PROFILE PAGE ── */
+.prof-header{
+  padding:28px 20px 24px;
+  background:linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%);
+  border-bottom:1px solid var(--border);
 }
-.brand-dot{
-  width:6px;height:6px;border-radius:50%;background:var(--yellow);
-  animation:pulse-dot 2s infinite;
+.prof-row{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.av-wrap{position:relative}
+.av-svg{width:64px;height:64px}
+.av-face{
+  position:absolute;inset:6px;border-radius:50%;
+  background:var(--s3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
 }
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.brand-title{
-  font-family:var(--teko);font-size:30px;font-weight:700;
-  color:#fff;letter-spacing:1px;line-height:1;
+.online{
+  position:absolute;bottom:4px;right:4px;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--green);border:2px solid var(--bg);
 }
-.brand-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono);letter-spacing:1px}
-.header-meta{text-align:right}
-.date-chip{
-  font-family:var(--mono);font-size:10px;color:var(--muted);
-  background:var(--faint);border:1px solid var(--border);
-  padding:3px 8px;border-radius:3px;display:inline-block;
+.prof-text{}
+.prof-name{font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1;margin-bottom:4px}
+.prof-dept{font-size:12px;color:var(--sub);font-weight:400}
+.prof-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px}
+.tag-green{background:rgba(0,208,132,.1);color:var(--green);border:1px solid rgba(0,208,132,.2)}
+.tag-yellow{background:rgba(245,196,0,.1);color:var(--yellow);border:1px solid rgba(245,196,0,.2)}
+.tag-sub{background:var(--s2);color:var(--sub);border:1px solid var(--border)}
+
+/* big bonus display */
+.bonus-hero{
+  background:var(--s1);border:1px solid var(--border);border-radius:16px;
+  padding:20px;margin-bottom:12px;position:relative;overflow:hidden;
 }
-.name-chip{
-  display:inline-block;margin-top:5px;
-  font-family:var(--raj);font-size:13px;font-weight:600;color:var(--yellow);
-  cursor:pointer;border-bottom:1px dashed rgba(245,196,0,.3);
+.bonus-hero::before{
+  content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,208,132,.08),transparent 70%);
 }
+.bh-label{font-family:var(--mono);font-size:10px;font-weight:500;color:var(--sub);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.bh-amount{font-size:48px;font-weight:900;letter-spacing:-2px;line-height:1;color:var(--green)}
+.bh-currency{font-size:20px;font-weight:400;color:var(--sub);margin-left:4px}
+.bh-sub{font-size:12px;color:var(--sub);margin-top:4px}
+.bh-bar-wrap{margin-top:14px}
+.bh-bar-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.bh-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--green2));transition:width 1s ease}
+.bh-bar-labels{display:flex;justify-content:space-between;margin-top:4px}
+.bh-bar-l{font-family:var(--mono);font-size:9px;color:var(--faint)}
+
+/* 3-stat row */
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.s3-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-align:center}
+.s3-val{font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1;color:var(--text)}
+.s3-lbl{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+
+/* today shift card */
+.shift-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:16px;
+  padding:18px;margin-bottom:12px;
+}
+.sc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.sc-title{font-size:15px;font-weight:700}
+.sc-badge{font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(0,208,132,.1);color:var(--green);border:1px solid rgba(0,208,132,.2)}
+.sc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.sc-item{text-align:center;padding:0 4px}
+.sc-item:not(:last-child){border-right:1px solid var(--border)}
+.sc-v{font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.sc-l{font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+
+/* station breakdown */
+.st-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;margin-bottom:8px;
+  display:flex;align-items:center;gap:14px;cursor:pointer;
+  transition:border-color .15s,background .15s;
+}
+.st-card:active{background:var(--s2)}
+.st-chip{
+  width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;
+}
+.st-body{flex:1;min-width:0}
+.st-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.st-meta{font-family:var(--mono);font-size:10px;color:var(--sub)}
+.st-bar{height:3px;background:var(--s3);border-radius:2px;margin-top:6px}
+.st-bar-f{height:100%;border-radius:2px;transition:width .6s ease}
+.st-right{text-align:right;flex-shrink:0}
+.st-bonus{font-size:18px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.st-unit{font-family:var(--mono);font-size:10px;color:var(--sub)}
+
+.edit-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px;background:var(--s1);border:1px solid var(--border);
+  border-radius:12px;color:var(--sub);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.edit-btn:active{border-color:var(--green);color:var(--green)}
 
 /* ── STATION TABS ── */
-.station-bar{
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-  padding:10px 12px 0;
-  overflow-x:auto;
-  white-space:nowrap;
-  scrollbar-width:none;
+.station-scroll{
+  display:flex;gap:6px;padding:12px 16px;
+  overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);
+  background:var(--bg);position:sticky;top:57px;z-index:9;
 }
-.station-bar::-webkit-scrollbar{display:none}
-.station-tab{
-  display:inline-block;
-  margin-right:6px;margin-bottom:0;
-  padding:8px 14px;
-  font-family:var(--raj);font-size:13px;font-weight:600;
-  letter-spacing:.5px;
-  color:var(--muted);
-  background:var(--faint);
-  border:1px solid var(--border);
-  border-bottom:none;
-  border-radius:6px 6px 0 0;
-  cursor:pointer;
+.station-scroll::-webkit-scrollbar{display:none}
+.st-tab{
+  flex-shrink:0;padding:7px 16px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  background:var(--s2);border:1px solid var(--border);color:var(--sub);
   transition:all .15s;
-  position:relative;
-  top:1px;
 }
-.station-tab.active{
-  color:var(--bg);
-  background:var(--yellow);
-  border-color:var(--yellow);
-}
-.station-tab.soon{
-  color:#333;
-  background:#1a1a1a;
-  border-color:#222;
-  cursor:not-allowed;
-  font-size:11px;
-}
-.soon-badge{
-  font-family:var(--mono);font-size:7px;
-  background:#222;color:#444;
-  border:1px solid #333;
-  padding:1px 4px;border-radius:2px;
-  margin-left:4px;letter-spacing:1px;
-  vertical-align:middle;
-}
+.st-tab.active{color:#000;border-color:transparent}
+.st-tab.soon{opacity:.35;cursor:not-allowed;font-size:11px}
+.soon-txt{font-size:8px;font-weight:500;margin-left:3px;opacity:.6;vertical-align:middle}
 
-/* ── CONTENT ── */
-.app{min-height:100vh;padding-bottom:90px}
-.section{padding:12px 14px 0}
-.section-label{
-  font-family:var(--mono);font-size:8px;letter-spacing:3px;
-  color:var(--muted);text-transform:uppercase;margin-bottom:8px;
-  display:flex;align-items:center;gap:8px;
-}
-.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
-
-/* ── STATION PANEL ── */
 .station-panel{display:none}
 .station-panel.active{display:block}
 
-/* ── HERO CARD ── */
-.hero{
-  background:var(--card);
-  border:1px solid var(--border-hi);
-  border-top:3px solid var(--yellow);
-  border-radius:0 0 10px 10px;
-  padding:16px;
-  position:relative;overflow:hidden;
+/* ── DASHBOARD HERO ── */
+.dash-hero{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  padding:20px;position:relative;overflow:hidden;
 }
-.station-badge{
-  position:absolute;top:12px;right:12px;
-  font-family:var(--mono);font-size:9px;letter-spacing:2px;
-  color:var(--yellow);background:rgba(245,196,0,.08);
-  border:1px solid rgba(245,196,0,.2);
-  padding:3px 8px;border-radius:3px;
+.dh-station-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:1px;
+  padding:5px 12px;border-radius:20px;margin-bottom:14px;
 }
+.dh-station-dot{width:6px;height:6px;border-radius:50%;animation:pulse-dot 2s infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.6)}}
 
-/* KPI grid */
-.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.kpi{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;padding:10px 12px;position:relative;overflow:hidden;
-}
-.kpi-label{
-  font-family:var(--mono);font-size:8px;letter-spacing:2px;
-  color:var(--muted);text-transform:uppercase;margin-bottom:4px;
-}
-.kpi-val{
-  font-family:var(--teko);font-size:30px;font-weight:600;
-  line-height:1;color:var(--text);
-}
-.kpi-unit{font-size:12px;font-weight:400;color:var(--muted);margin-left:2px}
-.kpi-bar{height:2px;background:var(--faint);border-radius:1px;margin-top:6px}
-.kpi-bar-fill{height:100%;border-radius:1px;transition:width .6s ease}
+/* 2x2 kpi */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.kpi{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.kpi-l{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.kpi-v{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1}
+.kpi-bar{height:2px;background:var(--s3);border-radius:1px;margin-top:7px}
+.kpi-bf{height:100%;border-radius:1px;transition:width .6s ease}
 
 /* progress */
-.prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
-.prog-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px}
-.prog-pct{font-family:var(--teko);font-size:18px;color:var(--yellow);font-weight:600}
-.prog-track{height:8px;background:var(--faint);border-radius:4px;overflow:hidden;position:relative}
-.prog-fill{
-  height:100%;border-radius:4px;
-  background:linear-gradient(90deg,var(--orange),var(--yellow));
-  transition:width .8s cubic-bezier(.4,0,.2,1);
-  position:relative;
-}
-.prog-fill::after{
-  content:'';position:absolute;right:0;top:0;bottom:0;width:3px;
-  background:#fff;border-radius:1px;opacity:.6;
-  animation:glow-bar 1.5s ease-in-out infinite;
-}
-@keyframes glow-bar{0%,100%{opacity:.6}50%{opacity:.15}}
-.prog-ticks{display:flex;justify-content:space-between;margin-top:3px}
-.tick{font-family:var(--mono);font-size:8px;color:var(--muted)}
-.tick.on{color:var(--yellow)}
+.prog-wrap{margin-bottom:14px}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.prog-lbl{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:2px;text-transform:uppercase}
+.prog-pct{font-size:18px;font-weight:800;letter-spacing:-.5px}
+.prog-track{height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s ease;position:relative}
+.prog-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:rgba(255,255,255,.6);border-radius:1px;animation:pg 1.5s ease-in-out infinite}
+@keyframes pg{0%,100%{opacity:.6}50%{opacity:.1}}
+.prog-ticks{display:flex;justify-content:space-between;margin-top:4px}
+.prog-tick{font-family:var(--mono);font-size:8px;color:var(--faint)}
+.prog-tick.on{color:var(--green)}
 
-/* bonus */
-.bonus-block{
-  background:linear-gradient(135deg,#0f1a0d,#0d160a);
-  border:1px solid rgba(46,204,113,.2);
-  border-radius:8px;padding:12px 14px;
-  display:flex;justify-content:space-between;align-items:center;
-  margin-top:10px;
+/* bonus strip */
+.bonus-strip{
+  background:var(--bg);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
 }
-.bonus-left{}
-.bonus-tag{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:rgba(46,204,113,.5);text-transform:uppercase}
-.bonus-formula{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:2px}
-.bonus-val{
-  font-family:var(--teko);font-size:36px;font-weight:700;
-  color:var(--green);letter-spacing:-1px;line-height:1;
-}
-.bonus-cur{font-size:14px;font-weight:400;margin-left:2px}
+.bs-left{}
+.bs-lbl{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px}
+.bs-formula{font-family:var(--mono);font-size:10px;color:var(--faint)}
+.bs-amount{font-size:32px;font-weight:900;letter-spacing:-1px;line-height:1;color:var(--green)}
+.bs-cur{font-size:14px;font-weight:400;color:var(--sub);margin-left:2px}
 
-/* month row */
-.month-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mstat{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:6px;padding:10px 8px;text-align:center;
-}
-.mstat-label{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
-.mstat-val{font-family:var(--teko);font-size:22px;font-weight:600;color:var(--text)}
-.mstat-unit{font-size:9px;color:var(--muted)}
+/* month mini */
+.month-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:16px;border-top:1px solid var(--border)}
+.mm-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.mm-v{font-size:20px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.mm-l{font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
 
 /* action buttons */
-.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.action-btn{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:8px;padding:14px;cursor:pointer;text-align:left;
-  transition:all .15s;position:relative;overflow:hidden;
+.act-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px;border-top:1px solid var(--border)}
+.act-btn{
+  background:var(--s2);border:1px solid var(--border);border-radius:12px;
+  padding:16px;cursor:pointer;text-align:left;transition:all .15s;
 }
-.action-btn:active{border-color:var(--yellow);background:rgba(245,196,0,.05)}
-.action-btn::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:var(--border);transition:background .15s;
-}
-.action-btn:active::before{background:var(--yellow)}
-.ab-icon{font-size:22px;margin-bottom:6px;display:block}
-.ab-title{font-family:var(--raj);font-size:14px;font-weight:700;color:var(--text);display:block}
-.ab-sub{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-top:2px;display:block;text-transform:uppercase}
-.action-btn-wide{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px 14px}
-.action-btn-wide .ab-icon{margin-bottom:0;font-size:24px}
+.act-btn:active{background:var(--s3);border-color:var(--border2)}
+.act-icon{font-size:20px;margin-bottom:8px;display:block}
+.act-name{font-size:14px;font-weight:700;display:block;margin-bottom:2px}
+.act-sub{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block}
+.act-wide{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:14px 16px}
+.act-wide .act-icon{margin-bottom:0;font-size:22px}
 
 /* ── HISTORY ── */
-.history-card{
-  background:var(--card);border:1px solid var(--border);
-  border-left:3px solid var(--yellow);
-  border-radius:6px;padding:12px 14px;margin-bottom:8px;
+.hist-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;margin-bottom:8px;
 }
-.hc-top{display:flex;justify-content:space-between;align-items:flex-start}
-.hc-main{font-family:var(--teko);font-size:22px;font-weight:600}
-.hc-meta{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:3px}
-.hc-note{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic}
-.hc-date{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:right}
-.hc-station{
-  display:inline-block;font-family:var(--mono);font-size:8px;
-  letter-spacing:2px;padding:2px 6px;border-radius:3px;
-  margin-bottom:4px;
-}
-.del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0;line-height:1}
+.hc-row{display:flex;justify-content:space-between;align-items:flex-start}
+.hc-st-chip{display:inline-block;font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 8px;border-radius:6px;margin-bottom:5px}
+.hc-main{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:3px}
+.hc-meta{font-family:var(--mono);font-size:10px;color:var(--sub)}
+.hc-note{font-size:11px;color:var(--faint);margin-top:3px;font-style:italic}
+.hc-right{text-align:right}
+.hc-date{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.del-btn{background:none;border:none;color:var(--faint);font-size:18px;cursor:pointer;padding:0;line-height:1;margin-top:6px;display:block;margin-left:auto}
 
-/* ── RATE TABLE ── */
-.rate-table{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+/* ── RATES ── */
+.rate-block{margin-bottom:20px}
+.rate-block-header{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 16px;background:var(--s1);
+  border:1px solid var(--border);border-radius:12px 12px 0 0;
+  border-bottom:none;
+}
+.rb-chip{font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px}
+.rb-norm{font-family:var(--mono);font-size:10px;color:var(--sub)}
+.rate-rows{background:var(--s1);border:1px solid var(--border);border-radius:0 0 12px 12px;overflow:hidden}
 .rate-row{
   display:flex;justify-content:space-between;align-items:center;
-  padding:9px 14px;border-bottom:1px solid var(--border);
-  font-family:var(--mono);font-size:12px;
+  padding:10px 16px;border-bottom:1px solid var(--border);
 }
 .rate-row:last-child{border-bottom:none}
-.rate-row.cur{background:rgba(245,196,0,.06);border-left:2px solid var(--yellow)}
-.rate-range{color:var(--muted)}
-.rate-amt{font-weight:600}
-.rate-bar-mini{height:2px;background:var(--faint);border-radius:1px;margin-top:2px;width:80px}
-.rate-bar-mini-fill{height:100%;border-radius:1px;background:var(--yellow)}
-
-/* ── MODAL ── */
-.overlay{
-  display:none;position:fixed;inset:0;z-index:200;
-  background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
-  align-items:flex-end;
-}
-.overlay.open{display:flex}
-.sheet{
-  width:100%;background:var(--surface);
-  border:1px solid var(--border-hi);
-  border-radius:16px 16px 0 0;
-  padding:18px 16px 36px;
-  animation:up .22s ease;
-}
-@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.sheet-handle{width:32px;height:3px;background:var(--border-hi);border-radius:2px;margin:0 auto 14px}
-.sheet-title{font-family:var(--teko);font-size:22px;font-weight:700;margin-bottom:14px;letter-spacing:.5px}
-
-.field{margin-bottom:10px}
-.field-label{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:4px}
-.field-input{
-  width:100%;background:var(--card);border:1px solid var(--border-hi);
-  border-radius:6px;padding:11px 12px;color:var(--text);
-  font-family:var(--mono);font-size:15px;outline:none;transition:border-color .15s;
-}
-.field-input:focus{border-color:var(--yellow)}
-.field-input::placeholder{color:var(--muted)}
-
-.dq-row{display:flex;gap:6px;margin-bottom:8px}
-.dq-btn{
-  flex:1;padding:8px;background:var(--card);border:1px solid var(--border);
-  border-radius:5px;color:var(--muted);font-family:var(--mono);font-size:10px;
-  cursor:pointer;text-align:center;letter-spacing:1px;transition:all .15s;
-}
-.dq-btn.sel{background:rgba(245,196,0,.1);border-color:var(--yellow);color:var(--yellow)}
-
-.preview{
-  background:rgba(245,196,0,.04);border:1px solid rgba(245,196,0,.15);
-  border-radius:6px;padding:10px 12px;margin-bottom:10px;display:none;
-}
-.preview.show{display:block}
-.prev-row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;margin-bottom:3px}
-.prev-k{color:var(--muted)}
-.prev-v{color:var(--yellow);font-weight:600}
-.prev-v.g{color:var(--green)}
-
-.save-btn{
-  width:100%;padding:14px;
-  background:var(--yellow);border:none;border-radius:8px;
-  color:#000;font-family:var(--teko);font-size:18px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .15s;
-}
-.save-btn:active{opacity:.8}
-.save-btn.ok{background:var(--green);color:#fff}
+.rate-row.cur{background:rgba(0,208,132,.04)}
+.rate-row.cur .rate-range{color:var(--text)}
+.rate-range{font-family:var(--mono);font-size:11px;color:var(--sub)}
+.rate-val{font-family:var(--mono);font-size:12px;font-weight:700}
+.rate-minibar{height:2px;background:var(--s3);border-radius:1px;margin-top:3px;width:60px}
+.rate-minibar-f{height:100%;border-radius:1px}
 
 /* ── BOTTOM NAV ── */
 .bnav{
   position:fixed;bottom:0;left:0;right:0;
-  background:var(--surface);border-top:2px solid var(--yellow);
-  display:grid;grid-template-columns:repeat(4,1fr);
-  padding:8px 0 22px;z-index:100;
+  background:var(--bg);
+  border-top:1px solid var(--border);
+  display:grid;padding:8px 0 20px;z-index:50;
 }
-.bni{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:3px}
-.bni-icon{font-size:20px}
-.bni-label{font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
-.bni.on .bni-label{color:var(--yellow)}
-.bni.on .bni-icon{filter:drop-shadow(0 0 4px var(--yellow))}
-
-/* page system */
-.page{display:none}
-.page.on{display:block}
-
-/* soon panel */
-.soon-panel{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:8px;padding:30px 20px;text-align:center;margin-top:4px;
+.bni{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;padding:3px;transition:opacity .15s;
 }
-.soon-icon{font-size:40px;margin-bottom:12px}
-.soon-title{font-family:var(--teko);font-size:28px;font-weight:700;color:var(--muted);letter-spacing:2px}
-.soon-sub{font-family:var(--mono);font-size:10px;color:#333;letter-spacing:2px;margin-top:6px}
+.bni:active{opacity:.6}
+.bni-icon{font-size:19px;transition:filter .2s}
+.bni-label{font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--faint);text-transform:uppercase}
+.bni.on .bni-label{color:var(--green)}
+.bni.on .bni-icon{filter:drop-shadow(0 0 5px var(--green))}
 
-/* station color accents */
-.st-pa{--sc:var(--blue)}
-.st-sio{--sc:#9b59b6}
-.st-os{--sc:var(--yellow)}
-.st-pc{--sc:var(--orange)}
-.st-hint{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:2px 8px;border-radius:3px;display:inline-block}
+/* ── MODAL ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.8);backdrop-filter:blur(8px);
+  align-items:flex-end;
+}
+.overlay.open{display:flex}
+.sheet{
+  width:100%;background:var(--s1);
+  border:1px solid var(--border2);
+  border-radius:20px 20px 0 0;
+  padding:20px 18px 40px;
+  animation:sheetup .2s ease;
+}
+@keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:32px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 16px}
+.sheet-title{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:16px}
 
-::-webkit-scrollbar{width:2px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:1px}
+.field{margin-bottom:12px}
+.field-label{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:2px;color:var(--sub);text-transform:uppercase;display:block;margin-bottom:5px}
+.field-input{
+  width:100%;background:var(--s2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 14px;color:var(--text);
+  font-family:var(--mono);font-size:15px;outline:none;transition:border-color .15s;
+}
+.field-input:focus{border-color:var(--green)}
+.field-input::placeholder{color:var(--faint)}
+
+.dq-row{display:flex;gap:6px;margin-bottom:8px}
+.dq-btn{
+  flex:1;padding:9px;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;color:var(--sub);font-family:var(--mono);font-size:10px;
+  cursor:pointer;text-align:center;letter-spacing:1px;transition:all .15s;
+}
+.dq-btn.sel{background:rgba(0,208,132,.1);border-color:var(--green);color:var(--green)}
+
+.preview{
+  background:rgba(0,208,132,.04);border:1px solid rgba(0,208,132,.15);
+  border-radius:10px;padding:12px 14px;margin-bottom:12px;display:none;
+}
+.preview.show{display:block}
+.prev-row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;margin-bottom:4px}
+.prev-k{color:var(--sub)}
+.prev-v{color:var(--green);font-weight:600}
+.prev-v.bonus{color:var(--green2)}
+
+.save-btn{
+  width:100%;padding:15px;background:var(--green);border:none;
+  border-radius:12px;color:#000;font-family:var(--inter);
+  font-size:15px;font-weight:800;letter-spacing:.5px;cursor:pointer;transition:opacity .15s;
+}
+.save-btn:active{opacity:.8}
+.save-btn.ok{background:#00a366}
+
+/* page-specific back btn */
+.back-topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px 12px;border-bottom:1px solid var(--border);
+  background:var(--bg);position:sticky;top:0;z-index:10;
+}
+.back-btn{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  color:var(--sub);padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
+}
+.back-title{font-size:18px;font-weight:800;letter-spacing:-.3px}
+
+/* empty state */
+.empty{text-align:center;color:var(--faint);padding:50px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
+
+::-webkit-scrollbar{width:0;height:0}
 </style>
 </head>
 <body>
 <div class="app">
-<div class="hazard-bar"></div>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-inner">
-    <div>
-      <div class="brand-tag"><div class="brand-dot"></div>AutoDoc Logistic · Szczecin · M13</div>
-      <div class="brand-title">WAREHOUSE TRACKER</div>
-      <div class="brand-sub">OUTBOUND · BONUS CALC</div>
+<!-- ════════════════ PAGE: PROFILE ════════════════ -->
+<div class="page on" id="page-profile">
+
+  <div class="prof-header">
+    <div class="prof-row">
+      <div class="av-wrap">
+        <svg class="av-svg" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="30" fill="none" stroke="#242424" stroke-width="4"/>
+          <circle cx="32" cy="32" r="30" fill="none" stroke="#00d084" stroke-width="4"
+            stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5"
+            transform="rotate(-90 32 32)" id="av-ring-circle"
+            style="transition:stroke-dashoffset 1s ease"/>
+        </svg>
+        <div class="av-face" id="av-emoji">👷</div>
+        <div class="online"></div>
+      </div>
+      <div class="prof-text">
+        <div class="prof-name" id="prof-name-display">Сотрудник</div>
+        <div class="prof-dept">AutoDoc Logistic · Szczecin</div>
+        <div class="prof-tags">
+          <span class="tag tag-sub" id="prof-badge-shift">M13 Outbound</span>
+          <span class="tag tag-green" id="prof-badge-level">Новичок</span>
+        </div>
+      </div>
     </div>
-    <div class="header-meta">
-      <div class="date-chip" id="hdr-date">--.--.----</div>
-      <div class="name-chip" id="hdr-name" onclick="openModal('modal-name')">· Имя ·</div>
+
+    <div class="bonus-hero">
+      <div class="bh-label">Бонус за месяц</div>
+      <div>
+        <span class="bh-amount" id="ring-total">0.00</span>
+        <span class="bh-currency">zł</span>
+      </div>
+      <div class="bh-sub" id="ring-sub">нет записей</div>
+      <div class="bh-bar-wrap">
+        <div class="bh-bar-track">
+          <div class="bh-bar-fill" id="bh-fill" style="width:0%"></div>
+        </div>
+        <div class="bh-bar-labels">
+          <span class="bh-bar-l">0 zł</span>
+          <span class="bh-bar-l">цель 500 zł</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat3">
+      <div class="s3-card">
+        <div class="s3-val" id="tot-hours" style="color:var(--yellow)">0</div>
+        <div class="s3-lbl">Часов</div>
+      </div>
+      <div class="s3-card">
+        <div class="s3-val" id="tot-peaks">0</div>
+        <div class="s3-lbl">Пиков</div>
+      </div>
+      <div class="s3-card">
+        <div class="s3-val" id="tot-shifts" style="color:var(--green)">0</div>
+        <div class="s3-lbl">Смен</div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- STATION TABS -->
-<div class="station-bar">
-  <div class="station-tab active" id="tab-os"  onclick="switchStation('os')">OS</div>
-  <div class="station-tab"        id="tab-pa"  onclick="switchStation('pa')">PA</div>
-  <div class="station-tab"        id="tab-sio" onclick="switchStation('sio')">SIO</div>
-  <div class="station-tab"        id="tab-pc"  onclick="switchStation('pc')">PC</div>
-  <div class="station-tab soon"   id="tab-s1">Stow <span class="soon-badge">SOON</span></div>
-  <div class="station-tab soon"   id="tab-s2">Pick <span class="soon-badge">SOON</span></div>
-  <div class="station-tab soon"   id="tab-s3">Receive <span class="soon-badge">SOON</span></div>
-</div>
-
-<!-- ═══ PAGE: DASHBOARD ═══ -->
-<div class="page on" id="page-dash">
-
-  <!-- OS PANEL -->
-  <div class="station-panel active st-os" id="panel-os">
-    <div class="section">
-      <div class="section-label">Oversize · норма 45 ppc/h</div>
-      <div class="hero">
-        <div class="station-badge">OS · OVERSIZE</div>
-        <div class="kpi-grid">
-          <div class="kpi">
-            <div class="kpi-label">Пики всего</div>
-            <div class="kpi-val" id="os-peaks">—</div>
-            <div class="kpi-bar"><div class="kpi-bar-fill" id="os-peaks-bar" style="width:0%;background:var(--yellow)"></div></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Ср. ppc/h</div>
-            <div class="kpi-val" id="os-pph">—</div>
-            <div class="kpi-bar"><div class="kpi-bar-fill" id="os-pph-bar" style="width:0%;background:var(--orange)"></div></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Сверхнормы</div>
-            <div class="kpi-val" style="color:var(--orange)" id="os-above">—</div>
-            <div class="kpi-bar"><div class="kpi-bar-fill" id="os-above-bar" style="width:0%;background:var(--orange)"></div></div>
-          </div>
-          <div class="kpi">
-            <div class="kpi-label">Часов</div>
-            <div class="kpi-val" id="os-hours">—<span class="kpi-unit">ч</span></div>
-            <div class="kpi-bar"><div class="kpi-bar-fill" id="os-hours-bar" style="width:0%;background:var(--blue)"></div></div>
-          </div>
+  <div class="pad mt">
+    <div class="sec-label">Смена сегодня</div>
+    <div class="shift-card">
+      <div class="sc-header">
+        <div class="sc-title" id="shift-date-label">—</div>
+        <div class="sc-badge">Активна</div>
+      </div>
+      <div class="sc-grid">
+        <div class="sc-item">
+          <div class="sc-v" id="sh-hours">—</div>
+          <div class="sc-l">Часов</div>
         </div>
-        <div class="prog-row">
-          <span class="prog-label">ПРОИЗВОДИТЕЛЬНОСТЬ</span>
-          <span class="prog-pct" id="os-pct">0%</span>
+        <div class="sc-item">
+          <div class="sc-v" id="sh-peaks">—</div>
+          <div class="sc-l">Пики</div>
         </div>
-        <div class="prog-track"><div class="prog-fill" id="os-prog" style="width:0%"></div></div>
+        <div class="sc-item">
+          <div class="sc-v" id="sh-above">—</div>
+          <div class="sc-l">Сверх</div>
+        </div>
+        <div class="sc-item">
+          <div class="sc-v" style="color:var(--green)" id="sh-bonus">—</div>
+          <div class="sc-l">Бонус</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pad mt">
+    <div class="sec-label">По станциям · месяц</div>
+    <div id="breakdown-list">
+      <div class="empty">НЕТ ДАННЫХ</div>
+    </div>
+  </div>
+
+  <div class="pad mt" style="padding-bottom:20px">
+    <div class="edit-btn" onclick="openEditProfile()">
+      <span>✏️</span><span>Редактировать профиль</span>
+    </div>
+  </div>
+</div><!-- /page-profile -->
+
+
+<!-- ════════════════ PAGE: DASHBOARD ════════════════ -->
+<div class="page" id="page-dash">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-brand">AutoDoc · M13 Outbound</div>
+      <div class="topbar-title">Дашборд</div>
+    </div>
+    <div class="topbar-right">
+      <div class="date-pill" id="hdr-date">--.--.----</div>
+      <div class="name-pill" id="hdr-name" onclick="openModal('modal-name')">—</div>
+    </div>
+  </div>
+
+  <div class="station-scroll">
+    <div class="st-tab active" id="tab-os"  onclick="switchStation('os')"  style="background:#f5c400;color:#000">OS</div>
+    <div class="st-tab"        id="tab-pa"  onclick="switchStation('pa')">PA</div>
+    <div class="st-tab"        id="tab-sio" onclick="switchStation('sio')">SIO</div>
+    <div class="st-tab"        id="tab-pc"  onclick="switchStation('pc')">PC</div>
+    <div class="st-tab soon">Stow <span class="soon-txt">SOON</span></div>
+    <div class="st-tab soon">Pick <span class="soon-txt">SOON</span></div>
+    <div class="st-tab soon">Receive <span class="soon-txt">SOON</span></div>
+  </div>
+
+  <!-- OS -->
+  <div class="station-panel active" id="panel-os">
+    <div class="dash-hero">
+      <div class="dh-station-badge" style="background:rgba(245,196,0,.1);color:var(--yellow);border:1px solid rgba(245,196,0,.2)">
+        <div class="dh-station-dot" style="background:var(--yellow)"></div>
+        OS · OVERSIZE · норма 45 ppc/h
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-l">Пики всего</div><div class="kpi-v" id="os-peaks" style="color:var(--yellow)">—</div><div class="kpi-bar"><div class="kpi-bf" id="os-peaks-bar" style="background:var(--yellow)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Ср. ppc/h</div><div class="kpi-v" id="os-pph">—</div><div class="kpi-bar"><div class="kpi-bf" id="os-pph-bar" style="background:var(--yellow)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Сверхнормы</div><div class="kpi-v" id="os-above" style="color:var(--orange)">—</div><div class="kpi-bar"><div class="kpi-bf" id="os-above-bar" style="background:var(--orange)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Часов</div><div class="kpi-v" id="os-hours">—</div><div class="kpi-bar"><div class="kpi-bf" id="os-hours-bar" style="background:var(--blue)"></div></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-top"><span class="prog-lbl">Производительность</span><span class="prog-pct" id="os-pct" style="color:var(--yellow)">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="os-prog" style="width:0%;background:linear-gradient(90deg,#b38a00,var(--yellow))"></div></div>
         <div class="prog-ticks">
-          <span class="tick" id="os-t0">0</span>
-          <span class="tick" id="os-t45">45✓</span>
-          <span class="tick" id="os-t68">68</span>
-          <span class="tick" id="os-t86">86+</span>
-        </div>
-        <div class="bonus-block">
-          <div class="bonus-left">
-            <div class="bonus-tag">Премия сегодня</div>
-            <div class="bonus-formula" id="os-formula">— × —</div>
-          </div>
-          <div class="bonus-val" id="os-bonus">0.00<span class="bonus-cur">zł</span></div>
+          <span class="prog-tick" id="os-t0">0</span><span class="prog-tick" id="os-t45">45✓</span><span class="prog-tick" id="os-t68">68</span><span class="prog-tick" id="os-t86">86+</span>
         </div>
       </div>
-    </div>
-    <div class="section">
-      <div class="section-label">Месяц</div>
-      <div class="month-row">
-        <div class="mstat"><div class="mstat-label">Пики</div><div class="mstat-val" id="os-mp">—</div><div class="mstat-unit">шт</div></div>
-        <div class="mstat"><div class="mstat-label">Бонус</div><div class="mstat-val" style="color:var(--green)" id="os-mb">—</div><div class="mstat-unit">zł</div></div>
-        <div class="mstat"><div class="mstat-label">Смены</div><div class="mstat-val" id="os-ms">—</div><div class="mstat-unit">дн</div></div>
+      <div class="bonus-strip">
+        <div><div class="bs-lbl">Премия сегодня</div><div class="bs-formula" id="os-formula">— × —</div></div>
+        <div class="bs-amount" id="os-bonus">0.00<span class="bs-cur">zł</span></div>
       </div>
     </div>
-    <div class="section">
-      <div class="section-label">Действия</div>
-      <div class="action-grid">
-        <button class="action-btn" onclick="openAdd('os')">
-          <span class="ab-icon">⚡</span>
-          <span class="ab-title">Добавить</span>
-          <span class="ab-sub">Новая запись</span>
-        </button>
-        <button class="action-btn" onclick="showPage('page-history')">
-          <span class="ab-icon">📋</span>
-          <span class="ab-title">История</span>
-          <span class="ab-sub">Все записи</span>
-        </button>
-        <button class="action-btn action-btn-wide" onclick="showPage('page-rates')">
-          <span class="ab-icon">📊</span>
-          <div><span class="ab-title">Таблица ставок</span><span class="ab-sub">OS Бонусная программа</span></div>
-        </button>
-      </div>
+    <div class="month-mini">
+      <div class="mm-card"><div class="mm-v" id="os-mp">—</div><div class="mm-l">Пики</div></div>
+      <div class="mm-card"><div class="mm-v" id="os-mb" style="color:var(--green)">—</div><div class="mm-l">Бонус zł</div></div>
+      <div class="mm-card"><div class="mm-v" id="os-ms">—</div><div class="mm-l">Смен</div></div>
     </div>
-  </div><!-- /panel-os -->
+    <div class="act-grid">
+      <button class="act-btn" onclick="openAdd('os')"><span class="act-icon">⚡</span><span class="act-name">Добавить</span><span class="act-sub">Новая запись</span></button>
+      <button class="act-btn" onclick="showPage('page-history');setNav('bn-hist')"><span class="act-icon">📋</span><span class="act-name">История</span><span class="act-sub">Все записи</span></button>
+      <button class="act-btn act-wide" onclick="showPage('page-rates');setNav('bn-rate')"><span class="act-icon">📊</span><div><span class="act-name">Таблица ставок OS</span><span class="act-sub">Бонусная программа</span></div></button>
+    </div>
+  </div>
 
-  <!-- PA PANEL -->
-  <div class="station-panel st-pa" id="panel-pa">
-    <div class="section">
-      <div class="section-label">Packing Automation · норма 120 ppc/h</div>
-      <div class="hero" style="border-top-color:var(--blue)">
-        <div class="station-badge" style="color:var(--blue);border-color:rgba(52,152,219,.2);background:rgba(52,152,219,.05)">PA · PACKING AUTO</div>
-        <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-label">Пики всего</div><div class="kpi-val" id="pa-peaks">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="pa-peaks-bar" style="width:0%;background:var(--blue)"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Ср. ppc/h</div><div class="kpi-val" id="pa-pph">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="pa-pph-bar" style="width:0%;background:var(--blue)"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Сверхнормы</div><div class="kpi-val" style="color:var(--blue)" id="pa-above">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="pa-above-bar" style="width:0%;background:var(--blue)"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Часов</div><div class="kpi-val" id="pa-hours">—<span class="kpi-unit">ч</span></div><div class="kpi-bar"><div class="kpi-bar-fill" id="pa-hours-bar" style="width:0%;background:var(--blue)"></div></div></div>
-        </div>
-        <div class="prog-row"><span class="prog-label">ПРОИЗВОДИТЕЛЬНОСТЬ</span><span class="prog-pct" id="pa-pct">0%</span></div>
-        <div class="prog-track"><div class="prog-fill" id="pa-prog" style="width:0%;background:linear-gradient(90deg,#1a6fa5,var(--blue))"></div></div>
+  <!-- PA -->
+  <div class="station-panel" id="panel-pa">
+    <div class="dash-hero">
+      <div class="dh-station-badge" style="background:rgba(77,158,245,.1);color:var(--blue);border:1px solid rgba(77,158,245,.2)">
+        <div class="dh-station-dot" style="background:var(--blue)"></div>
+        PA · PACKING AUTO · норма 120 ppc/h
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-l">Пики всего</div><div class="kpi-v" id="pa-peaks" style="color:var(--blue)">—</div><div class="kpi-bar"><div class="kpi-bf" id="pa-peaks-bar" style="background:var(--blue)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Ср. ppc/h</div><div class="kpi-v" id="pa-pph">—</div><div class="kpi-bar"><div class="kpi-bf" id="pa-pph-bar" style="background:var(--blue)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Сверхнормы</div><div class="kpi-v" id="pa-above" style="color:var(--orange)">—</div><div class="kpi-bar"><div class="kpi-bf" id="pa-above-bar" style="background:var(--orange)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Часов</div><div class="kpi-v" id="pa-hours">—</div><div class="kpi-bar"><div class="kpi-bf" id="pa-hours-bar" style="background:var(--blue)"></div></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-top"><span class="prog-lbl">Производительность</span><span class="prog-pct" id="pa-pct" style="color:var(--blue)">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="pa-prog" style="width:0%;background:linear-gradient(90deg,#1a5fa0,var(--blue))"></div></div>
         <div class="prog-ticks">
-          <span class="tick" id="pa-t0">0</span><span class="tick" id="pa-t120">120✓</span>
-          <span class="tick" id="pa-t168">168</span><span class="tick" id="pa-t211">211+</span>
-        </div>
-        <div class="bonus-block" style="background:linear-gradient(135deg,#0d1520,#0a1220);border-color:rgba(52,152,219,.2)">
-          <div><div class="bonus-tag" style="color:rgba(52,152,219,.5)">Премия сегодня</div><div class="bonus-formula" id="pa-formula">— × —</div></div>
-          <div class="bonus-val" style="color:var(--blue)" id="pa-bonus">0.00<span class="bonus-cur">zł</span></div>
+          <span class="prog-tick" id="pa-t0">0</span><span class="prog-tick" id="pa-t120">120✓</span><span class="prog-tick" id="pa-t168">168</span><span class="prog-tick" id="pa-t211">211+</span>
         </div>
       </div>
-    </div>
-    <div class="section"><div class="section-label">Месяц</div>
-      <div class="month-row">
-        <div class="mstat"><div class="mstat-label">Пики</div><div class="mstat-val" id="pa-mp">—</div><div class="mstat-unit">шт</div></div>
-        <div class="mstat"><div class="mstat-label">Бонус</div><div class="mstat-val" style="color:var(--green)" id="pa-mb">—</div><div class="mstat-unit">zł</div></div>
-        <div class="mstat"><div class="mstat-label">Смены</div><div class="mstat-val" id="pa-ms">—</div><div class="mstat-unit">дн</div></div>
+      <div class="bonus-strip">
+        <div><div class="bs-lbl">Премия сегодня</div><div class="bs-formula" id="pa-formula">— × —</div></div>
+        <div class="bs-amount" id="pa-bonus" style="color:var(--blue)">0.00<span class="bs-cur">zł</span></div>
       </div>
     </div>
-    <div class="section"><div class="section-label">Действия</div>
-      <div class="action-grid">
-        <button class="action-btn" onclick="openAdd('pa')"><span class="ab-icon">⚡</span><span class="ab-title">Добавить</span><span class="ab-sub">Новая запись</span></button>
-        <button class="action-btn" onclick="showPage('page-history')"><span class="ab-icon">📋</span><span class="ab-title">История</span><span class="ab-sub">Все записи</span></button>
-        <button class="action-btn action-btn-wide" onclick="showPage('page-rates')"><span class="ab-icon">📊</span><div><span class="ab-title">Таблица ставок PA</span><span class="ab-sub">Бонусная программа</span></div></button>
-      </div>
+    <div class="month-mini">
+      <div class="mm-card"><div class="mm-v" id="pa-mp">—</div><div class="mm-l">Пики</div></div>
+      <div class="mm-card"><div class="mm-v" id="pa-mb" style="color:var(--green)">—</div><div class="mm-l">Бонус zł</div></div>
+      <div class="mm-card"><div class="mm-v" id="pa-ms">—</div><div class="mm-l">Смен</div></div>
     </div>
-  </div><!-- /panel-pa -->
+    <div class="act-grid">
+      <button class="act-btn" onclick="openAdd('pa')"><span class="act-icon">⚡</span><span class="act-name">Добавить</span><span class="act-sub">Новая запись</span></button>
+      <button class="act-btn" onclick="showPage('page-history');setNav('bn-hist')"><span class="act-icon">📋</span><span class="act-name">История</span><span class="act-sub">Все записи</span></button>
+      <button class="act-btn act-wide" onclick="showPage('page-rates');setNav('bn-rate')"><span class="act-icon">📊</span><div><span class="act-name">Таблица ставок PA</span><span class="act-sub">Бонусная программа</span></div></button>
+    </div>
+  </div>
 
-  <!-- SIO PANEL -->
-  <div class="station-panel st-sio" id="panel-sio">
-    <div class="section">
-      <div class="section-label">Single Item Orders · норма 54 ppc/h</div>
-      <div class="hero" style="border-top-color:#9b59b6">
-        <div class="station-badge" style="color:#9b59b6;border-color:rgba(155,89,182,.2);background:rgba(155,89,182,.05)">SIO · SINGLE ITEM</div>
-        <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-label">Пики всего</div><div class="kpi-val" id="sio-peaks">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="sio-peaks-bar" style="width:0%;background:#9b59b6"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Ср. ppc/h</div><div class="kpi-val" id="sio-pph">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="sio-pph-bar" style="width:0%;background:#9b59b6"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Сверхнормы</div><div class="kpi-val" style="color:#9b59b6" id="sio-above">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="sio-above-bar" style="width:0%;background:#9b59b6"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Часов</div><div class="kpi-val" id="sio-hours">—<span class="kpi-unit">ч</span></div><div class="kpi-bar"><div class="kpi-bar-fill" id="sio-hours-bar" style="width:0%;background:var(--blue)"></div></div></div>
-        </div>
-        <div class="prog-row"><span class="prog-label">ПРОИЗВОДИТЕЛЬНОСТЬ</span><span class="prog-pct" id="sio-pct">0%</span></div>
-        <div class="prog-track"><div class="prog-fill" id="sio-prog" style="width:0%;background:linear-gradient(90deg,#6c3483,#9b59b6)"></div></div>
+  <!-- SIO -->
+  <div class="station-panel" id="panel-sio">
+    <div class="dash-hero">
+      <div class="dh-station-badge" style="background:rgba(155,109,255,.1);color:var(--purple);border:1px solid rgba(155,109,255,.2)">
+        <div class="dh-station-dot" style="background:var(--purple)"></div>
+        SIO · SINGLE ITEM · норма 54 ppc/h
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-l">Пики всего</div><div class="kpi-v" id="sio-peaks" style="color:var(--purple)">—</div><div class="kpi-bar"><div class="kpi-bf" id="sio-peaks-bar" style="background:var(--purple)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Ср. ppc/h</div><div class="kpi-v" id="sio-pph">—</div><div class="kpi-bar"><div class="kpi-bf" id="sio-pph-bar" style="background:var(--purple)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Сверхнормы</div><div class="kpi-v" id="sio-above" style="color:var(--orange)">—</div><div class="kpi-bar"><div class="kpi-bf" id="sio-above-bar" style="background:var(--orange)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Часов</div><div class="kpi-v" id="sio-hours">—</div><div class="kpi-bar"><div class="kpi-bf" id="sio-hours-bar" style="background:var(--blue)"></div></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-top"><span class="prog-lbl">Производительность</span><span class="prog-pct" id="sio-pct" style="color:var(--purple)">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="sio-prog" style="width:0%;background:linear-gradient(90deg,#5a3ea0,var(--purple))"></div></div>
         <div class="prog-ticks">
-          <span class="tick" id="sio-t0">0</span><span class="tick" id="sio-t54">54✓</span>
-          <span class="tick" id="sio-t76">76</span><span class="tick" id="sio-t96">96+</span>
-        </div>
-        <div class="bonus-block" style="background:linear-gradient(135deg,#150d1f,#110b1a);border-color:rgba(155,89,182,.2)">
-          <div><div class="bonus-tag" style="color:rgba(155,89,182,.5)">Премия сегодня</div><div class="bonus-formula" id="sio-formula">— × —</div></div>
-          <div class="bonus-val" style="color:#9b59b6" id="sio-bonus">0.00<span class="bonus-cur">zł</span></div>
+          <span class="prog-tick" id="sio-t0">0</span><span class="prog-tick" id="sio-t54">54✓</span><span class="prog-tick" id="sio-t76">76</span><span class="prog-tick" id="sio-t96">96+</span>
         </div>
       </div>
-    </div>
-    <div class="section"><div class="section-label">Месяц</div>
-      <div class="month-row">
-        <div class="mstat"><div class="mstat-label">Пики</div><div class="mstat-val" id="sio-mp">—</div><div class="mstat-unit">шт</div></div>
-        <div class="mstat"><div class="mstat-label">Бонус</div><div class="mstat-val" style="color:var(--green)" id="sio-mb">—</div><div class="mstat-unit">zł</div></div>
-        <div class="mstat"><div class="mstat-label">Смены</div><div class="mstat-val" id="sio-ms">—</div><div class="mstat-unit">дн</div></div>
+      <div class="bonus-strip">
+        <div><div class="bs-lbl">Премия сегодня</div><div class="bs-formula" id="sio-formula">— × —</div></div>
+        <div class="bs-amount" id="sio-bonus" style="color:var(--purple)">0.00<span class="bs-cur">zł</span></div>
       </div>
     </div>
-    <div class="section"><div class="section-label">Действия</div>
-      <div class="action-grid">
-        <button class="action-btn" onclick="openAdd('sio')"><span class="ab-icon">⚡</span><span class="ab-title">Добавить</span><span class="ab-sub">Новая запись</span></button>
-        <button class="action-btn" onclick="showPage('page-history')"><span class="ab-icon">📋</span><span class="ab-title">История</span><span class="ab-sub">Все записи</span></button>
-        <button class="action-btn action-btn-wide" onclick="showPage('page-rates')"><span class="ab-icon">📊</span><div><span class="ab-title">Таблица ставок SIO</span><span class="ab-sub">Бонусная программа</span></div></button>
-      </div>
+    <div class="month-mini">
+      <div class="mm-card"><div class="mm-v" id="sio-mp">—</div><div class="mm-l">Пики</div></div>
+      <div class="mm-card"><div class="mm-v" id="sio-mb" style="color:var(--green)">—</div><div class="mm-l">Бонус zł</div></div>
+      <div class="mm-card"><div class="mm-v" id="sio-ms">—</div><div class="mm-l">Смен</div></div>
     </div>
-  </div><!-- /panel-sio -->
+    <div class="act-grid">
+      <button class="act-btn" onclick="openAdd('sio')"><span class="act-icon">⚡</span><span class="act-name">Добавить</span><span class="act-sub">Новая запись</span></button>
+      <button class="act-btn" onclick="showPage('page-history');setNav('bn-hist')"><span class="act-icon">📋</span><span class="act-name">История</span><span class="act-sub">Все записи</span></button>
+      <button class="act-btn act-wide" onclick="showPage('page-rates');setNav('bn-rate')"><span class="act-icon">📊</span><div><span class="act-name">Таблица ставок SIO</span><span class="act-sub">Бонусная программа</span></div></button>
+    </div>
+  </div>
 
-  <!-- PC PANEL -->
-  <div class="station-panel st-pc" id="panel-pc">
-    <div class="section">
-      <div class="section-label">Picking Consolidation · норма 225 ppc/h</div>
-      <div class="hero" style="border-top-color:var(--orange)">
-        <div class="station-badge" style="color:var(--orange);border-color:rgba(232,114,12,.2);background:rgba(232,114,12,.05)">PC · PICKING CONSOL</div>
-        <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-label">Пики всего</div><div class="kpi-val" id="pc-peaks">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="pc-peaks-bar" style="width:0%;background:var(--orange)"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Ср. ppc/h</div><div class="kpi-val" id="pc-pph">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="pc-pph-bar" style="width:0%;background:var(--orange)"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Сверхнормы</div><div class="kpi-val" style="color:var(--orange)" id="pc-above">—</div><div class="kpi-bar"><div class="kpi-bar-fill" id="pc-above-bar" style="width:0%;background:var(--orange)"></div></div></div>
-          <div class="kpi"><div class="kpi-label">Часов</div><div class="kpi-val" id="pc-hours">—<span class="kpi-unit">ч</span></div><div class="kpi-bar"><div class="kpi-bar-fill" id="pc-hours-bar" style="width:0%;background:var(--blue)"></div></div></div>
-        </div>
-        <div class="prog-row"><span class="prog-label">ПРОИЗВОДИТЕЛЬНОСТЬ</span><span class="prog-pct" id="pc-pct">0%</span></div>
-        <div class="prog-track"><div class="prog-fill" id="pc-prog" style="width:0%;background:linear-gradient(90deg,#7d3c0a,var(--orange))"></div></div>
+  <!-- PC -->
+  <div class="station-panel" id="panel-pc">
+    <div class="dash-hero">
+      <div class="dh-station-badge" style="background:rgba(255,107,53,.1);color:var(--orange);border:1px solid rgba(255,107,53,.2)">
+        <div class="dh-station-dot" style="background:var(--orange)"></div>
+        PC · PICKING CONSOL · норма 225 ppc/h
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-l">Пики всего</div><div class="kpi-v" id="pc-peaks" style="color:var(--orange)">—</div><div class="kpi-bar"><div class="kpi-bf" id="pc-peaks-bar" style="background:var(--orange)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Ср. ppc/h</div><div class="kpi-v" id="pc-pph">—</div><div class="kpi-bar"><div class="kpi-bf" id="pc-pph-bar" style="background:var(--orange)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Сверхнормы</div><div class="kpi-v" id="pc-above" style="color:var(--orange)">—</div><div class="kpi-bar"><div class="kpi-bf" id="pc-above-bar" style="background:var(--orange)"></div></div></div>
+        <div class="kpi"><div class="kpi-l">Часов</div><div class="kpi-v" id="pc-hours">—</div><div class="kpi-bar"><div class="kpi-bf" id="pc-hours-bar" style="background:var(--blue)"></div></div></div>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-top"><span class="prog-lbl">Производительность</span><span class="prog-pct" id="pc-pct" style="color:var(--orange)">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="pc-prog" style="width:0%;background:linear-gradient(90deg,#8a3a10,var(--orange))"></div></div>
         <div class="prog-ticks">
-          <span class="tick" id="pc-t0">0</span><span class="tick" id="pc-t225">225✓</span>
-          <span class="tick" id="pc-t314">314</span><span class="tick" id="pc-t395">395+</span>
-        </div>
-        <div class="bonus-block" style="background:linear-gradient(135deg,#1a0f05,#160d04);border-color:rgba(232,114,12,.2)">
-          <div><div class="bonus-tag" style="color:rgba(232,114,12,.5)">Премия сегодня</div><div class="bonus-formula" id="pc-formula">— × —</div></div>
-          <div class="bonus-val" style="color:var(--orange)" id="pc-bonus">0.00<span class="bonus-cur">zł</span></div>
+          <span class="prog-tick" id="pc-t0">0</span><span class="prog-tick" id="pc-t225">225✓</span><span class="prog-tick" id="pc-t314">314</span><span class="prog-tick" id="pc-t395">395+</span>
         </div>
       </div>
-    </div>
-    <div class="section"><div class="section-label">Месяц</div>
-      <div class="month-row">
-        <div class="mstat"><div class="mstat-label">Пики</div><div class="mstat-val" id="pc-mp">—</div><div class="mstat-unit">шт</div></div>
-        <div class="mstat"><div class="mstat-label">Бонус</div><div class="mstat-val" style="color:var(--green)" id="pc-mb">—</div><div class="mstat-unit">zł</div></div>
-        <div class="mstat"><div class="mstat-label">Смены</div><div class="mstat-val" id="pc-ms">—</div><div class="mstat-unit">дн</div></div>
+      <div class="bonus-strip">
+        <div><div class="bs-lbl">Премия сегодня</div><div class="bs-formula" id="pc-formula">— × —</div></div>
+        <div class="bs-amount" id="pc-bonus" style="color:var(--orange)">0.00<span class="bs-cur">zł</span></div>
       </div>
     </div>
-    <div class="section"><div class="section-label">Действия</div>
-      <div class="action-grid">
-        <button class="action-btn" onclick="openAdd('pc')"><span class="ab-icon">⚡</span><span class="ab-title">Добавить</span><span class="ab-sub">Новая запись</span></button>
-        <button class="action-btn" onclick="showPage('page-history')"><span class="ab-icon">📋</span><span class="ab-title">История</span><span class="ab-sub">Все записи</span></button>
-        <button class="action-btn action-btn-wide" onclick="showPage('page-rates')"><span class="ab-icon">📊</span><div><span class="ab-title">Таблица ставок PC</span><span class="ab-sub">Бонусная программа</span></div></button>
-      </div>
+    <div class="month-mini">
+      <div class="mm-card"><div class="mm-v" id="pc-mp">—</div><div class="mm-l">Пики</div></div>
+      <div class="mm-card"><div class="mm-v" id="pc-mb" style="color:var(--green)">—</div><div class="mm-l">Бонус zł</div></div>
+      <div class="mm-card"><div class="mm-v" id="pc-ms">—</div><div class="mm-l">Смен</div></div>
     </div>
-  </div><!-- /panel-pc -->
+    <div class="act-grid">
+      <button class="act-btn" onclick="openAdd('pc')"><span class="act-icon">⚡</span><span class="act-name">Добавить</span><span class="act-sub">Новая запись</span></button>
+      <button class="act-btn" onclick="showPage('page-history');setNav('bn-hist')"><span class="act-icon">📋</span><span class="act-name">История</span><span class="act-sub">Все записи</span></button>
+      <button class="act-btn act-wide" onclick="showPage('page-rates');setNav('bn-rate')"><span class="act-icon">📊</span><div><span class="act-name">Таблица ставок PC</span><span class="act-sub">Бонусная программа</span></div></button>
+    </div>
+  </div>
 
 </div><!-- /page-dash -->
 
-<!-- ═══ PAGE: HISTORY ═══ -->
+
+<!-- ════════════════ PAGE: HISTORY ════════════════ -->
 <div class="page" id="page-history">
-  <div class="header">
-    <div style="display:flex;align-items:center;gap:10px">
-      <button onclick="showPage('page-dash')" style="background:var(--faint);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:5px 10px;font-family:var(--mono);font-size:10px;cursor:pointer">← НАЗАД</button>
-      <div><div class="brand-tag"><div class="brand-dot"></div>История смен</div><div class="brand-title" style="font-size:24px">ВСЕ ЗАПИСИ</div></div>
-    </div>
+  <div class="back-topbar">
+    <button class="back-btn" onclick="showPage('page-dash');setNav('bn-dash')">← Назад</button>
+    <div class="back-title">История</div>
   </div>
-  <div class="section" style="padding-top:14px">
+  <div class="pad" style="padding-top:16px">
     <div id="hist-list"></div>
-    <div id="hist-empty" style="display:none;text-align:center;color:var(--muted);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px">НЕТ ЗАПИСЕЙ</div>
+    <div id="hist-empty" class="empty" style="display:none">НЕТ ЗАПИСЕЙ</div>
   </div>
 </div>
 
-<!-- ═══ PAGE: RATES ═══ -->
+
+<!-- ════════════════ PAGE: RATES ════════════════ -->
 <div class="page" id="page-rates">
-  <div class="header">
-    <div style="display:flex;align-items:center;gap:10px">
-      <button onclick="showPage('page-dash')" style="background:var(--faint);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:5px 10px;font-family:var(--mono);font-size:10px;cursor:pointer">← НАЗАД</button>
-      <div><div class="brand-tag"><div class="brand-dot"></div>Ставки</div><div class="brand-title" style="font-size:24px">БОНУС. ПРОГРАММА</div></div>
-    </div>
+  <div class="back-topbar">
+    <button class="back-btn" onclick="showPage('page-dash');setNav('bn-dash')">← Назад</button>
+    <div class="back-title">Ставки</div>
   </div>
-  <div class="section" style="padding-top:14px" id="rates-content"></div>
+  <div class="pad" style="padding-top:16px;padding-bottom:20px" id="rates-content"></div>
 </div>
+
 
 <!-- BOTTOM NAV -->
-<div class="bnav">
-  <div class="bni on" id="bn-dash" onclick="showPage('page-dash');setNav('bn-dash')"><span class="bni-icon">⚡</span><span class="bni-label">Дашборд</span></div>
+<div class="bnav" style="grid-template-columns:repeat(5,1fr)">
+  <div class="bni on" id="bn-prof" onclick="showPage('page-profile');setNav('bn-prof');renderProfile()"><span class="bni-icon">👤</span><span class="bni-label">Профиль</span></div>
+  <div class="bni"    id="bn-dash" onclick="showPage('page-dash');setNav('bn-dash')"><span class="bni-icon">⚡</span><span class="bni-label">Дашборд</span></div>
   <div class="bni"    id="bn-add"  onclick="openAdd(curStation)"><span class="bni-icon">➕</span><span class="bni-label">Добавить</span></div>
   <div class="bni"    id="bn-hist" onclick="showPage('page-history');setNav('bn-hist')"><span class="bni-icon">📋</span><span class="bni-label">История</span></div>
   <div class="bni"    id="bn-rate" onclick="showPage('page-rates');setNav('bn-rate')"><span class="bni-icon">📊</span><span class="bni-label">Ставки</span></div>
 </div>
 
+
 <!-- MODAL: ADD -->
 <div class="overlay" id="modal-add" onclick="closeOverlay(event,'modal-add')">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title" id="add-title">⚡ Добавить запись</div>
+    <div class="sheet-title" id="add-title">Добавить запись</div>
     <div class="field">
       <span class="field-label">Дата смены</span>
       <div class="dq-row">
@@ -642,17 +692,48 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--r
       </div>
       <input class="field-input" type="date" id="inp-date" onchange="dqClear();updPrev()"/>
     </div>
-    <div class="field"><span class="field-label">Пики (штук)</span><input class="field-input" type="number" id="inp-peaks" placeholder="напр. 380" oninput="updPrev()"/></div>
-    <div class="field"><span class="field-label">Часов отработано</span><input class="field-input" type="number" step="0.5" id="inp-hours" placeholder="напр. 8" oninput="updPrev()"/></div>
+    <div class="field"><span class="field-label">Пики (штук)</span><input class="field-input" type="number" id="inp-peaks" placeholder="380" oninput="updPrev()"/></div>
+    <div class="field"><span class="field-label">Часов отработано</span><input class="field-input" type="number" step="0.5" id="inp-hours" placeholder="8" oninput="updPrev()"/></div>
     <div class="field"><span class="field-label">Заметка</span><input class="field-input" type="text" id="inp-note" placeholder="необязательно"/></div>
     <div class="preview" id="prev-box">
       <div class="prev-row"><span class="prev-k">ppc/h</span><span class="prev-v" id="pv-pph">—</span></div>
       <div class="prev-row"><span class="prev-k">По норме</span><span class="prev-v" id="pv-norm">—</span></div>
       <div class="prev-row"><span class="prev-k">Сверхнормы</span><span class="prev-v" id="pv-above">—</span></div>
       <div class="prev-row"><span class="prev-k">Ставка</span><span class="prev-v" id="pv-rate">—</span></div>
-      <div class="prev-row"><span class="prev-k">Бонус</span><span class="prev-v g" id="pv-bonus">—</span></div>
+      <div class="prev-row"><span class="prev-k">Бонус</span><span class="prev-v bonus" id="pv-bonus">—</span></div>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveEntry()">СОХРАНИТЬ</button>
+  </div>
+</div>
+
+<!-- MODAL: EDIT PROFILE -->
+<div class="overlay" id="modal-profile" onclick="closeOverlay(event,'modal-profile')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Профиль</div>
+    <div class="field"><span class="field-label">Имя</span><input class="field-input" type="text" id="ep-name" placeholder="Введи имя"/></div>
+    <div class="field"><span class="field-label">Станция по умолчанию</span>
+      <select class="field-input" id="ep-role" style="appearance:none">
+        <option value="M13 Outbound · OS">M13 Outbound · OS</option>
+        <option value="M13 Outbound · PA">M13 Outbound · PA</option>
+        <option value="M13 Outbound · SIO">M13 Outbound · SIO</option>
+        <option value="M13 Outbound · PC">M13 Outbound · PC</option>
+      </select>
+    </div>
+    <div class="field"><span class="field-label">Аватар</span>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('👷')">👷</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('🧑‍🏭')">🧑‍🏭</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('🦺')">🦺</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('⚡')">⚡</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('📦')">📦</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('🚀')">🚀</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('💪')">💪</span>
+        <span style="font-size:28px;cursor:pointer" onclick="setEmoji('🏭')">🏭</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--sub)">Выбрано: <span id="ep-emoji-preview">👷</span></div>
+    </div>
+    <button class="save-btn" onclick="saveProfile()">СОХРАНИТЬ</button>
   </div>
 </div>
 
@@ -660,164 +741,157 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--r
 <div class="overlay" id="modal-name" onclick="closeOverlay(event,'modal-name')">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title">✏️ Твоё имя</div>
-    <div class="field"><span class="field-label">Имя сотрудника</span><input class="field-input" type="text" id="inp-name" placeholder="Введи имя"/></div>
+    <div class="sheet-title">Твоё имя</div>
+    <div class="field"><span class="field-label">Имя</span><input class="field-input" type="text" id="inp-name" placeholder="Введи имя"/></div>
     <button class="save-btn" onclick="saveName()">СОХРАНИТЬ</button>
   </div>
 </div>
 
 </div><!-- /app -->
 <script>
-// ══ STATION CONFIGS ══════════════════════════════════════════
 const STATIONS = {
-  os: {
-    name:'OS · Oversize', norm:45, color:'#f5c400',
-    ticks:[0,45,68,86], maxPPH:86,
-    thresholds:[
-      [0,45,0],[46,52,.61],[53,59,.631],[60,67,.651],
-      [68,74,.681],[75,81,.70],[82,85,.72],[86,999,.74]
-    ]
-  },
-  pa: {
-    name:'PA · Packing Automation', norm:120, color:'#3498db',
-    ticks:[0,120,168,211], maxPPH:211,
-    thresholds:[
-      [0,120,0],[121,133,.05],[134,142,.09],[143,151,.14],
-      [152,167,.17],[168,182,.20],[183,210,.22],[211,999,.24]
-    ]
-  },
-  sio: {
-    name:'SIO · Single Item Orders', norm:54, color:'#9b59b6',
-    ticks:[0,54,76,96], maxPPH:96,
-    thresholds:[
-      [0,54,0],[55,60,.22],[61,64,.27],[65,68,.31],
-      [69,75,.36],[76,82,.39],[83,95,.44],[96,999,.46]
-    ]
-  },
-  pc: {
-    name:'PC · Picking Consolidation', norm:225, color:'#e8720c',
-    ticks:[0,225,314,395], maxPPH:395,
-    thresholds:[
-      [0,225,0],[226,250,.04],[251,267,.06],[268,283,.08],
-      [284,313,.09],[314,342,.10],[343,394,.121],[395,999,.141]
-    ]
-  }
+  os:  { name:'OS · Oversize',            norm:45,  color:'#f5c400', ticks:[0,45,68,86],       maxPPH:86,  thresholds:[[0,45,0],[46,52,.61],[53,59,.631],[60,67,.651],[68,74,.681],[75,81,.70],[82,85,.72],[86,999,.74]] },
+  pa:  { name:'PA · Packing Automation',  norm:120, color:'#4d9ef5', ticks:[0,120,168,211],     maxPPH:211, thresholds:[[0,120,0],[121,133,.05],[134,142,.09],[143,151,.14],[152,167,.17],[168,182,.20],[183,210,.22],[211,999,.24]] },
+  sio: { name:'SIO · Single Item Orders', norm:54,  color:'#9b6dff', ticks:[0,54,76,96],        maxPPH:96,  thresholds:[[0,54,0],[55,60,.22],[61,64,.27],[65,68,.31],[69,75,.36],[76,82,.39],[83,95,.44],[96,999,.46]] },
+  pc:  { name:'PC · Picking Consol',      norm:225, color:'#ff6b35', ticks:[0,225,314,395],     maxPPH:395, thresholds:[[0,225,0],[226,250,.04],[251,267,.06],[268,283,.08],[284,313,.09],[314,342,.10],[343,394,.121],[395,999,.141]] }
 };
 
-// ══ STATE ════════════════════════════════════════════════════
 let DB = loadDB();
 let curStation = 'os';
 let dqMode = 'today';
 
 function loadDB(){ try{ return JSON.parse(localStorage.getItem('wh_db')||'{"entries":[],"name":""}'); }catch{ return {entries:[],name:''}; } }
 function saveDB(){ try{ localStorage.setItem('wh_db',JSON.stringify(DB)); }catch{} }
-
 function toISO(d){ return d.toISOString().slice(0,10) }
 function todayISO(){ return toISO(new Date()) }
 function yestISO(){ const d=new Date();d.setDate(d.getDate()-1);return toISO(d) }
 function monthISO(){ return new Date().toISOString().slice(0,7) }
 function fmtDate(iso){ if(!iso)return''; const[y,m,d]=iso.split('-');return`${d}.${m}.${y}` }
 
-function getRate(st, pph){
-  for(const[lo,hi,r] of STATIONS[st].thresholds) if(pph>=lo&&pph<=hi) return r;
-  return STATIONS[st].thresholds.at(-1)[2];
-}
-function calcEntry(st, peaks, hours){
-  const pph  = hours>0?peaks/hours:0;
-  const norm = Math.round(STATIONS[st].norm*hours);
-  const above= Math.max(0,peaks-norm);
-  const rate = getRate(st,Math.round(pph));
-  return {pph,norm,above,rate,bonus:above*rate};
-}
+function getRate(st,pph){ for(const[lo,hi,r] of STATIONS[st].thresholds) if(pph>=lo&&pph<=hi) return r; return STATIONS[st].thresholds.at(-1)[2]; }
+function calcEntry(st,peaks,hours){ const pph=hours>0?peaks/hours:0,norm=Math.round(STATIONS[st].norm*hours),above=Math.max(0,peaks-norm),rate=getRate(st,Math.round(pph)); return {pph,norm,above,rate,bonus:above*rate}; }
 
-// ══ INIT ═════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.Telegram?.WebApp){ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
   document.getElementById('hdr-date').textContent = fmtDate(todayISO());
   document.getElementById('inp-date').value = todayISO();
-  renderName();
-  renderAllDash();
-  renderHistory();
-  renderRates();
+  renderName(); renderAllDash(); renderHistory(); renderRates(); renderProfile();
+  showPage('page-profile'); setNav('bn-prof');
 });
 
-// ══ STATION SWITCH ═══════════════════════════════════════════
+function renderProfile(){
+  const month=monthISO(), today=todayISO();
+  const stColors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
+  const stLabels={os:'OS · Oversize',pa:'PA · Packing Auto',sio:'SIO · Single Item',pc:'PC · Picking Consol'};
+  const name=DB.name||'Сотрудник', role=DB.role||'M13 Outbound · OS', emoji=DB.emoji||'👷';
+  document.getElementById('prof-name-display').textContent=name;
+  document.getElementById('av-emoji').textContent=emoji;
+  const mEs=DB.entries.filter(e=>e.shiftDate?.slice(0,7)===month);
+  const totBonus=mEs.reduce((s,e)=>s+e.c.bonus,0);
+  const totHours=mEs.reduce((s,e)=>s+e.hours,0);
+  const totPeaks=mEs.reduce((s,e)=>s+e.peaks,0);
+  const totShifts=new Set(mEs.map(e=>e.shiftDate)).size;
+  const totEntries=mEs.length;
+  const ringPct=Math.min(1,totBonus/500);
+  const circ=2*Math.PI*30;
+  document.getElementById('av-ring-circle').style.strokeDashoffset=circ*(1-ringPct);
+  document.getElementById('ring-total').textContent=totBonus.toFixed(2);
+  document.getElementById('ring-sub').textContent=totEntries?`${totEntries} запис${totEntries===1?'ь':totEntries<5?'и':'ей'}`:'нет записей';
+  document.getElementById('bh-fill').style.width=(ringPct*100)+'%';
+  document.getElementById('tot-hours').textContent=totHours.toFixed(1);
+  document.getElementById('tot-peaks').textContent=totPeaks;
+  document.getElementById('tot-shifts').textContent=totShifts;
+  const lvl=totBonus>=200?'🔥 Топ':totBonus>=100?'⭐ Хорошо':totBonus>0?'📈 Растёт':'Новичок';
+  document.getElementById('prof-badge-level').textContent=lvl;
+  document.getElementById('prof-badge-shift').textContent=role;
+  const tEs=DB.entries.filter(e=>e.shiftDate===today);
+  const tH=tEs.reduce((s,e)=>s+e.hours,0),tP=tEs.reduce((s,e)=>s+e.peaks,0),tA=tEs.reduce((s,e)=>s+e.c.above,0),tB=tEs.reduce((s,e)=>s+e.c.bonus,0);
+  const dayNames=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  document.getElementById('shift-date-label').textContent=`${dayNames[new Date().getDay()]}, ${fmtDate(today)}`;
+  document.getElementById('sh-hours').textContent=tH>0?tH.toFixed(1):'—';
+  document.getElementById('sh-peaks').textContent=tP||'—';
+  document.getElementById('sh-above').textContent=tA||'—';
+  document.getElementById('sh-bonus').textContent=tB>0?tB.toFixed(2):'—';
+  const bl=document.getElementById('breakdown-list');
+  let bHtml='';
+  for(const[st,cfg] of Object.entries(STATIONS)){
+    const es=mEs.filter(e=>e.station===st);
+    if(!es.length) continue;
+    const h=es.reduce((s,e)=>s+e.hours,0),p=es.reduce((s,e)=>s+e.peaks,0),b=es.reduce((s,e)=>s+e.c.bonus,0);
+    const col=stColors[st],barW=Math.min(100,Math.round((b/Math.max(totBonus,1))*100));
+    bHtml+=`<div class="st-card" onclick="switchStation('${st}');showPage('page-dash');setNav('bn-dash')">
+      <div class="st-chip" style="background:${col}15;color:${col};border:1px solid ${col}25">${st.toUpperCase()}</div>
+      <div class="st-body">
+        <div class="st-name">${stLabels[st]}</div>
+        <div class="st-meta">${es.length} зап. · ${p} шт · ${h.toFixed(1)} ч</div>
+        <div class="st-bar"><div class="st-bar-f" style="width:${barW}%;background:${col}"></div></div>
+      </div>
+      <div class="st-right">
+        <div class="st-bonus" style="color:${col}">${b.toFixed(2)}</div>
+        <div class="st-unit">zł</div>
+      </div>
+    </div>`;
+  }
+  bl.innerHTML=bHtml||'<div class="empty">НЕТ ДАННЫХ ЗА МЕСЯЦ</div>';
+}
+
+function openEditProfile(){
+  document.getElementById('ep-name').value=DB.name||'';
+  document.getElementById('ep-role').value=DB.role||'M13 Outbound · OS';
+  document.getElementById('ep-emoji-preview').textContent=DB.emoji||'👷';
+  openModal('modal-profile');
+}
+function setEmoji(e){ DB.emoji=e; document.getElementById('ep-emoji-preview').textContent=e; document.getElementById('av-emoji').textContent=e; }
+function saveProfile(){ DB.name=document.getElementById('ep-name').value.trim()||DB.name; DB.role=document.getElementById('ep-role').value; DB.emoji=document.getElementById('ep-emoji-preview').textContent; saveDB(); renderName(); renderProfile(); closeModal('modal-profile'); }
+
 function switchStation(st){
-  curStation = st;
-  document.querySelectorAll('.station-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab-'+st).classList.add('active');
+  curStation=st;
+  const colors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
+  document.querySelectorAll('.st-tab').forEach(t=>{ t.style.background=''; t.style.color=''; t.classList.remove('active'); });
+  const tab=document.getElementById('tab-'+st);
+  tab.classList.add('active'); tab.style.background=colors[st]; tab.style.color=st==='os'?'#000':'#fff';
   document.querySelectorAll('.station-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+st).classList.add('active');
 }
 
-// ══ DASHBOARD RENDER ═════════════════════════════════════════
 function renderAllDash(){ ['os','pa','sio','pc'].forEach(renderDash) }
-
 function renderDash(st){
-  const today = todayISO(), month = monthISO();
-  const cfg = STATIONS[st];
-  const tEs = DB.entries.filter(e=>e.station===st&&e.shiftDate===today);
-  const mEs = DB.entries.filter(e=>e.station===st&&e.shiftDate?.slice(0,7)===month);
-
-  const tp=tEs.reduce((s,e)=>s+e.peaks,0);
-  const th=tEs.reduce((s,e)=>s+e.hours,0);
-  const ta=tEs.reduce((s,e)=>s+e.c.above,0);
-  const tb=tEs.reduce((s,e)=>s+e.c.bonus,0);
-  const pph=th>0?tp/th:0;
-  const rate=getRate(st,Math.round(pph));
-  const pct=Math.min(100,Math.round((pph/cfg.maxPPH)*100));
-
+  const today=todayISO(),month=monthISO(),cfg=STATIONS[st];
+  const tEs=DB.entries.filter(e=>e.station===st&&e.shiftDate===today);
+  const mEs=DB.entries.filter(e=>e.station===st&&e.shiftDate?.slice(0,7)===month);
+  const tp=tEs.reduce((s,e)=>s+e.peaks,0),th=tEs.reduce((s,e)=>s+e.hours,0),ta=tEs.reduce((s,e)=>s+e.c.above,0),tb=tEs.reduce((s,e)=>s+e.c.bonus,0);
+  const pph=th>0?tp/th:0,rate=getRate(st,Math.round(pph)),pct=Math.min(100,Math.round((pph/cfg.maxPPH)*100));
   const s=id=>document.getElementById(`${st}-${id}`);
-  s('peaks').textContent = tp||'—';
-  s('pph').textContent   = th>0?pph.toFixed(1):'—';
-  s('above').textContent = ta||'—';
-  s('hours').innerHTML   = th>0?`${th.toFixed(1)}<span class="kpi-unit">ч</span>`:'—';
-
-  s('peaks-bar').style.width = Math.min(100,Math.round((tp/500)*100))+'%';
-  s('pph-bar').style.width   = pct+'%';
-  s('above-bar').style.width = Math.min(100,Math.round((ta/200)*100))+'%';
-  s('hours-bar').style.width = Math.min(100,Math.round((th/12)*100))+'%';
-
-  s('prog').style.width = pct+'%';
-  s('pct').textContent  = pct+'%';
-
-  // ticks
-  cfg.ticks.forEach((v,i)=>{
-    const el=document.getElementById(`${st}-t${v}`);
-    if(!el)return;
-    el.classList.toggle('on', pph>=v && (i===cfg.ticks.length-1 || pph<cfg.ticks[i+1]));
-  });
-
-  s('formula').textContent = `${ta} шт × ${rate.toFixed(3)} zł`;
-  s('bonus').innerHTML     = `${tb.toFixed(2)}<span class="bonus-cur">zł</span>`;
-
-  const mp=mEs.reduce((s,e)=>s+e.peaks,0);
-  const mb=mEs.reduce((s,e)=>s+e.c.bonus,0);
-  const ms=new Set(mEs.map(e=>e.shiftDate)).size;
-  s('mp').textContent = mp||'—';
-  s('mb').textContent = mb>0?mb.toFixed(2):'—';
-  s('ms').textContent = ms||'—';
+  s('peaks').textContent=tp||'—'; s('pph').textContent=th>0?pph.toFixed(1):'—';
+  s('above').textContent=ta||'—'; s('hours').textContent=th>0?th.toFixed(1)+'ч':'—';
+  s('peaks-bar').style.width=Math.min(100,Math.round((tp/500)*100))+'%';
+  s('pph-bar').style.width=pct+'%'; s('above-bar').style.width=Math.min(100,Math.round((ta/200)*100))+'%';
+  s('hours-bar').style.width=Math.min(100,Math.round((th/12)*100))+'%';
+  s('prog').style.width=pct+'%'; s('pct').textContent=pct+'%';
+  cfg.ticks.forEach((v,i)=>{ const el=document.getElementById(`${st}-t${v}`); if(!el)return; el.classList.toggle('on',pph>=v&&(i===cfg.ticks.length-1||pph<cfg.ticks[i+1])); });
+  s('formula').textContent=`${ta} шт × ${rate.toFixed(3)} zł`;
+  s('bonus').innerHTML=`${tb.toFixed(2)}<span class="bs-cur">zł</span>`;
+  const mp=mEs.reduce((s,e)=>s+e.peaks,0),mb=mEs.reduce((s,e)=>s+e.c.bonus,0),ms=new Set(mEs.map(e=>e.shiftDate)).size;
+  s('mp').textContent=mp||'—'; s('mb').textContent=mb>0?mb.toFixed(2):'—'; s('ms').textContent=ms||'—';
 }
 
-// ══ HISTORY ══════════════════════════════════════════════════
 function renderHistory(){
-  const list=document.getElementById('hist-list');
-  const empty=document.getElementById('hist-empty');
+  const list=document.getElementById('hist-list'),empty=document.getElementById('hist-empty');
   const es=[...DB.entries].reverse();
   if(!es.length){ list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  const stColors={os:'#f5c400',pa:'#3498db',sio:'#9b59b6',pc:'#e8720c'};
+  const stColors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
   list.innerHTML=es.map(e=>{
     const col=stColors[e.station]||'#f5c400';
-    return `<div class="history-card" style="border-left-color:${col}">
-      <div class="hc-top">
+    return `<div class="hist-card" style="border-left:3px solid ${col}">
+      <div class="hc-row">
         <div>
-          <div class="hc-station" style="background:${col}18;color:${col};border:1px solid ${col}30">${(e.station||'os').toUpperCase()}</div>
-          <div class="hc-main">${e.peaks} <span style="font-size:13px;color:var(--muted)">шт</span> · ${e.hours} <span style="font-size:13px;color:var(--muted)">ч</span></div>
-          <div class="hc-meta">${e.c.pph.toFixed(1)} pph · сверх: <span style="color:var(--orange)">${e.c.above}</span> · бонус: <span style="color:var(--green)">${e.c.bonus.toFixed(2)} zł</span></div>
+          <div class="hc-st-chip" style="background:${col}15;color:${col}">${(e.station||'os').toUpperCase()}</div>
+          <div class="hc-main">${e.peaks} шт · ${e.hours} ч</div>
+          <div class="hc-meta">${e.c.pph.toFixed(1)} pph · сверх <span style="color:var(--orange)">${e.c.above}</span> · бонус <span style="color:var(--green)">${e.c.bonus.toFixed(2)} zł</span></div>
           ${e.note?`<div class="hc-note">${e.note}</div>`:''}
         </div>
-        <div style="text-align:right">
+        <div class="hc-right">
           <div class="hc-date">${fmtDate(e.shiftDate)}</div>
           <div class="hc-date">${e.addedAt||''}</div>
           <button class="del-btn" onclick="delEntry(${e.id})">×</button>
@@ -827,39 +901,28 @@ function renderHistory(){
   }).join('');
 }
 
-function delEntry(id){
-  DB.entries=DB.entries.filter(e=>e.id!==id);
-  saveDB(); renderAllDash(); renderHistory();
-}
+function delEntry(id){ DB.entries=DB.entries.filter(e=>e.id!==id); saveDB(); renderAllDash(); renderHistory(); renderProfile(); }
 
-// ══ RATES ════════════════════════════════════════════════════
 function renderRates(){
   const cont=document.getElementById('rates-content');
-  const stColors={os:'#f5c400',pa:'#3498db',sio:'#9b59b6',pc:'#e8720c'};
+  const stColors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
   let html='';
   for(const[st,cfg] of Object.entries(STATIONS)){
-    const col=stColors[st];
-    const today=todayISO();
-    const es=DB.entries.filter(e=>e.station===st&&e.shiftDate===today);
-    const tp=es.reduce((s,e)=>s+e.peaks,0);
-    const th=es.reduce((s,e)=>s+e.hours,0);
-    const curPPH=th>0?Math.round(tp/th):0;
-    html+=`<div style="margin-bottom:16px">
-      <div class="section-label" style="color:${col}">${cfg.name}</div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:8px">
-        НОРМА: <span style="color:${col}">${cfg.norm} ppc/h</span>
+    const col=stColors[st],today=todayISO(),es=DB.entries.filter(e=>e.station===st&&e.shiftDate===today);
+    const tp=es.reduce((s,e)=>s+e.peaks,0),th=es.reduce((s,e)=>s+e.hours,0),curPPH=th>0?Math.round(tp/th):0;
+    html+=`<div class="rate-block">
+      <div class="rate-block-header">
+        <div class="rb-chip" style="background:${col}15;color:${col}">${st.toUpperCase()}</div>
+        <div><div style="font-size:13px;font-weight:700">${cfg.name}</div><div class="rb-norm">норма ${cfg.norm} ppc/h</div></div>
       </div>
-      <div class="rate-table">`;
+      <div class="rate-rows">`;
     for(const[lo,hi,rate] of cfg.thresholds){
       const rng=lo===0?`До ${hi}`:hi===999?`От ${lo}+`:`${lo}–${hi}`;
       const isCur=curPPH>=lo&&curPPH<=hi;
       const barW=Math.round((rate/cfg.thresholds.at(-1)[2])*100);
       html+=`<div class="rate-row${isCur?' cur':''}">
-        <div>
-          <div class="rate-range">${rng} ppc/h</div>
-          <div class="rate-bar-mini"><div class="rate-bar-mini-fill" style="width:${barW}%;background:${col}"></div></div>
-        </div>
-        <div class="rate-amt" style="color:${rate===0?'var(--muted)':col}">${rate.toFixed(3)} zł${isCur?' ◀':''}</div>
+        <div><div class="rate-range">${rng} ppc/h</div><div class="rate-minibar"><div class="rate-minibar-f" style="width:${barW}%;background:${col}"></div></div></div>
+        <div class="rate-val" style="color:${rate===0?'var(--faint)':col}">${rate.toFixed(3)} zł${isCur?' ◀':''}</div>
       </div>`;
     }
     html+='</div></div>';
@@ -867,83 +930,47 @@ function renderRates(){
   cont.innerHTML=html;
 }
 
-// ══ ADD MODAL ════════════════════════════════════════════════
 function openAdd(st){
-  curStation=st;
-  const cfg=STATIONS[st];
-  document.getElementById('add-title').textContent=`⚡ Добавить · ${st.toUpperCase()}`;
+  curStation=st; document.getElementById('add-title').textContent=`Добавить · ${st.toUpperCase()}`;
   dqSet(dqMode==='custom'?'today':dqMode);
-  document.getElementById('inp-peaks').value='';
-  document.getElementById('inp-hours').value='';
-  document.getElementById('inp-note').value='';
-  document.getElementById('prev-box').classList.remove('show');
+  document.getElementById('inp-peaks').value=''; document.getElementById('inp-hours').value='';
+  document.getElementById('inp-note').value=''; document.getElementById('prev-box').classList.remove('show');
   openModal('modal-add');
 }
-
-function dqSet(mode){
-  dqMode=mode;
-  document.getElementById('dq-t').classList.toggle('sel',mode==='today');
-  document.getElementById('dq-y').classList.toggle('sel',mode==='yesterday');
-  document.getElementById('inp-date').value=mode==='today'?todayISO():yestISO();
-  updPrev();
-}
+function dqSet(mode){ dqMode=mode; document.getElementById('dq-t').classList.toggle('sel',mode==='today'); document.getElementById('dq-y').classList.toggle('sel',mode==='yesterday'); document.getElementById('inp-date').value=mode==='today'?todayISO():yestISO(); updPrev(); }
 function dqClear(){ dqMode='custom'; document.getElementById('dq-t').classList.remove('sel'); document.getElementById('dq-y').classList.remove('sel'); }
-
 function updPrev(){
-  const p=Number(document.getElementById('inp-peaks').value);
-  const h=Number(document.getElementById('inp-hours').value);
+  const p=Number(document.getElementById('inp-peaks').value),h=Number(document.getElementById('inp-hours').value);
   const box=document.getElementById('prev-box');
   if(!p||!h||h<=0){ box.classList.remove('show'); return; }
-  const c=calcEntry(curStation,p,h);
-  box.classList.add('show');
-  document.getElementById('pv-pph').textContent  = c.pph.toFixed(1)+' pph';
-  document.getElementById('pv-norm').textContent = c.norm+' шт';
-  document.getElementById('pv-above').textContent= c.above+' шт';
-  document.getElementById('pv-rate').textContent = c.rate.toFixed(3)+' zł/шт';
-  document.getElementById('pv-bonus').textContent= c.bonus.toFixed(2)+' zł';
+  const c=calcEntry(curStation,p,h); box.classList.add('show');
+  document.getElementById('pv-pph').textContent=c.pph.toFixed(1)+' pph';
+  document.getElementById('pv-norm').textContent=c.norm+' шт';
+  document.getElementById('pv-above').textContent=c.above+' шт';
+  document.getElementById('pv-rate').textContent=c.rate.toFixed(3)+' zł/шт';
+  document.getElementById('pv-bonus').textContent=c.bonus.toFixed(2)+' zł';
 }
-
 function saveEntry(){
-  const p=Number(document.getElementById('inp-peaks').value);
-  const h=Number(document.getElementById('inp-hours').value);
-  const d=document.getElementById('inp-date').value||todayISO();
-  const note=document.getElementById('inp-note').value.trim();
+  const p=Number(document.getElementById('inp-peaks').value),h=Number(document.getElementById('inp-hours').value);
+  const d=document.getElementById('inp-date').value||todayISO(),note=document.getElementById('inp-note').value.trim();
   if(!p||!h||h<=0)return;
-  const c=calcEntry(curStation,p,h);
-  const now=new Date();
-  DB.entries.push({
-    id:Date.now(),station:curStation,peaks:p,hours:h,
-    shiftDate:d,note,c,
-    addedAt:now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})
-  });
+  const c=calcEntry(curStation,p,h),now=new Date();
+  DB.entries.push({id:Date.now(),station:curStation,peaks:p,hours:h,shiftDate:d,note,c,addedAt:now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
   saveDB();
   const btn=document.getElementById('save-btn');
-  btn.textContent='✓ СОХРАНЕНО'; btn.classList.add('ok');
+  btn.textContent='✓ Сохранено'; btn.classList.add('ok');
   setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('ok'); closeModal('modal-add'); },700);
-  renderAllDash(); renderHistory(); renderRates();
+  renderAllDash(); renderHistory(); renderRates(); renderProfile();
 }
 
-// ══ NAME ═════════════════════════════════════════════════════
-function renderName(){ document.getElementById('hdr-name').textContent=DB.name||'· Имя ·'; }
-function saveName(){
-  DB.name=document.getElementById('inp-name').value.trim();
-  saveDB(); renderName(); closeModal('modal-name');
-}
+function renderName(){ document.getElementById('hdr-name').textContent=DB.name||'— Имя —'; }
+function saveName(){ DB.name=document.getElementById('inp-name').value.trim(); saveDB(); renderName(); renderProfile(); closeModal('modal-name'); }
 
-// ══ MODALS / PAGES ═══════════════════════════════════════════
 function openModal(id){ document.getElementById(id).classList.add('open') }
 function closeModal(id){ document.getElementById(id).classList.remove('open') }
 function closeOverlay(e,id){ if(e.target.id===id) closeModal(id) }
-
-function showPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
-  window.scrollTo(0,0);
-}
-function setNav(id){
-  document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
-}
+function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
+function setNav(id){ document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
 </script>
 </body>
 </html>
