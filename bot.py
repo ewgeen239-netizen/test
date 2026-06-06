@@ -16,7 +16,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
 # ── конфиг ────────────────────────────────────────────────────
 TOKEN      = os.environ.get("TOKEN", "8888364212:AAFJcaKMpv2FfxWBx5WJ0nGv8tYWYGYWtBc")
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://ewgeen239-netizen.github.io/test/")
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "test-production-ffca.up.railway.app")
 PORT       = int(os.environ.get("PORT", 5000))
 DB_FILE    = "os_data.json"
 RATING_FILE= "rating.json"
