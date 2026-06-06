@@ -669,12 +669,55 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--i
 </div>
 
 
-<!-- BOTTOM NAV -->
+<!-- ════════════════ PAGE: LEADERBOARD ════════════════ -->
+<div class="page" id="page-top">
+  <div class="back-topbar">
+    <button class="back-btn" onclick="showPage('page-profile');setNav('bn-prof')">← Назад</button>
+    <div class="back-title">🏆 Топ работников</div>
+  </div>
+
+  <!-- month selector -->
+  <div style="padding:12px 16px 0;display:flex;gap:8px;align-items:center">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:2px;text-transform:uppercase">Месяц:</div>
+    <input type="month" id="lb-month" style="background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;flex:1" onchange="renderLeaderboard()"/>
+  </div>
+
+  <!-- my position card -->
+  <div class="pad" style="padding-top:12px">
+    <div id="lb-my-pos" style="background:rgba(0,208,132,.06);border:1px solid rgba(0,208,132,.2);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">ТВО МЕСТО</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div id="lb-my-rank" style="font-size:28px;font-weight:900;color:var(--green)">—</div>
+        <div style="text-align:right">
+          <div id="lb-my-bonus" style="font-size:20px;font-weight:800;color:var(--green)">—</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--sub)">бонус zł</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- loading -->
+    <div id="lb-loading" style="text-align:center;padding:40px 0;font-family:var(--mono);font-size:11px;color:var(--sub);letter-spacing:2px">ЗАГРУЗКА...</div>
+
+    <!-- error -->
+    <div id="lb-error" style="display:none;text-align:center;padding:40px 0">
+      <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--sub);letter-spacing:1px">НЕТ СОЕДИНЕНИЯ С СЕРВЕРОМ</div>
+      <div style="font-size:11px;color:var(--faint);margin-top:6px">Убедись что бот запущен на Railway</div>
+      <button onclick="renderLeaderboard()" style="margin-top:12px;padding:8px 16px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--sub);font-size:12px;cursor:pointer">Повторить</button>
+    </div>
+
+    <!-- top list -->
+    <div id="lb-list"></div>
+  </div>
+</div>
+
+
+<!-- BOTTOM NAV — 5 пунктов -->
 <div class="bnav" style="grid-template-columns:repeat(5,1fr)">
   <div class="bni on" id="bn-prof" onclick="showPage('page-profile');setNav('bn-prof');renderProfile()"><span class="bni-icon">👤</span><span class="bni-label">Профиль</span></div>
   <div class="bni"    id="bn-dash" onclick="showPage('page-dash');setNav('bn-dash')"><span class="bni-icon">⚡</span><span class="bni-label">Дашборд</span></div>
   <div class="bni"    id="bn-add"  onclick="openAdd(curStation)"><span class="bni-icon">➕</span><span class="bni-label">Добавить</span></div>
-  <div class="bni"    id="bn-hist" onclick="showPage('page-history');setNav('bn-hist')"><span class="bni-icon">📋</span><span class="bni-label">История</span></div>
+  <div class="bni"    id="bn-top"  onclick="showPage('page-top');setNav('bn-top');renderLeaderboard()"><span class="bni-icon">🏆</span><span class="bni-label">Топ</span></div>
   <div class="bni"    id="bn-rate" onclick="showPage('page-rates');setNav('bn-rate')"><span class="bni-icon">📊</span><span class="bni-label">Ставки</span></div>
 </div>
 
@@ -748,229 +791,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--i
 </div>
 
 </div><!-- /app -->
-<script>
-const STATIONS = {
-  os:  { name:'OS · Oversize',            norm:45,  color:'#f5c400', ticks:[0,45,68,86],       maxPPH:86,  thresholds:[[0,45,0],[46,52,.61],[53,59,.631],[60,67,.651],[68,74,.681],[75,81,.70],[82,85,.72],[86,999,.74]] },
-  pa:  { name:'PA · Packing Automation',  norm:120, color:'#4d9ef5', ticks:[0,120,168,211],     maxPPH:211, thresholds:[[0,120,0],[121,133,.05],[134,142,.09],[143,151,.14],[152,167,.17],[168,182,.20],[183,210,.22],[211,999,.24]] },
-  sio: { name:'SIO · Single Item Orders', norm:54,  color:'#9b6dff', ticks:[0,54,76,96],        maxPPH:96,  thresholds:[[0,54,0],[55,60,.22],[61,64,.27],[65,68,.31],[69,75,.36],[76,82,.39],[83,95,.44],[96,999,.46]] },
-  pc:  { name:'PC · Picking Consol',      norm:225, color:'#ff6b35', ticks:[0,225,314,395],     maxPPH:395, thresholds:[[0,225,0],[226,250,.04],[251,267,.06],[268,283,.08],[284,313,.09],[314,342,.10],[343,394,.121],[395,999,.141]] }
-};
 
-let DB = loadDB();
-let curStation = 'os';
-let dqMode = 'today';
-
-function loadDB(){ try{ return JSON.parse(localStorage.getItem('wh_db')||'{"entries":[],"name":""}'); }catch{ return {entries:[],name:''}; } }
-function saveDB(){ try{ localStorage.setItem('wh_db',JSON.stringify(DB)); }catch{} }
-function toISO(d){ return d.toISOString().slice(0,10) }
-function todayISO(){ return toISO(new Date()) }
-function yestISO(){ const d=new Date();d.setDate(d.getDate()-1);return toISO(d) }
-function monthISO(){ return new Date().toISOString().slice(0,7) }
-function fmtDate(iso){ if(!iso)return''; const[y,m,d]=iso.split('-');return`${d}.${m}.${y}` }
-
-function getRate(st,pph){ for(const[lo,hi,r] of STATIONS[st].thresholds) if(pph>=lo&&pph<=hi) return r; return STATIONS[st].thresholds.at(-1)[2]; }
-function calcEntry(st,peaks,hours){ const pph=hours>0?peaks/hours:0,norm=Math.round(STATIONS[st].norm*hours),above=Math.max(0,peaks-norm),rate=getRate(st,Math.round(pph)); return {pph,norm,above,rate,bonus:above*rate}; }
-
-document.addEventListener('DOMContentLoaded',()=>{
-  if(window.Telegram?.WebApp){ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
-  document.getElementById('hdr-date').textContent = fmtDate(todayISO());
-  document.getElementById('inp-date').value = todayISO();
-  renderName(); renderAllDash(); renderHistory(); renderRates(); renderProfile();
-  showPage('page-profile'); setNav('bn-prof');
-});
-
-function renderProfile(){
-  const month=monthISO(), today=todayISO();
-  const stColors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
-  const stLabels={os:'OS · Oversize',pa:'PA · Packing Auto',sio:'SIO · Single Item',pc:'PC · Picking Consol'};
-  const name=DB.name||'Сотрудник', role=DB.role||'M13 Outbound · OS', emoji=DB.emoji||'👷';
-  document.getElementById('prof-name-display').textContent=name;
-  document.getElementById('av-emoji').textContent=emoji;
-  const mEs=DB.entries.filter(e=>e.shiftDate?.slice(0,7)===month);
-  const totBonus=mEs.reduce((s,e)=>s+e.c.bonus,0);
-  const totHours=mEs.reduce((s,e)=>s+e.hours,0);
-  const totPeaks=mEs.reduce((s,e)=>s+e.peaks,0);
-  const totShifts=new Set(mEs.map(e=>e.shiftDate)).size;
-  const totEntries=mEs.length;
-  const ringPct=Math.min(1,totBonus/500);
-  const circ=2*Math.PI*30;
-  document.getElementById('av-ring-circle').style.strokeDashoffset=circ*(1-ringPct);
-  document.getElementById('ring-total').textContent=totBonus.toFixed(2);
-  document.getElementById('ring-sub').textContent=totEntries?`${totEntries} запис${totEntries===1?'ь':totEntries<5?'и':'ей'}`:'нет записей';
-  document.getElementById('bh-fill').style.width=(ringPct*100)+'%';
-  document.getElementById('tot-hours').textContent=totHours.toFixed(1);
-  document.getElementById('tot-peaks').textContent=totPeaks;
-  document.getElementById('tot-shifts').textContent=totShifts;
-  const lvl=totBonus>=200?'🔥 Топ':totBonus>=100?'⭐ Хорошо':totBonus>0?'📈 Растёт':'Новичок';
-  document.getElementById('prof-badge-level').textContent=lvl;
-  document.getElementById('prof-badge-shift').textContent=role;
-  const tEs=DB.entries.filter(e=>e.shiftDate===today);
-  const tH=tEs.reduce((s,e)=>s+e.hours,0),tP=tEs.reduce((s,e)=>s+e.peaks,0),tA=tEs.reduce((s,e)=>s+e.c.above,0),tB=tEs.reduce((s,e)=>s+e.c.bonus,0);
-  const dayNames=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-  document.getElementById('shift-date-label').textContent=`${dayNames[new Date().getDay()]}, ${fmtDate(today)}`;
-  document.getElementById('sh-hours').textContent=tH>0?tH.toFixed(1):'—';
-  document.getElementById('sh-peaks').textContent=tP||'—';
-  document.getElementById('sh-above').textContent=tA||'—';
-  document.getElementById('sh-bonus').textContent=tB>0?tB.toFixed(2):'—';
-  const bl=document.getElementById('breakdown-list');
-  let bHtml='';
-  for(const[st,cfg] of Object.entries(STATIONS)){
-    const es=mEs.filter(e=>e.station===st);
-    if(!es.length) continue;
-    const h=es.reduce((s,e)=>s+e.hours,0),p=es.reduce((s,e)=>s+e.peaks,0),b=es.reduce((s,e)=>s+e.c.bonus,0);
-    const col=stColors[st],barW=Math.min(100,Math.round((b/Math.max(totBonus,1))*100));
-    bHtml+=`<div class="st-card" onclick="switchStation('${st}');showPage('page-dash');setNav('bn-dash')">
-      <div class="st-chip" style="background:${col}15;color:${col};border:1px solid ${col}25">${st.toUpperCase()}</div>
-      <div class="st-body">
-        <div class="st-name">${stLabels[st]}</div>
-        <div class="st-meta">${es.length} зап. · ${p} шт · ${h.toFixed(1)} ч</div>
-        <div class="st-bar"><div class="st-bar-f" style="width:${barW}%;background:${col}"></div></div>
-      </div>
-      <div class="st-right">
-        <div class="st-bonus" style="color:${col}">${b.toFixed(2)}</div>
-        <div class="st-unit">zł</div>
-      </div>
-    </div>`;
-  }
-  bl.innerHTML=bHtml||'<div class="empty">НЕТ ДАННЫХ ЗА МЕСЯЦ</div>';
-}
-
-function openEditProfile(){
-  document.getElementById('ep-name').value=DB.name||'';
-  document.getElementById('ep-role').value=DB.role||'M13 Outbound · OS';
-  document.getElementById('ep-emoji-preview').textContent=DB.emoji||'👷';
-  openModal('modal-profile');
-}
-function setEmoji(e){ DB.emoji=e; document.getElementById('ep-emoji-preview').textContent=e; document.getElementById('av-emoji').textContent=e; }
-function saveProfile(){ DB.name=document.getElementById('ep-name').value.trim()||DB.name; DB.role=document.getElementById('ep-role').value; DB.emoji=document.getElementById('ep-emoji-preview').textContent; saveDB(); renderName(); renderProfile(); closeModal('modal-profile'); }
-
-function switchStation(st){
-  curStation=st;
-  const colors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
-  document.querySelectorAll('.st-tab').forEach(t=>{ t.style.background=''; t.style.color=''; t.classList.remove('active'); });
-  const tab=document.getElementById('tab-'+st);
-  tab.classList.add('active'); tab.style.background=colors[st]; tab.style.color=st==='os'?'#000':'#fff';
-  document.querySelectorAll('.station-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+st).classList.add('active');
-}
-
-function renderAllDash(){ ['os','pa','sio','pc'].forEach(renderDash) }
-function renderDash(st){
-  const today=todayISO(),month=monthISO(),cfg=STATIONS[st];
-  const tEs=DB.entries.filter(e=>e.station===st&&e.shiftDate===today);
-  const mEs=DB.entries.filter(e=>e.station===st&&e.shiftDate?.slice(0,7)===month);
-  const tp=tEs.reduce((s,e)=>s+e.peaks,0),th=tEs.reduce((s,e)=>s+e.hours,0),ta=tEs.reduce((s,e)=>s+e.c.above,0),tb=tEs.reduce((s,e)=>s+e.c.bonus,0);
-  const pph=th>0?tp/th:0,rate=getRate(st,Math.round(pph)),pct=Math.min(100,Math.round((pph/cfg.maxPPH)*100));
-  const s=id=>document.getElementById(`${st}-${id}`);
-  s('peaks').textContent=tp||'—'; s('pph').textContent=th>0?pph.toFixed(1):'—';
-  s('above').textContent=ta||'—'; s('hours').textContent=th>0?th.toFixed(1)+'ч':'—';
-  s('peaks-bar').style.width=Math.min(100,Math.round((tp/500)*100))+'%';
-  s('pph-bar').style.width=pct+'%'; s('above-bar').style.width=Math.min(100,Math.round((ta/200)*100))+'%';
-  s('hours-bar').style.width=Math.min(100,Math.round((th/12)*100))+'%';
-  s('prog').style.width=pct+'%'; s('pct').textContent=pct+'%';
-  cfg.ticks.forEach((v,i)=>{ const el=document.getElementById(`${st}-t${v}`); if(!el)return; el.classList.toggle('on',pph>=v&&(i===cfg.ticks.length-1||pph<cfg.ticks[i+1])); });
-  s('formula').textContent=`${ta} шт × ${rate.toFixed(3)} zł`;
-  s('bonus').innerHTML=`${tb.toFixed(2)}<span class="bs-cur">zł</span>`;
-  const mp=mEs.reduce((s,e)=>s+e.peaks,0),mb=mEs.reduce((s,e)=>s+e.c.bonus,0),ms=new Set(mEs.map(e=>e.shiftDate)).size;
-  s('mp').textContent=mp||'—'; s('mb').textContent=mb>0?mb.toFixed(2):'—'; s('ms').textContent=ms||'—';
-}
-
-function renderHistory(){
-  const list=document.getElementById('hist-list'),empty=document.getElementById('hist-empty');
-  const es=[...DB.entries].reverse();
-  if(!es.length){ list.innerHTML=''; empty.style.display='block'; return; }
-  empty.style.display='none';
-  const stColors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
-  list.innerHTML=es.map(e=>{
-    const col=stColors[e.station]||'#f5c400';
-    return `<div class="hist-card" style="border-left:3px solid ${col}">
-      <div class="hc-row">
-        <div>
-          <div class="hc-st-chip" style="background:${col}15;color:${col}">${(e.station||'os').toUpperCase()}</div>
-          <div class="hc-main">${e.peaks} шт · ${e.hours} ч</div>
-          <div class="hc-meta">${e.c.pph.toFixed(1)} pph · сверх <span style="color:var(--orange)">${e.c.above}</span> · бонус <span style="color:var(--green)">${e.c.bonus.toFixed(2)} zł</span></div>
-          ${e.note?`<div class="hc-note">${e.note}</div>`:''}
-        </div>
-        <div class="hc-right">
-          <div class="hc-date">${fmtDate(e.shiftDate)}</div>
-          <div class="hc-date">${e.addedAt||''}</div>
-          <button class="del-btn" onclick="delEntry(${e.id})">×</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function delEntry(id){ DB.entries=DB.entries.filter(e=>e.id!==id); saveDB(); renderAllDash(); renderHistory(); renderProfile(); }
-
-function renderRates(){
-  const cont=document.getElementById('rates-content');
-  const stColors={os:'#f5c400',pa:'#4d9ef5',sio:'#9b6dff',pc:'#ff6b35'};
-  let html='';
-  for(const[st,cfg] of Object.entries(STATIONS)){
-    const col=stColors[st],today=todayISO(),es=DB.entries.filter(e=>e.station===st&&e.shiftDate===today);
-    const tp=es.reduce((s,e)=>s+e.peaks,0),th=es.reduce((s,e)=>s+e.hours,0),curPPH=th>0?Math.round(tp/th):0;
-    html+=`<div class="rate-block">
-      <div class="rate-block-header">
-        <div class="rb-chip" style="background:${col}15;color:${col}">${st.toUpperCase()}</div>
-        <div><div style="font-size:13px;font-weight:700">${cfg.name}</div><div class="rb-norm">норма ${cfg.norm} ppc/h</div></div>
-      </div>
-      <div class="rate-rows">`;
-    for(const[lo,hi,rate] of cfg.thresholds){
-      const rng=lo===0?`До ${hi}`:hi===999?`От ${lo}+`:`${lo}–${hi}`;
-      const isCur=curPPH>=lo&&curPPH<=hi;
-      const barW=Math.round((rate/cfg.thresholds.at(-1)[2])*100);
-      html+=`<div class="rate-row${isCur?' cur':''}">
-        <div><div class="rate-range">${rng} ppc/h</div><div class="rate-minibar"><div class="rate-minibar-f" style="width:${barW}%;background:${col}"></div></div></div>
-        <div class="rate-val" style="color:${rate===0?'var(--faint)':col}">${rate.toFixed(3)} zł${isCur?' ◀':''}</div>
-      </div>`;
-    }
-    html+='</div></div>';
-  }
-  cont.innerHTML=html;
-}
-
-function openAdd(st){
-  curStation=st; document.getElementById('add-title').textContent=`Добавить · ${st.toUpperCase()}`;
-  dqSet(dqMode==='custom'?'today':dqMode);
-  document.getElementById('inp-peaks').value=''; document.getElementById('inp-hours').value='';
-  document.getElementById('inp-note').value=''; document.getElementById('prev-box').classList.remove('show');
-  openModal('modal-add');
-}
-function dqSet(mode){ dqMode=mode; document.getElementById('dq-t').classList.toggle('sel',mode==='today'); document.getElementById('dq-y').classList.toggle('sel',mode==='yesterday'); document.getElementById('inp-date').value=mode==='today'?todayISO():yestISO(); updPrev(); }
-function dqClear(){ dqMode='custom'; document.getElementById('dq-t').classList.remove('sel'); document.getElementById('dq-y').classList.remove('sel'); }
-function updPrev(){
-  const p=Number(document.getElementById('inp-peaks').value),h=Number(document.getElementById('inp-hours').value);
-  const box=document.getElementById('prev-box');
-  if(!p||!h||h<=0){ box.classList.remove('show'); return; }
-  const c=calcEntry(curStation,p,h); box.classList.add('show');
-  document.getElementById('pv-pph').textContent=c.pph.toFixed(1)+' pph';
-  document.getElementById('pv-norm').textContent=c.norm+' шт';
-  document.getElementById('pv-above').textContent=c.above+' шт';
-  document.getElementById('pv-rate').textContent=c.rate.toFixed(3)+' zł/шт';
-  document.getElementById('pv-bonus').textContent=c.bonus.toFixed(2)+' zł';
-}
-function saveEntry(){
-  const p=Number(document.getElementById('inp-peaks').value),h=Number(document.getElementById('inp-hours').value);
-  const d=document.getElementById('inp-date').value||todayISO(),note=document.getElementById('inp-note').value.trim();
-  if(!p||!h||h<=0)return;
-  const c=calcEntry(curStation,p,h),now=new Date();
-  DB.entries.push({id:Date.now(),station:curStation,peaks:p,hours:h,shiftDate:d,note,c,addedAt:now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
-  saveDB();
-  const btn=document.getElementById('save-btn');
-  btn.textContent='✓ Сохранено'; btn.classList.add('ok');
-  setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('ok'); closeModal('modal-add'); },700);
-  renderAllDash(); renderHistory(); renderRates(); renderProfile();
-}
-
-function renderName(){ document.getElementById('hdr-name').textContent=DB.name||'— Имя —'; }
-function saveName(){ DB.name=document.getElementById('inp-name').value.trim(); saveDB(); renderName(); renderProfile(); closeModal('modal-name'); }
-
-function openModal(id){ document.getElementById(id).classList.add('open') }
-function closeModal(id){ document.getElementById(id).classList.remove('open') }
-function closeOverlay(e,id){ if(e.target.id===id) closeModal(id) }
-function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
-function setNav(id){ document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
-</script>
 </body>
 </html>
