@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 import json, os, math
 
 # ── Читаем из переменных окружения (Railway → Variables) ──────
-TOKEN      = os.environ.get("TOKEN", "ВСТАВЬ_СВОЙ_TOKEN_ЗДЕСЬ")
-WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://твой-юзернейм.github.io/autodoc-tracker/")
+TOKEN      = os.environ.get("TOKEN", "8888364212:AAFJcaKMpv2FfxWBx5WJ0nGv8tYWYGYWtBc")
+WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://ewgeen239-netizen.github.io/test/")
 
 bot = telebot.TeleBot(TOKEN)
 
