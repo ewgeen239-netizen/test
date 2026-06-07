@@ -335,6 +335,45 @@ select.fl-in{appearance:none}
 .em{font-size:26px;cursor:pointer;border-radius:8px;padding:3px;transition:background .1s}
 .em:active{background:var(--c3)}
 
+/* ── SALARY ── */
+.sal-hero{background:var(--c1);border-bottom:1px solid var(--line);padding:18px 14px}
+.sal-rate-row{display:flex;gap:7px;margin-bottom:12px}
+.sal-rate-btn{flex:1;padding:10px 8px;background:var(--c2);border:1px solid var(--line);border-radius:10px;color:var(--sub);font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;text-align:center;letter-spacing:.5px;transition:all .15s}
+.sal-rate-btn.sel{background:rgba(232,255,0,.1);border-color:var(--accent);color:var(--accent)}
+
+.sal-inp-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.sal-inp-box{background:var(--c2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.sal-inp-lbl{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:5px}
+.sal-inp{width:100%;background:none;border:none;color:var(--text);font-family:var(--mono);font-size:18px;font-weight:700;outline:none;-moz-appearance:textfield}
+.sal-inp::-webkit-inner-spin-button{display:none}
+.sal-inp::placeholder{color:var(--dim)}
+
+.sal-result{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:8px}
+.sal-res-title{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:10px}
+.sal-res-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.sal-res-row:last-child{border-bottom:none}
+.sal-res-k{font-size:12px;color:var(--sub)}
+.sal-res-v{font-family:var(--mono);font-size:14px;font-weight:700}
+.sal-big{background:linear-gradient(135deg,var(--c1),#1a1f0a);border:1px solid rgba(232,255,0,.2);border-radius:12px;padding:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.sal-big-lbl{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:3px}
+.sal-big-sub{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:2px}
+.sal-big-num{font-size:30px;font-weight:900;letter-spacing:-1.5px;line-height:1;color:var(--accent)}
+.sal-big-unit{font-size:13px;color:var(--sub);margin-left:2px}
+.sal-netto{background:linear-gradient(135deg,#0d1a0d,#0a160a);border:1px solid rgba(34,197,94,.2);border-radius:12px;padding:16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.sal-netto .sal-big-num{color:var(--green)}
+
+.ovt-card{background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:8px}
+.ovt-title{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ovt-badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 8px;border-radius:20px}
+.ovt-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:7px}
+.ovt-inp{width:100%;background:var(--c2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:15px;font-weight:700;outline:none;-moz-appearance:textfield}
+.ovt-inp::-webkit-inner-spin-button{display:none}
+.ovt-result{font-family:var(--mono);font-size:12px;text-align:right;min-width:90px}
+
+.info-row{display:flex;gap:6px;align-items:flex-start;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
+
 .empty{text-align:center;color:var(--dim);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
 ::-webkit-scrollbar{width:0}
 </style>
@@ -348,7 +387,8 @@ select.fl-in{appearance:none}
     <div class="user-row">
       <div class="av">
         <div class="av-ring"></div>
-        <span id="av-em">👷</span>
+        <img id="av-photo" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px;position:absolute;inset:0" src="" alt=""/>
+        <span id="av-em" style="position:relative;z-index:1">👷</span>
       </div>
       <div class="user-info">
         <div class="name" id="u-name">Сотрудник</div>
@@ -552,6 +592,244 @@ select.fl-in{appearance:none}
   <div class="shpanel" id="sh-green"><div class="soon-box"><div class="soon-box-ic">🟢</div><div class="soon-box-t">Green Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
 </div>
 
+<!-- ═══════════ SALARY ═══════════ -->
+<div class="page" id="page-salary">
+  <div class="top">
+    <div class="top-l"><div class="eyebrow">Расчёт зарплаты</div><div class="heading">Зарплата</div></div>
+  </div>
+
+  <div class="sal-hero">
+
+    <!-- Возраст — до 26 лет PIT = 0% -->
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--c2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">🎓 До 26 лет (ulga dla młodych)</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--sub);line-height:1.4">PIT = 0% · освобождение от налога<br>до 85 528 zł/год</div>
+      </div>
+      <div onclick="toggleUnder26()" id="u26-toggle" style="
+        width:46px;height:26px;border-radius:13px;background:var(--c3);
+        border:1px solid var(--line2);cursor:pointer;position:relative;
+        transition:background .2s,border-color .2s;flex-shrink:0;
+      ">
+        <div id="u26-knob" style="
+          position:absolute;top:3px;left:3px;
+          width:18px;height:18px;border-radius:50%;
+          background:var(--sub);transition:left .2s,background .2s;
+        "></div>
+      </div>
+    </div>
+
+    <!-- Почасовая ставка -->
+    <div class="lbl" style="padding:0;margin-bottom:8px">Почасовая ставка</div>
+    <div class="sal-rate-row" id="rate-btns">
+      <button class="sal-rate-btn sel" onclick="setRate(27.70,'27.70 zł — мин')" id="rb-min">27.70 zł<br><span style="font-size:9px;opacity:.6">минимальная</span></button>
+      <button class="sal-rate-btn" onclick="setRate(28.50,'28.50 zł')" id="rb-2">28.50 zł</button>
+      <button class="sal-rate-btn" onclick="setRate(30.00,'30.00 zł')" id="rb-3">30.00 zł</button>
+      <button class="sal-rate-btn" onclick="setRate(0,'Своя')" id="rb-own">Своя</button>
+    </div>
+    <div id="own-rate-wrap" style="display:none;margin-bottom:10px">
+      <div class="sal-inp-box">
+        <div class="sal-inp-lbl">Своя ставка (zł/ч)</div>
+        <input class="sal-inp" type="number" step="0.01" id="own-rate" placeholder="28.00" oninput="rSalary()"/>
+      </div>
+    </div>
+
+    <!-- Основные часы -->
+    <div class="lbl" style="padding:0;margin-bottom:8px;margin-top:4px">Основные часы</div>
+    <div class="sal-inp-row">
+      <div class="sal-inp-box">
+        <div class="sal-inp-lbl">Рабочих часов</div>
+        <input class="sal-inp" type="number" step="0.5" id="sal-hours" placeholder="160" oninput="rSalary()"/>
+      </div>
+      <div class="sal-inp-box">
+        <div class="sal-inp-lbl">Из них DARK (22–6)</div>
+        <input class="sal-inp" type="number" step="0.5" id="sal-dark" placeholder="160" oninput="rSalary()"/>
+      </div>
+    </div>
+
+    <!-- Info о DARK -->
+    <div class="info-row">
+      <div class="info-icon">ℹ️</div>
+      <div class="info-text">DARK смена (22:00–6:00) даёт +20% к ставке за каждый ночной час. Включено автоматически при расчёте.</div>
+    </div>
+  </div>
+
+  <!-- Результат основной зарплаты -->
+  <div class="pad gap">
+    <div class="lbl">Основная зарплата</div>
+
+    <div class="sal-big" id="sal-brutto-card">
+      <div>
+        <div class="sal-big-lbl">Брутто</div>
+        <div class="sal-big-sub" id="sal-brutto-sub">— ч × — zł</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sal-big-num" id="sal-brutto">0.00</div>
+        <div class="sal-big-unit">zł</div>
+      </div>
+    </div>
+
+    <div class="sal-netto">
+      <div>
+        <div class="sal-big-lbl" style="color:rgba(34,197,94,.5)">Нетто (на руки)</div>
+        <div class="sal-big-sub" id="sal-netto-sub">после вычетов ~21.5%</div>
+      </div>
+      <div style="text-align:right">
+        <div class="sal-big-num" id="sal-netto">0.00</div>
+        <div class="sal-big-unit">zł</div>
+      </div>
+    </div>
+
+    <div class="sal-result">
+      <div class="sal-res-title">Детализация вычетов</div>
+      <div class="sal-res-row"><span class="sal-res-k">Базовые часы</span><span class="sal-res-v" id="d-base">—</span></div>
+      <div class="sal-res-row"><span class="sal-res-k">Доплата DARK +20%</span><span class="sal-res-v" style="color:var(--accent)" id="d-dark">—</span></div>
+      <div class="sal-res-row"><span class="sal-res-k">ZUS работника (~13.7%)</span><span class="sal-res-v" style="color:var(--red)" id="d-zus">—</span></div>
+      <div class="sal-res-row"><span class="sal-res-k">Налог PIT</span><span class="sal-res-v" style="color:var(--red)" id="d-pit">—</span></div>
+      <div class="sal-res-row"><span class="sal-res-k">Фонд труда</span><span class="sal-res-v" style="color:var(--red)" id="d-fp">—</span></div>
+    </div>
+  </div>
+
+  <!-- Сверхурочные -->
+  <div class="pad gap">
+    <div class="lbl">Сверхурочные часы</div>
+
+    <!-- Dark toggle для сверхурочных -->
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:8px">
+      <div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">🌙 DARK надбавка для сверхурочных</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--sub)">+20% если сверхурочные тоже ночные (22–6)</div>
+      </div>
+      <div onclick="toggleOvtDark()" id="ovt-dark-toggle" style="
+        width:46px;height:26px;border-radius:13px;background:var(--c3);
+        border:1px solid var(--line2);cursor:pointer;position:relative;
+        transition:background .2s,border-color .2s;flex-shrink:0;
+      ">
+        <div id="ovt-dark-knob" style="
+          position:absolute;top:3px;left:3px;
+          width:18px;height:18px;border-radius:50%;
+          background:var(--sub);transition:left .2s,background .2s;
+        "></div>
+      </div>
+    </div>
+      <div class="ovt-title">
+        <span>Сверхурочные</span>
+        <span class="ovt-badge" style="background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.2)">+100%</span>
+      </div>
+      <div class="ovt-row">
+        <div class="sal-inp-box" style="margin:0">
+          <div class="sal-inp-lbl">Часов ×100%</div>
+          <input class="sal-inp ovt-inp" type="number" step="0.5" id="ovt-100" placeholder="0" oninput="rSalary()"/>
+        </div>
+        <div class="ovt-result" id="ovt-100-res" style="color:var(--orange)">0.00 zł</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px">Брутто: <span id="ovt-100-b" style="color:var(--sub)">0.00</span> · Нетто: <span id="ovt-100-n" style="color:var(--green)">0.00</span></div>
+    </div>
+
+    <div class="ovt-card">
+      <div class="ovt-title">
+        <span>Сверхурочные</span>
+        <span class="ovt-badge" style="background:rgba(59,130,246,.1);color:var(--blue);border:1px solid rgba(59,130,246,.2)">+50%</span>
+      </div>
+      <div class="ovt-row">
+        <div class="sal-inp-box" style="margin:0">
+          <div class="sal-inp-lbl">Часов ×50%</div>
+          <input class="sal-inp ovt-inp" type="number" step="0.5" id="ovt-50" placeholder="0" oninput="rSalary()"/>
+        </div>
+        <div class="ovt-result" id="ovt-50-res" style="color:var(--blue)">0.00 zł</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px">Брутто: <span id="ovt-50-b" style="color:var(--sub)">0.00</span> · Нетто: <span id="ovt-50-n" style="color:var(--green)">0.00</span></div>
+    </div>
+  </div>
+
+  <!-- ИТОГО -->
+  <div class="pad gap" style="padding-bottom:24px">
+    <div class="lbl">💼 Суммарно вся зарплата</div>
+
+    <!-- Большой итог брутто -->
+    <div style="background:linear-gradient(135deg,#1a1a0a,#0f0f0a);border:1px solid rgba(232,255,0,.3);border-radius:14px;padding:16px;margin-bottom:8px">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:rgba(232,255,0,.5);text-transform:uppercase;margin-bottom:4px">Итого Брутто</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div>
+          <div style="font-size:38px;font-weight:900;letter-spacing:-2px;line-height:1;color:var(--accent)" id="total-brutto">0.00</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px">základní + přesčas + DARK</div>
+        </div>
+        <div style="font-size:18px;color:var(--sub)">zł</div>
+      </div>
+    </div>
+
+    <!-- Большой итог нетто -->
+    <div style="background:linear-gradient(135deg,#0d1a0d,#0a0f0a);border:1px solid rgba(34,197,94,.25);border-radius:14px;padding:16px;margin-bottom:8px">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:rgba(34,197,94,.5);text-transform:uppercase;margin-bottom:4px">Итого Нетто (на руки)</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div>
+          <div style="font-size:38px;font-weight:900;letter-spacing:-2px;line-height:1;color:var(--green)" id="total-netto">0.00</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px">после ZUS + PIT</div>
+        </div>
+        <div style="font-size:18px;color:var(--sub)">zł</div>
+      </div>
+    </div>
+
+    <!-- Детальная разбивка -->
+    <div style="background:var(--c1);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px">
+      <div style="padding:10px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">Разбивка</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--line)">
+        <div style="padding:10px 12px;border-right:1px solid var(--line)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">Основные</div>
+          <div style="font-size:15px;font-weight:800;color:var(--accent)" id="sum-base-b">0.00</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--green);margin-top:1px" id="sum-base-n">0.00 н</div>
+        </div>
+        <div style="padding:10px 12px;border-right:1px solid var(--line)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">×100%</div>
+          <div style="font-size:15px;font-weight:800;color:var(--orange)" id="sum-100-b">0.00</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--green);margin-top:1px" id="sum-100-n">0.00 н</div>
+        </div>
+        <div style="padding:10px 12px">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">×50%</div>
+          <div style="font-size:15px;font-weight:800;color:var(--blue)" id="sum-50-b">0.00</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--green);margin-top:1px" id="sum-50-n">0.00 н</div>
+        </div>
+      </div>
+
+      <div style="padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--sub)">Доплата DARK +20%</span>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent)" id="sum-dark">—</span>
+      </div>
+      <div style="padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--sub)">Вычет ZUS (~13.71%)</span>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red)" id="sum-zus">—</span>
+      </div>
+      <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--sub)">Вычет PIT (~12%)</span>
+        <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red)" id="sum-pit">—</span>
+      </div>
+    </div>
+
+    <!-- Бонус за пики -->
+    <div style="background:linear-gradient(135deg,#161008,#100c05);border:1px solid rgba(249,115,22,.2);border-radius:12px;padding:13px 14px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-size:13px;font-weight:700">🎁 Бонус за пики</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:800;color:var(--orange)" id="sal-bonus-line">0.00 zł</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--dim)">За превышение нормы ppc/h · выплачивается отдельно</div>
+    </div>
+
+    <!-- ФИНАЛЬНАЯ СУММА с бонусом -->
+    <div style="background:linear-gradient(135deg,#0f0f1a,#0a0a14);border:2px solid rgba(168,85,247,.35);border-radius:14px;padding:18px">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:rgba(168,85,247,.6);text-transform:uppercase;margin-bottom:8px">🏆 На руки с бонусом</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:42px;font-weight:900;letter-spacing:-2px;line-height:1;color:var(--purple)" id="grand-total">0.00</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:4px">нетто + бонус за пики</div>
+        </div>
+        <div style="font-size:20px;color:var(--sub)">zł</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ═══════════ HISTORY ═══════════ -->
 <div class="page" id="page-hist">
   <div class="bbar"><button class="bbar-btn" onclick="showPage('page-dash');setNav('n-dash')">← Назад</button><div class="bbar-title">История</div></div>
@@ -569,11 +847,11 @@ select.fl-in{appearance:none}
 
 <!-- NAV -->
 <div class="nav">
-  <div class="ni on"  id="n-prof"  onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
-  <div class="ni"     id="n-dash"  onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
-  <div class="ni"     id="n-notes" onclick="showPage('page-notes');setNav('n-notes')"><span class="ni-ic">📝</span><span class="ni-lb">Заметки</span></div>
-  <div class="ni"     id="n-sched" onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
-  <div class="ni"     id="n-hist"  onclick="showPage('page-hist');setNav('n-hist')"><span class="ni-ic">📋</span><span class="ni-lb">История</span></div>
+  <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
+  <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
+  <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
+  <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
+  <div class="ni"     id="n-notes"  onclick="showPage('page-notes');setNav('n-notes')"><span class="ni-ic">📝</span><span class="ni-lb">Заметки</span></div>
 </div>
 
 <!-- MODAL: ADD -->
@@ -696,14 +974,33 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(window.Telegram?.WebApp){
     Telegram.WebApp.ready(); Telegram.WebApp.expand();
     const u=Telegram.WebApp.initDataUnsafe?.user;
-    if(u){ if(!DB.name) DB.name=[u.first_name,u.last_name].filter(Boolean).join(' '); if(!DB.uid) DB.uid=String(u.id); sv(); }
+    if(u){
+      if(!DB.name) DB.name=[u.first_name,u.last_name].filter(Boolean).join(' ');
+      if(!DB.uid)  DB.uid=String(u.id);
+      // Подтягиваем фото профиля из Telegram
+      if(u.photo_url){
+        const img=document.getElementById('av-photo');
+        img.src=u.photo_url;
+        img.style.display='block';
+        document.getElementById('av-em').style.display='none';
+        // сохраняем url
+        DB.photoUrl=u.photo_url;
+      }
+      sv();
+    }
+  }
+  // если фото уже было сохранено
+  if(DB.photoUrl){
+    const img=document.getElementById('av-photo');
+    img.src=DB.photoUrl; img.style.display='block';
+    document.getElementById('av-em').style.display='none';
   }
   document.getElementById('hdr-date').textContent=fmt(todayISO());
   document.getElementById('in-date').value=todayISO();
   rAll();
   showPage('page-profile'); setNav('n-prof');
 });
-function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); }
+function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
 
 // ══ PROFILE ═══════════════════════════════════
 function rProfile(){
@@ -938,6 +1235,162 @@ function saveEntry(){
   btn.textContent='✓ Сохранено'; btn.classList.add('ok');
   setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('ok'); closeModal('m-add'); },700);
   rAllDash(); rHist(); rRates(); rProfile();
+}
+
+// ══ SALARY ════════════════════════════════════
+// Польские налоги 2024–2025
+// ZUS работника: эмерытальный 9.76% + рентовый 1.5% + больничный 2.45% = 13.71%
+// PIT: 12% до 120 000 zł/год, первые 30 000 освобождены (для расчёта месяца: ~12%)
+// Фонд труда (FP): 2.45% (платит работодатель, но показываем для полноты)
+const ZUS_RATE  = 0.1371;  // 13.71%
+const PIT_RATE  = 0.12;    // 12%
+const DARK_ADD  = 0.20;    // +20% за ночные часы
+
+let curHourRate = 27.70;
+let ownRateMode = false;
+let ovtDarkOn   = false;
+let under26     = false; // до 26 лет — PIT = 0%
+
+function toggleUnder26(){
+  under26 = !under26;
+  const toggle = document.getElementById('u26-toggle');
+  const knob   = document.getElementById('u26-knob');
+  if(under26){
+    toggle.style.background  = 'rgba(34,197,94,.2)';
+    toggle.style.borderColor = 'rgba(34,197,94,.4)';
+    knob.style.left          = '23px';
+    knob.style.background    = 'var(--green)';
+  } else {
+    toggle.style.background  = 'var(--c3)';
+    toggle.style.borderColor = 'var(--line2)';
+    knob.style.left          = '3px';
+    knob.style.background    = 'var(--sub)';
+  }
+  rSalary();
+}
+
+function toggleOvtDark(){
+  ovtDarkOn = !ovtDarkOn;
+  const toggle = document.getElementById('ovt-dark-toggle');
+  const knob   = document.getElementById('ovt-dark-knob');
+  if(ovtDarkOn){
+    toggle.style.background      = 'rgba(232,255,0,.2)';
+    toggle.style.borderColor     = 'rgba(232,255,0,.4)';
+    knob.style.left              = '23px';
+    knob.style.background        = 'var(--accent)';
+  } else {
+    toggle.style.background      = 'var(--c3)';
+    toggle.style.borderColor     = 'var(--line2)';
+    knob.style.left              = '3px';
+    knob.style.background        = 'var(--sub)';
+  }
+  rSalary();
+}
+
+function setRate(r, label){
+  ownRateMode = (r === 0);
+  document.getElementById('own-rate-wrap').style.display = ownRateMode ? 'block' : 'none';
+  if(!ownRateMode) curHourRate = r;
+  document.querySelectorAll('.sal-rate-btn').forEach(b=>b.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  rSalary();
+}
+
+function nettoFromBrutto(brutto){
+  const zus   = brutto * ZUS_RATE;
+  const base  = brutto - zus;
+  const pit   = Math.max(0, base * PIT_RATE);
+  return { netto: brutto - zus - pit, zus, pit };
+}
+
+function rSalary(){
+  // get rate
+  if(ownRateMode){
+    const own = parseFloat(document.getElementById('own-rate').value);
+    if(!isNaN(own) && own > 0) curHourRate = own;
+  }
+  const R = curHourRate;
+
+  const hours    = parseFloat(document.getElementById('sal-hours').value) || 0;
+  const darkH    = Math.min(parseFloat(document.getElementById('sal-dark').value)||0, hours);
+  const normalH  = hours - darkH;
+
+  // base brutto
+  const baseNormal = normalH * R;
+  const baseDark   = darkH  * R * (1 + DARK_ADD);  // +20%
+  const darkBonus  = darkH  * R * DARK_ADD;         // сама доплата
+  const baseBrutto = baseNormal + baseDark;
+
+  const {netto: baseNetto, zus, pit} = nettoFromBrutto(baseBrutto);
+  const fp = baseBrutto * 0.0245; // Фонд труда (инфо)
+
+  // overtime 100%
+  const ovt100H    = parseFloat(document.getElementById('ovt-100').value)||0;
+  const ovt100Mult = ovtDarkOn ? 2 * (1 + DARK_ADD) : 2; // ×2 + 20% если DARK
+  const ovt100B    = ovt100H * R * ovt100Mult;
+  const {netto: ovt100N} = nettoFromBrutto(ovt100B);
+
+  // overtime 50%
+  const ovt50H     = parseFloat(document.getElementById('ovt-50').value)||0;
+  const ovt50Mult  = ovtDarkOn ? 1.5 * (1 + DARK_ADD) : 1.5; // ×1.5 + 20% если DARK
+  const ovt50B     = ovt50H * R * ovt50Mult;
+  const {netto: ovt50N} = nettoFromBrutto(ovt50B);
+
+  // totals
+  const totalB = baseBrutto + ovt100B + ovt50B;
+  const totalN = baseNetto  + ovt100N + ovt50N;
+
+  // bonus from entries
+  const mBonus = DB.entries.filter(e=>e.shiftDate?.slice(0,7)===mISO()).reduce((s,e)=>s+e.c.bonus,0);
+
+  const f2 = n => n.toFixed(2);
+  const fh = n => n % 1 === 0 ? n.toString() : n.toFixed(1);
+
+  // update UI
+  document.getElementById('sal-brutto').textContent     = f2(baseBrutto);
+  document.getElementById('sal-brutto-sub').textContent = `${fh(hours)} ч × ${R.toFixed(2)} zł${darkH>0?` (+${f2(darkBonus)} DARK)` :''}`;
+  document.getElementById('sal-netto').textContent      = f2(baseNetto);
+  document.getElementById('sal-netto-sub').textContent  = `после вычетов ZUS+PIT`;
+
+  document.getElementById('d-base').textContent = f2(baseNormal + darkH*R) + ' zł';
+  document.getElementById('d-dark').textContent = darkH > 0 ? `+${f2(darkBonus)} zł` : '—';
+  document.getElementById('d-zus').textContent  = `-${f2(zus)} zł`;
+  document.getElementById('d-pit').textContent  = `-${f2(pit)} zł`;
+  document.getElementById('d-fp').textContent   = `${f2(fp)} zł (инфо)`;
+
+  const darkMark = ovtDarkOn ? ' 🌙' : '';
+  document.getElementById('ovt-100-res').textContent = `+${f2(ovt100B)} zł${darkMark}`;
+  document.getElementById('ovt-100-b').textContent   = f2(ovt100B);
+  document.getElementById('ovt-100-n').textContent   = f2(ovt100N);
+
+  document.getElementById('ovt-50-res').textContent  = `+${f2(ovt50B)} zł${darkMark}`;
+  document.getElementById('ovt-50-b').textContent    = f2(ovt50B);
+  document.getElementById('ovt-50-n').textContent    = f2(ovt50N);
+
+  document.getElementById('total-brutto').textContent = f2(totalB);
+  document.getElementById('total-netto').textContent  = f2(totalN);
+
+  // разбивка по колонкам
+  document.getElementById('sum-base-b').textContent = f2(baseBrutto);
+  document.getElementById('sum-base-n').textContent = f2(baseNetto) + ' н';
+  document.getElementById('sum-100-b').textContent  = f2(ovt100B);
+  document.getElementById('sum-100-n').textContent  = f2(ovt100N) + ' н';
+  document.getElementById('sum-50-b').textContent   = f2(ovt50B);
+  document.getElementById('sum-50-n').textContent   = f2(ovt50N) + ' н';
+
+  // суммарный ZUS и PIT со всех частей
+  const {zus: zus100, pit: pit100} = nettoFromBrutto(ovt100B);
+  const {zus: zus50,  pit: pit50}  = nettoFromBrutto(ovt50B);
+  const totalZUS = zus + zus100 + zus50;
+  const totalPIT = pit + pit100 + pit50;
+  document.getElementById('sum-dark').textContent  = darkH > 0 ? `+${f2(darkBonus)} zł` : '—';
+  document.getElementById('sum-zus').textContent   = `-${f2(totalZUS)} zł`;
+  document.getElementById('sum-pit').textContent   = `-${f2(totalPIT)} zł`;
+
+  document.getElementById('sal-bonus-line').textContent = f2(mBonus) + ' zł';
+
+  // ФИНАЛЬНАЯ СУММА: нетто + бонус
+  document.getElementById('grand-total').textContent = f2(totalN + mBonus);
 }
 
 // ══ UTILS ═════════════════════════════════════
