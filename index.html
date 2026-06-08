@@ -280,6 +280,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .cal-cell.urlop{background:rgba(168,85,247,.08);border-color:rgba(168,85,247,.25)}
 .cal-cell.urlop .cal-dn{color:#c084fc}
 .cal-cell.urlop .cal-t{color:#c084fc;font-size:7px}
+.cal-cell.ovt{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.35)}
+.cal-cell.ovt .cal-dn{color:var(--orange)}
+.cal-cell.ovt .cal-t{color:var(--orange);font-size:7px}
+.cal-cell.ovt-work{background:linear-gradient(135deg,rgba(29,78,216,.08) 50%,rgba(249,115,22,.12) 50%);border-color:rgba(249,115,22,.4)}
+.cal-cell.ovt-work .cal-dn{color:var(--orange)}
+.cal-cell.ovt-work .cal-t{color:var(--orange);font-size:7px}
 .cal-cell.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
 .cal-cell.today .cal-dn{color:var(--accent);font-weight:900}
 .cal-cell.empty{background:transparent;border-color:transparent;min-height:50px}
@@ -405,7 +411,7 @@ select.fl-in{appearance:none}
     </div>
 
     <div class="bonus-hero">
-      <div class="bh-lbl">Бонус за месяц</div>
+      <div class="bh-lbl">Бонус за пики · месяц</div>
       <div><span class="bh-num" id="bh-num">0.00</span><span style="font-size:18px;color:var(--sub);margin-left:4px">zł</span></div>
       <div class="bh-sub" id="bh-sub">нет записей</div>
       <div class="prog-bar"><div class="prog-fill" id="bh-bar" style="width:0%"></div></div>
@@ -561,40 +567,85 @@ select.fl-in{appearance:none}
 
 <!-- ═══════════ SCHEDULE ═══════════ -->
 <div class="page" id="page-sched">
-  <div class="top"><div class="top-l"><div class="eyebrow">Grafik pracy · AutoDoc</div><div class="heading">График смен</div></div></div>
-  <div class="shift-tabs">
-    <div class="shtab act-dark" onclick="switchShift('dark')">🌙 DARK</div>
-    <div class="shtab soon">🟠 ORANGE</div>
-    <div class="shtab soon">🟢 GREEN</div>
+  <div class="top">
+    <div class="top-l"><div class="eyebrow">AutoDoc · Szczecin</div><div class="heading">График</div></div>
   </div>
-  <div class="shpanel act" id="sh-dark">
-    <div class="cal-hdr">
-      <div class="cal-title" id="cal-title">Июнь 2026</div>
-      <div class="cal-ctrl">
-        <button class="cal-btn" onclick="calPrev()">‹</button>
-        <button class="cal-btn cal-today" onclick="calGoNow()">СЕГ</button>
-        <button class="cal-btn" onclick="calNext()">›</button>
+
+  <!-- Верхний выбор: График смен / Автобусы -->
+  <div style="display:flex;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)">
+    <button id="sched-tab-shifts" onclick="switchSchedTab('shifts')" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--accent);color:#000;transition:all .15s">📅 График смен</button>
+    <button id="sched-tab-bus" onclick="switchSchedTab('bus')" style="flex:1;padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--c2);color:var(--sub);transition:all .15s">🚌 Автобусы</button>
+  </div>
+
+  <!-- SHIFTS PANEL -->
+  <div id="sched-panel-shifts">
+    <div class="shift-tabs">
+      <div class="shtab act-dark" onclick="switchShift('dark')">🌙 DARK</div>
+      <div class="shtab soon">🟠 ORANGE <span style="font-size:8px;opacity:.5">скоро</span></div>
+      <div class="shtab soon">🟢 GREEN <span style="font-size:8px;opacity:.5">скоро</span></div>
+    </div>
+
+    <div class="shpanel act" id="sh-dark">
+      <div class="cal-hdr">
+        <div class="cal-title" id="cal-title">Июнь 2026</div>
+        <div class="cal-ctrl">
+          <button class="cal-btn" onclick="calPrev()">‹</button>
+          <button class="cal-btn cal-today" onclick="calGoNow()">СЕГ</button>
+          <button class="cal-btn" onclick="calNext()">›</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div class="ws-lbl">С:</div>
+        <div class="ws-btns">
+          <button class="ws-btn act" id="ws-mon" onclick="setWS('mon')">ПН</button>
+          <button class="ws-btn"     id="ws-sun" onclick="setWS('sun')">ВС</button>
+        </div>
+        <div class="cal-stats" id="cal-stats"></div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-legend">
+        <div class="leg"><div class="leg-d" style="background:rgba(59,130,246,.4)"></div>22:00–6:00</div>
+        <div class="leg"><div class="leg-d" style="background:var(--c3)"></div>Выходной</div>
+        <div class="leg"><div class="leg-d" style="background:rgba(239,68,68,.3)"></div>Праздник</div>
+        <div class="leg"><div class="leg-d" style="background:rgba(168,85,247,.35)"></div>Отпуск</div>
+        <div class="leg"><div class="leg-d" style="background:rgba(249,115,22,.5)"></div>Доп. часы</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:6px;letter-spacing:.5px">💡 Обычный день → отпуск · Оранжевый день → удалить доп. часы</div>
+
+      <!-- Кнопка добавить доп часы 100% -->
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px">Доп. часы</div>
+        <button onclick="openOvtModal()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:var(--c2);border:1px solid var(--line);border-radius:12px;cursor:pointer;transition:border-color .15s">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">⏱️</span>
+            <div style="text-align:left">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">Добавить доп. часы</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:1px">100% · за текущую смену</div>
+            </div>
+          </div>
+          <span style="font-family:var(--mono);font-size:11px;font-weight:700;background:rgba(232,255,0,.1);color:var(--accent);border:1px solid rgba(232,255,0,.2);padding:3px 9px;border-radius:20px">+100%</span>
+        </button>
+        <!-- счётчик доп часов за месяц -->
+        <div id="ovt-month-summary" style="display:none;margin-top:8px;background:var(--c1);border:1px solid var(--line);border-radius:10px;padding:11px 13px">
+          <div style="font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--sub);text-transform:uppercase;margin-bottom:6px">Доп. часы за месяц</div>
+          <div id="ovt-month-list" style="font-size:13px;color:var(--text)"></div>
+        </div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-      <div class="ws-lbl">С:</div>
-      <div class="ws-btns">
-        <button class="ws-btn act" id="ws-mon" onclick="setWS('mon')">ПН</button>
-        <button class="ws-btn"     id="ws-sun" onclick="setWS('sun')">ВС</button>
-      </div>
-      <div class="cal-stats" id="cal-stats"></div>
-    </div>
-    <div class="cal-grid" id="cal-grid"></div>
-    <div class="cal-legend">
-      <div class="leg"><div class="leg-d" style="background:rgba(59,130,246,.4)"></div>22:00–6:00</div>
-      <div class="leg"><div class="leg-d" style="background:var(--c3)"></div>Выходной</div>
-      <div class="leg"><div class="leg-d" style="background:rgba(239,68,68,.3)"></div>Праздник</div>
-      <div class="leg"><div class="leg-d" style="background:rgba(168,85,247,.35)"></div>Отпуск</div>
-    </div>
-    <div style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:8px;letter-spacing:.5px">💡 Нажми на рабочий день чтобы отметить отпуск</div>
+
+    <div class="shpanel" id="sh-orange"><div class="soon-box"><div class="soon-box-ic">🟠</div><div class="soon-box-t">Orange Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
+    <div class="shpanel" id="sh-green"><div class="soon-box"><div class="soon-box-ic">🟢</div><div class="soon-box-t">Green Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
   </div>
-  <div class="shpanel" id="sh-orange"><div class="soon-box"><div class="soon-box-ic">🟠</div><div class="soon-box-t">Orange Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
-  <div class="shpanel" id="sh-green"><div class="soon-box"><div class="soon-box-ic">🟢</div><div class="soon-box-t">Green Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
+
+  <!-- BUS PANEL -->
+  <div id="sched-panel-bus" style="display:none;padding:14px">
+    <div class="soon-box">
+      <div class="soon-box-ic">🚌</div>
+      <div class="soon-box-t">Расписание автобусов</div>
+      <div class="soon-box-s" style="margin-top:8px">Szczecin · Маршруты к складу</div>
+      <div style="margin-top:16px;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px">Скоро · Coming Soon</div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════ SALARY ═══════════ -->
@@ -924,6 +975,32 @@ select.fl-in{appearance:none}
   </div>
 </div>
 
+<!-- MODAL: OVERTIME (из графика) -->
+<div class="ovl" id="m-ovt" onclick="cOvl(event,'m-ovt')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">⏱️ Доп. часы · +100%</div>
+    <div class="fl">
+      <span class="fl-lb">Дата</span>
+      <div class="dq">
+        <div class="dq-b sel" id="ovt-dq-t" onclick="ovtDqSet('today')">СЕГОДНЯ</div>
+        <div class="dq-b"    id="ovt-dq-y" onclick="ovtDqSet('yesterday')">ВЧЕРА</div>
+      </div>
+      <input class="fl-in" type="date" id="ovt-date"/>
+    </div>
+    <div class="fl">
+      <span class="fl-lb">Количество часов ×100%</span>
+      <input class="fl-in" type="number" step="0.5" id="ovt-hrs" placeholder="2" oninput="upOvtPrev()"/>
+    </div>
+    <!-- live preview -->
+    <div class="prev-box" id="ovt-prev" style="display:none">
+      <div class="prev-row"><span class="prev-k">Брутто</span><span class="prev-v" id="ovt-pv-b">—</span></div>
+      <div class="prev-row"><span class="prev-k">Нетто</span><span class="prev-v" id="ovt-pv-n">—</span></div>
+    </div>
+    <button class="sv-btn" onclick="saveOvt()">СОХРАНИТЬ</button>
+  </div>
+</div>
+
 <!-- MODAL: NAME -->
 <div class="ovl" id="m-name" onclick="cOvl(event,'m-name')">
   <div class="sheet">
@@ -1193,6 +1270,73 @@ function rNotes(){
   </div>`).join('');
 }
 
+// ══ SCHEDULE TAB ══════════════════════════════
+function switchSchedTab(tab){
+  const isShifts = tab === 'shifts';
+  document.getElementById('sched-panel-shifts').style.display = isShifts ? 'block' : 'none';
+  document.getElementById('sched-panel-bus').style.display    = isShifts ? 'none'  : 'block';
+  const btnS = document.getElementById('sched-tab-shifts');
+  const btnB = document.getElementById('sched-tab-bus');
+  btnS.style.background = isShifts ? 'var(--accent)' : 'var(--c2)';
+  btnS.style.color      = isShifts ? '#000' : 'var(--sub)';
+  btnS.style.border     = isShifts ? 'none' : '1px solid var(--line)';
+  btnB.style.background = !isShifts ? 'rgba(232,255,0,.1)' : 'var(--c2)';
+  btnB.style.color      = !isShifts ? 'var(--accent)' : 'var(--sub)';
+  btnB.style.border     = !isShifts ? '1px solid rgba(232,255,0,.2)' : '1px solid var(--line)';
+}
+
+// ══ OVERTIME (from schedule) ═══════════════════
+let ovtDqMode = 'today';
+function ovtDqSet(m){
+  ovtDqMode=m;
+  document.getElementById('ovt-dq-t').classList.toggle('sel',m==='today');
+  document.getElementById('ovt-dq-y').classList.toggle('sel',m==='yesterday');
+  document.getElementById('ovt-date').value = m==='today'?todayISO():yestISO();
+  upOvtPrev();
+}
+function upOvtPrev(){
+  const h=parseFloat(document.getElementById('ovt-hrs').value)||0;
+  const box=document.getElementById('ovt-prev');
+  if(!h){ box.style.display='none'; return; }
+  box.style.display='block';
+  const b=h*curHourRate*2;
+  const {netto:n}=nettoFromBrutto(b);
+  document.getElementById('ovt-pv-b').textContent=b.toFixed(2)+' zł';
+  document.getElementById('ovt-pv-n').textContent=n.toFixed(2)+' zł';
+}
+function saveOvt(){
+  const h=parseFloat(document.getElementById('ovt-hrs').value)||0;
+  const d=document.getElementById('ovt-date').value||todayISO();
+  if(!h) return;
+  if(!DB.ovt) DB.ovt=[];
+  DB.ovt.push({id:Date.now(),date:d,hours:h,pct:100});
+  sv(); closeModal('m-ovt'); rOvtSummary();
+  document.getElementById('ovt-hrs').value='';
+  document.getElementById('ovt-prev').style.display='none';
+}
+function rOvtSummary(){
+  const el=document.getElementById('ovt-month-summary');
+  const listEl=document.getElementById('ovt-month-list');
+  if(!DB.ovt?.length){ el.style.display='none'; return; }
+  const m=`${cY}-${String(cM+1).padStart(2,'0')}`;
+  const mOvt=DB.ovt.filter(o=>o.date?.slice(0,7)===m);
+  if(!mOvt.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  const totalH=mOvt.reduce((s,o)=>s+o.hours,0);
+  const totalB=mOvt.reduce((s,o)=>s+(o.hours*curHourRate*2),0);
+  const {netto:totalN}=nettoFromBrutto(totalB);
+  listEl.innerHTML=mOvt.map(o=>{
+    const b=(o.hours*curHourRate*2).toFixed(2);
+    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line);font-size:12px">
+      <span style="color:var(--sub);font-family:var(--mono)">${fmt(o.date)} · ${o.hours}ч ×100%</span>
+      <span style="font-family:var(--mono);color:var(--orange)">${b} zł</span>
+    </div>`;
+  }).join('')+`<div style="display:flex;justify-content:space-between;padding:7px 0;font-family:var(--mono);font-size:11px;font-weight:700">
+    <span style="color:var(--sub)">Итого: ${totalH}ч</span>
+    <span style="color:var(--green)">${totalN.toFixed(2)} zł нетто</span>
+  </div>`;
+}
+
 // ══ CALENDAR ══════════════════════════════════
 const MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const DOW_MON=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
@@ -1208,7 +1352,14 @@ function rCal(){
   const mk=`${cY}-${String(cM+1).padStart(2,'0')}`;
   document.getElementById('cal-title').textContent=`${MN[cM]} ${cY}`;
   const data=SCH[mk], grid=document.getElementById('cal-grid'), today=todayISO();
-  const urlopDays = DB.urlop?.[mk] || {}; // {day: reason}
+  const urlopDays = DB.urlop?.[mk] || {};
+  // собираем доп.часы за этот месяц по дням
+  const ovtByDay = {};
+  (DB.ovt||[]).filter(o=>o.date?.slice(0,7)===mk).forEach(o=>{
+    const d = parseInt(o.date.split('-')[2]);
+    ovtByDay[d] = (ovtByDay[d]||0) + o.hours;
+  });
+
   const dow=ws==='mon'?DOW_MON:DOW_SUN;
   let h=dow.map(d=>`<div class="cal-dow">${d}</div>`).join('');
   const jsFD=new Date(cY,cM,1).getDay();
@@ -1218,10 +1369,26 @@ function rCal(){
   for(let d=1;d<=dim;d++){
     const s=`${cY}-${String(cM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isT=s===today;
-    let type='free',tt='WOLNE';
+    const hasOvt=ovtByDay[d];
+    let type='free', tt='WOLNE';
     if(urlopDays[d]){ type='urlop'; tt='URLOP'; }
     else if(data){ const hv=data.h?.[String(d)]; if(hv){type='holiday';tt='ŚWIĘTO';} else if(data.w?.includes(d)){type='work';tt='22–6';} }
-    h+=`<div class="cal-cell ${type}${isT?' today':''}" onclick="toggleUrlop(${d},'${mk}')"><div class="cal-dn">${d}</div><div class="cal-t">${tt}</div></div>`;
+    // доп.часы поверх базового типа
+    let cellClass = type;
+    let cellContent = tt;
+    if(hasOvt){
+      cellClass = type==='work' ? 'ovt-work' : 'ovt';
+      cellContent = `+${hasOvt}ч`;
+    }
+    // tooltip-like click: если доп часы — предлагаем отменить
+    const clickFn = hasOvt
+      ? `confirmDelOvt(${d},'${mk}')`
+      : `toggleUrlop(${d},'${mk}')`;
+    h+=`<div class="cal-cell ${cellClass}${isT?' today':''}" onclick="${clickFn}">
+      <div class="cal-dn">${d}</div>
+      <div class="cal-t">${cellContent}</div>
+      ${hasOvt?`<div style="position:absolute;top:2px;right:2px;width:5px;height:5px;border-radius:50%;background:var(--orange)"></div>`:''}
+    </div>`;
   }
   const total=off+dim, trail=(7-total%7)%7;
   for(let i=0;i<trail;i++) h+=`<div class="cal-cell empty"></div>`;
@@ -1230,24 +1397,46 @@ function rCal(){
       `<div style="grid-column:1/-1;text-align:center;padding:28px 0;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:2px">НЕТ ДАННЫХ</div>`;
   } else { grid.innerHTML=h; }
   const wc=data?.w?.length||0, hc=Object.keys(data?.h||{}).length;
-  const uc=Object.keys(urlopDays).length, fc=dim-wc-hc-uc;
-  document.getElementById('cal-stats').textContent=data?`⚡${wc}  🏖${fc}  🎉${hc}${uc>0?`  🟣${uc}`:''}` :'';
+  const uc=Object.keys(urlopDays).length, oc=Object.keys(ovtByDay).length;
+  const fc=dim-wc-hc-uc;
+  document.getElementById('cal-stats').textContent=data
+    ?`⚡${wc}  🏖${fc}  🎉${hc}${uc>0?`  🟣${uc}`:''}${oc>0?`  🟠${oc}`:''}`
+    :'';
+  rOvtSummary();
 }
 
 function toggleUrlop(day, mk){
   if(!DB.urlop) DB.urlop={};
   if(!DB.urlop[mk]) DB.urlop[mk]={};
-  if(DB.urlop[mk][day]){
-    delete DB.urlop[mk][day];
-  } else {
-    DB.urlop[mk][day]='Urlop';
-  }
+  if(DB.urlop[mk][day]){ delete DB.urlop[mk][day]; }
+  else { DB.urlop[mk][day]='Urlop'; }
   sv(); rCal();
+}
+
+function confirmDelOvt(day, mk){
+  // найдём все доп.часы за этот день
+  const dateStr=`${mk}-${String(day).padStart(2,'0')}`;
+  const toRemove=(DB.ovt||[]).filter(o=>o.date===dateStr);
+  if(!toRemove.length) return;
+  const totalH=toRemove.reduce((s,o)=>s+o.hours,0);
+  // простое подтверждение через confirm
+  if(confirm(`Удалить доп. часы за ${fmt(dateStr)}?\n+${totalH}ч ×100%`)){
+    DB.ovt=(DB.ovt||[]).filter(o=>o.date!==dateStr);
+    sv(); rCal(); rOvtSummary();
+  }
 }
 function calPrev(){ if(cM===0){cM=11;cY--;}else cM--; rCal(); }
 function calNext(){ if(cM===11){cM=0;cY++;}else cM++; rCal(); }
 function calGoNow(){ const n=new Date();cY=n.getFullYear();cM=n.getMonth();rCal(); }
 function switchShift(s){ document.querySelectorAll('.shpanel').forEach(p=>p.classList.remove('act')); document.getElementById('sh-'+s).classList.add('act'); }
+
+// init overtime modal
+function openOvtModal(){
+  ovtDqSet('today');
+  document.getElementById('ovt-hrs').value='';
+  document.getElementById('ovt-prev').style.display='none';
+  openModal('m-ovt');
+}
 
 // ══ ADD ENTRY ═════════════════════════════════
 function openAdd(st){
