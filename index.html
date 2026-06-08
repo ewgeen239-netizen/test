@@ -638,15 +638,44 @@ select.fl-in{appearance:none}
   </div>
 
   <!-- BUS PANEL -->
-  <div id="sched-panel-bus" style="display:none;padding:14px">
-    <div class="soon-box">
-      <div class="soon-box-ic">🚌</div>
-      <div class="soon-box-t">Расписание автобусов</div>
-      <div class="soon-box-s" style="margin-top:8px">Szczecin · Маршруты к складу</div>
-      <div style="margin-top:16px;font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:1px">Скоро · Coming Soon</div>
+  <div id="sched-panel-bus" style="display:none">
+
+    <!-- Route selector -->
+    <div id="bus-selector" style="padding:12px 14px;border-bottom:1px solid var(--line)">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px">Выбери маршрут</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <button id="bus-btn-1" onclick="showBus(1)" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;cursor:pointer;text-align:left;transition:all .15s">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔴</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Маршрут А — Hoża / Jana z Czarnolasu</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px">с 27.10.2025 · 3 смены · Kablowa 1</div>
+          </div>
+        </button>
+        <button id="bus-btn-2" onclick="showBus(2)" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--c2);border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:left;transition:all .15s">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,196,0,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🟡</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Маршрут Б — Kleeberga / Osiedle Kaliny</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px">с 02.09.2024 · 3 смены · Kablowa 1</div>
+          </div>
+        </button>
+        <button id="bus-btn-3" onclick="showBus(3)" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--c2);border:1px solid var(--line);border-radius:12px;cursor:pointer;text-align:left;transition:all .15s">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(59,130,246,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🔵</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Маршрут В — Centrum–Wyszyńskiego</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px">с 02.09.2024 · 3 смены · Kablowa 1</div>
+          </div>
+        </button>
+      </div>
     </div>
+
+    <!-- BUS DETAIL PANELS — rendered by JS -->
+    <div id="bus-detail-1" style="display:none;padding:14px"></div>
+    <div id="bus-detail-2" style="display:none;padding:14px"></div>
+    <div id="bus-detail-3" style="display:none;padding:14px"></div>
+
   </div>
 </div>
+
 
 <!-- ═══════════ SALARY ═══════════ -->
 <div class="page" id="page-salary">
@@ -1270,6 +1299,202 @@ function rNotes(){
   </div>`).join('');
 }
 
+// ══ BUS SCHEDULE DATA & RENDER ════════════════
+const BUS_DATA = {
+  1: {
+    icon:'🔴', title:'Маршрут А',
+    sub:'Hoża / Jana z Czarnolasu · с 27.10.2025',
+    color:'239,68,68',
+    shifts:[
+      { name:'Zmiana 1', dark:false,
+        dojazd:{ time:'04:40', stops:[
+          ['Hoża 21','04:43'],['Jana z Czarnolasu 11','04:46'],['Pasterska 11','04:48'],
+          ['Łabędzia 32','04:50'],['Krasińskiego 11','04:52'],['Kołłątaja 22','04:54'],
+          ['Sczanieckiej 21','04:54'],['Wyszyńskiego 11','05:00'],['AUTODOC Kablowa 1','05:40','work']
+        ]},
+        powrot:{ time:'14:20', stops:[
+          ['AUTODOC Kablowa 1','14:20','work'],['Plac Słowiański 11',''],['Sczanieckiej 22',''],
+          ['Kołłątaja 21',''],['Krasińskiego 12',''],['Łabędzia 31',''],
+          ['Pasterska 12',''],['Jana z Czarnolasu 12',''],['Hoża 22','']
+        ]}
+      },
+      { name:'Zmiana 2', dark:false,
+        dojazd:{ time:'12:40', stops:[
+          ['Hoża 21','12:40'],['Jana z Czarnolasu 11','12:43'],['Pasterska 11','12:46'],
+          ['Łabędzia 32','12:48'],['Krasińskiego 11','12:51'],['Kołłątaja 22','12:55'],
+          ['Sczanieckiej 21','12:55'],['Wyszyńskiego 11','13:03'],['AUTODOC Kablowa 1','13:40','work']
+        ]},
+        powrot:{ time:'22:20', stops:[
+          ['AUTODOC Kablowa 1','22:20','work'],['Plac Słowiański 11',''],['Sczanieckiej 22',''],
+          ['Kołłątaja 21',''],['Krasińskiego 12',''],['Łabędzia 31',''],
+          ['Pasterska 12',''],['Jana z Czarnolasu 12',''],['Hoża 22','']
+        ]}
+      },
+      { name:'Zmiana 3 (DARK)', dark:true,
+        dojazd:{ time:'20:50', stops:[
+          ['Hoża 21','20:50'],['Jana z Czarnolasu 11','20:53'],['Pasterska 11','20:56'],
+          ['Łabędzia 32','20:58'],['Krasińskiego 11','21:00'],['Kołłątaja 22','21:02'],
+          ['Sczanieckiej 21','21:05'],['Wyszyńskiego 11','21:10'],
+          ['Basen Górniczy (przy drodze głównej)','21:17'],['AUTODOC Kablowa 1','21:40','work']
+        ]},
+        powrot:{ time:'06:20', stops:[
+          ['AUTODOC Kablowa 1','06:20','work'],['Plac Słowiański 11',''],
+          ['Basen Górniczy (przy drodze głównej)',''],['Wyszyńskiego 22','','hi'],
+          ['Sczanieckiej 22',''],['Kołłątaja 21',''],['Krasińskiego 12',''],
+          ['Łabędzia 31',''],['Pasterska 12',''],['Jana z Czarnolasu 12',''],['Hoża 22','']
+        ]}
+      }
+    ]
+  },
+  2: {
+    icon:'🟡', title:'Маршрут Б',
+    sub:'Kleeberga / Osiedle Kaliny · с 02.09.2024',
+    color:'245,196,0',
+    shifts:[
+      { name:'Zmiana 1', dark:false,
+        dojazd:{ time:'04:40', stops:[
+          ['Kleeberga 11','04:45'],['Osiedle Kaliny 11','04:47'],['Osiedle Przyjaźni 11','04:51'],
+          ['Ku Słońcu 11','05:00'],['Plac Kościuszki 33','05:05'],
+          ['Wyszyńskiego 11','05:05'],['AUTODOC Kablowa 1','05:40','work']
+        ]},
+        powrot:{ time:'14:20', stops:[
+          ['AUTODOC Kablowa 1','14:20','work'],['Plac Słowiański 11',''],['Plac Kościuszki',''],
+          ['Ku Słońcu',''],['Osiedle Przyjaźni',''],['Osiedle Kaliny',''],['Kleeberga','']
+        ]}
+      },
+      { name:'Zmiana 2', dark:false,
+        dojazd:{ time:'12:35', stops:[
+          ['Kleeberga 11','12:35'],['Osiedle Kaliny 11','12:40'],['Osiedle Przyjaźni 11','12:42'],
+          ['Ku Słońcu 11','12:46'],['Plac Kościuszki 33','12:55'],
+          ['Wyszyńskiego 11','13:00'],['AUTODOC Kablowa 1','13:40','work']
+        ]},
+        powrot:{ time:'22:20', stops:[
+          ['AUTODOC Kablowa 1','22:20','work'],['Plac Słowiański 11',''],['Plac Kościuszki',''],
+          ['Ku Słońcu',''],['Osiedle Przyjaźni',''],['Osiedle Kaliny',''],['Kleeberga','']
+        ]}
+      },
+      { name:'Zmiana 3 (DARK)', dark:true,
+        dojazd:{ time:'20:45', stops:[
+          ['Kleeberga 11','20:45'],['Osiedle Kaliny 11','20:48'],['Osiedle Przyjaźni 11','20:50'],
+          ['Ku Słońcu 11','20:54'],['Reda 21','20:59'],['Mieszka I 12','21:01','hi'],
+          ['Plac Kościuszki 33','21:05'],['Wyszyńskiego 11','21:10'],['AUTODOC Kablowa 1','21:40','work']
+        ]},
+        powrot:{ time:'06:20', stops:[
+          ['AUTODOC Kablowa 1','06:20','work'],['Plac Słowiański 11',''],['Wyszyńskiego 16',''],
+          ['Plac Kościuszki 35',''],['Mieszka I','','hi'],['Reda 11',''],
+          ['Ku Słońcu 31',''],['Osiedle Przyjaźni 12',''],['Derdowskiego 21',''],['Kleeberga 12','']
+        ]}
+      }
+    ]
+  },
+  3: {
+    icon:'🔵', title:'Маршрут В',
+    sub:'Centrum – Wyszyńskiego · с 02.09.2024',
+    color:'59,130,246',
+    shifts:[
+      { name:'Zmiana 1', dark:false,
+        dojazd:{ time:'05:15', stops:[
+          ['Wyszyńskiego 11','05:15'],['Basen Górniczy (przy drodze głównej)','05:20'],
+          ['Plac Słowiański 12','05:26'],['AUTODOC Kablowa 1','05:40','work']
+        ]},
+        powrot:{ time:'14:20', stops:[
+          ['AUTODOC Kablowa 1','14:20','work'],['Plac Słowiański 11',''],
+          ['Basen Górniczy (przy drodze głównej)',''],['Wyszyńskiego 16','']
+        ]}
+      },
+      { name:'Zmiana 2', dark:false,
+        dojazd:{ time:'13:03', stops:[
+          ['Wyszyńskiego 11','13:03'],['Basen Górniczy (przy drodze głównej)','13:08'],
+          ['Plac Słowiański 12','13:15'],['AUTODOC Kablowa 1','13:40','work']
+        ]},
+        powrot:{ time:'22:20', stops:[
+          ['AUTODOC Kablowa 1','22:20','work'],['Plac Słowiański 11',''],
+          ['Basen Górniczy (przy drodze głównej)',''],['Wyszyńskiego 16','']
+        ]}
+      },
+      { name:'Zmiana 3 (DARK)', dark:true,
+        dojazd:{ time:'21:20', stops:[
+          ['Wyszyńskiego 11','21:20'],['Basen Górniczy (przy drodze głównej)','21:25'],
+          ['Plac Słowiański 12','21:33'],['AUTODOC Kablowa 1','21:40','work']
+        ]},
+        powrot:{ time:'06:20', stops:[
+          ['AUTODOC Kablowa 1','06:20','work'],['Plac Słowiański 11',''],
+          ['Basen Górniczy (przy drodze głównej)',''],['Wyszyńskiego 16','']
+        ]}
+      }
+    ]
+  }
+};
+
+function bStop(name, time, type){
+  const isWork = type==='work', isHi = type==='hi';
+  const bg   = isWork?'rgba(232,255,0,.05)':isHi?'rgba(249,115,22,.08)':'transparent';
+  const col  = isWork?'var(--accent)':isHi?'var(--orange)':'var(--sub)';
+  const dot  = isWork?'🏭':isHi?'⭐':'·';
+  const bold = isWork||isHi;
+  return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);background:${bg}">
+    <span style="font-size:12px;flex-shrink:0">${dot}</span>
+    <span style="flex:1;font-size:12px;color:${bold?'var(--text)':'var(--sub)'};font-weight:${bold?700:400}">${name}</span>
+    ${time?`<span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${col}">${time}</span>`:''}
+  </div>`;
+}
+
+function renderBusRoute(n, data){
+  const c = data.color;
+  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button onclick="hideBus()" style="background:var(--c2);border:1px solid var(--line);border-radius:8px;color:var(--sub);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">← Назад</button>
+    <div>
+      <div style="font-size:15px;font-weight:800;letter-spacing:-.3px">${data.icon} ${data.title}</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--sub)">${data.sub}</div>
+    </div>
+  </div>`;
+
+  data.shifts.forEach(shift => {
+    const dc  = shift.dark ? '59,130,246' : c;
+    const pfx = shift.dark ? '🌙' : '⏰';
+    const warn= shift.dark ? `<div style="font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px">⚠️ INNY ROZKŁAD DLA ZMIANY NOCNEJ</div>` : '';
+
+    html += `<div style="background:var(--c1);border:1px solid rgba(${dc},.3);border-radius:12px;margin-bottom:10px;overflow:hidden">
+      <div style="background:rgba(${dc},.1);border-bottom:1px solid rgba(${dc},.2);padding:10px 14px">
+        <div style="font-weight:700;font-size:13px;color:rgba(${dc===c?c:'59,130,246'},1)">${pfx} ${shift.name} — Dojazd</div>
+        ${warn}
+        <div style="font-family:var(--mono);font-size:11px;color:var(--sub);margin-top:3px">выезд ${shift.dojazd.time}</div>
+      </div>
+      <div style="padding:0 14px">${shift.dojazd.stops.map(s=>bStop(s[0],s[1],s[2])).join('')}</div>
+      <div style="background:rgba(${dc},.06);border-top:1px solid rgba(${dc},.15);padding:10px 14px;margin-top:0;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700;font-size:13px;color:rgba(${dc===c?c:'59,130,246'},1)">🏠 ${shift.name} — Powrót</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--sub)">${shift.powrot.time}</div>
+      </div>
+      <div style="padding:0 14px">${shift.powrot.stops.map(s=>bStop(s[0],s[1],s[2])).join('')}</div>
+    </div>`;
+  });
+
+  return html;
+}
+
+function showBus(n){
+  const data = BUS_DATA[n];
+  if(!data) return;
+  // hide selector
+  document.getElementById('bus-selector').style.display='none';
+  // render and show detail
+  const el = document.getElementById(`bus-detail-${n}`);
+  el.innerHTML = renderBusRoute(n, data);
+  el.style.display='block';
+  // dim other buttons
+  [1,2,3].forEach(i=>{ const b=document.getElementById(`bus-btn-${i}`); if(b) b.style.opacity=i===n?'1':'0.5'; });
+}
+
+function hideBus(){
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById(`bus-detail-${i}`);
+    if(el){ el.style.display='none'; el.innerHTML=''; }
+    const b=document.getElementById(`bus-btn-${i}`);
+    if(b) b.style.opacity='1';
+  });
+  document.getElementById('bus-selector').style.display='block';
+}
+
 // ══ SCHEDULE TAB ══════════════════════════════
 function switchSchedTab(tab){
   const isShifts = tab === 'shifts';
@@ -1327,14 +1552,30 @@ function rOvtSummary(){
   const {netto:totalN}=nettoFromBrutto(totalB);
   listEl.innerHTML=mOvt.map(o=>{
     const b=(o.hours*curHourRate*2).toFixed(2);
-    return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--line);font-size:12px">
-      <span style="color:var(--sub);font-family:var(--mono)">${fmt(o.date)} · ${o.hours}ч ×100%</span>
-      <span style="font-family:var(--mono);color:var(--orange)">${b} zł</span>
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)">
+      <div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text)">${fmt(o.date)} · ${o.hours}ч ×100%</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--orange);margin-top:1px">${b} zł брутто</div>
+      </div>
+      <button onclick="delOvt(${o.id})" style="
+        background:none;border:none;cursor:pointer;
+        width:28px;height:28px;border-radius:8px;
+        display:flex;align-items:center;justify-content:center;
+        color:var(--sub);font-size:16px;line-height:1;
+        flex-shrink:0;
+        transition:background .15s,color .15s;
+      " onmouseover="this.style.background='rgba(239,68,68,.12)';this.style.color='var(--red)'"
+         onmouseout="this.style.background='none';this.style.color='var(--sub)'">×</button>
     </div>`;
-  }).join('')+`<div style="display:flex;justify-content:space-between;padding:7px 0;font-family:var(--mono);font-size:11px;font-weight:700">
+  }).join('')+`<div style="display:flex;justify-content:space-between;padding:8px 0;font-family:var(--mono);font-size:11px;font-weight:700">
     <span style="color:var(--sub)">Итого: ${totalH}ч</span>
     <span style="color:var(--green)">${totalN.toFixed(2)} zł нетто</span>
   </div>`;
+}
+
+function delOvt(id){
+  DB.ovt=(DB.ovt||[]).filter(o=>o.id!==id);
+  sv(); rOvtSummary(); rCal();
 }
 
 // ══ CALENDAR ══════════════════════════════════
