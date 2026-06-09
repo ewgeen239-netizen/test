@@ -383,6 +383,55 @@ select.fl-in{appearance:none}
 .info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
 
+/* ── SAFETY ── */
+.ohs-header{
+  background:linear-gradient(135deg,#1a0808,#0f0505);
+  border-bottom:2px solid rgba(239,68,68,.4);
+  padding:20px 16px 16px;position:relative;overflow:hidden;
+}
+.ohs-header::before{
+  content:'OHS';position:absolute;right:-8px;top:4px;
+  font-size:64px;font-weight:900;color:rgba(239,68,68,.06);
+  font-family:var(--mono);letter-spacing:-2px;line-height:1;
+}
+.ohs-logo{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:rgba(239,68,68,.6);text-transform:uppercase;margin-bottom:6px}
+.ohs-title{font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--red);line-height:1;margin-bottom:2px}
+.ohs-sub{font-size:12px;color:var(--sub);font-weight:500}
+.ohs-warn{
+  background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);
+  border-radius:10px;padding:11px 13px;margin-bottom:10px;
+  font-size:12px;font-weight:600;color:var(--text);line-height:1.4;
+}
+.ohs-rule{
+  background:var(--c1);border:1px solid var(--line);border-radius:12px;
+  padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;
+}
+.ohs-rule-icon{font-size:28px;flex-shrink:0;margin-top:2px}
+.ohs-rule-body{}
+.ohs-rule-title{font-size:13px;font-weight:800;letter-spacing:-.2px;margin-bottom:4px;line-height:1.3}
+.ohs-rule-text{font-size:11px;color:var(--sub);line-height:1.5}
+.ohs-rule.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.03)}
+.ohs-rule.ok .ohs-rule-title{color:var(--green)}
+.ohs-rule.no{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.03)}
+.ohs-rule.no .ohs-rule-title{color:var(--red)}
+.ohs-ppe{
+  background:linear-gradient(135deg,#1a1200,#0f0c00);
+  border:1px solid rgba(245,196,0,.25);border-radius:12px;
+  padding:14px;margin-bottom:8px;
+}
+.ohs-ppe-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ohs-ppe-items{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ohs-ppe-item{background:rgba(245,196,0,.06);border:1px solid rgba(245,196,0,.15);border-radius:10px;padding:10px 6px;text-align:center}
+.ohs-ppe-em{font-size:26px;margin-bottom:4px}
+.ohs-ppe-lbl{font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:.5px;text-transform:uppercase}
+.ohs-alert{
+  background:linear-gradient(135deg,#1a0f00,#120a00);
+  border:1px solid rgba(245,196,0,.3);border-radius:12px;padding:14px;margin-bottom:8px;
+}
+.ohs-alert-title{font-size:14px;font-weight:800;color:var(--yellow);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.ohs-alert-text{font-size:11px;color:var(--sub);line-height:1.6}
+.ohs-alert-text b{color:var(--text)}
+.ohs-alert li{margin-left:14px;margin-top:4px}
 .empty{text-align:center;color:var(--dim);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
 ::-webkit-scrollbar{width:0}
 </style>
@@ -930,13 +979,107 @@ select.fl-in{appearance:none}
   <div class="pad" style="padding-top:14px;padding-bottom:20px" id="rates-cnt"></div>
 </div>
 
+<!-- ═══════════ SAFETY ═══════════ -->
+<div class="page" id="page-safety">
+  <div class="ohs-header">
+    <div class="ohs-logo">✚ AutoDoc · OHS Reminder</div>
+    <div class="ohs-title">Безопасная работа с ножом</div>
+    <div class="ohs-sub">Bezpieczna obsługa noża bezpiecznego</div>
+  </div>
+
+  <div style="padding:14px 14px 0">
+
+    <div class="ohs-warn">
+      ⚠️ PRZYPOMINAMY O PODSTAWOWYCH ZASADACH BEZPIECZEŃSTWA PODCZAS PRACY Z NOŻEM BEZPIECZNYM
+    </div>
+
+    <!-- Rule 1 ✅ -->
+    <div class="ohs-rule ok">
+      <div class="ohs-rule-icon">✅</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Używaj wyłącznie noży dopuszczonych przez pracodawcę</div>
+        <div class="ohs-rule-text">Не приноси личные ножи и не используй ножи, не допущенные работодателем.<br>Nie wnoś prywatnych noży ani nie używaj noży niedopuszczonych przez pracodawcę.</div>
+      </div>
+    </div>
+
+    <!-- Rule 2 ✅ -->
+    <div class="ohs-rule ok">
+      <div class="ohs-rule-icon">✅</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Sprawdzaj stan techniczny noża przed użyciem</div>
+        <div class="ohs-rule-text">Проверяй механизм выдвижения лезвия, состояние лезвия и блокировку. Не используй повреждённые ножи.<br>Sprawdź mechanizm wysuwania ostrza, stan ostrza oraz blokadę. Nie używaj uszkodzonych noży.</div>
+      </div>
+    </div>
+
+    <!-- Rule 3 ✅ -->
+    <div class="ohs-rule ok">
+      <div class="ohs-rule-icon">✅</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Tnij zawsze w kierunku od siebie</div>
+        <div class="ohs-rule-text">Режь всегда от себя. Соблюдай безопасное расстояние рук от лезвия и избегай резких движений во время резки.<br>Zachowuj bezpieczną odległość dłoni od ostrza i unikaj gwałtownych ruchów podczas cięcia.</div>
+      </div>
+    </div>
+
+    <!-- Rule 4 ❌ -->
+    <div class="ohs-rule no">
+      <div class="ohs-rule-icon">🚫</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Nie modyfikuj noża i nie korzystaj z uszkodzonego noża</div>
+        <div class="ohs-rule-text">Не заматывай нож лентой, не делай отверстий. В случае повреждения немедленно прекрати работу и сообщи руководителю.<br>Nie oklejaj noża taśmą, nie dokonuj przeróbek. W przypadku uszkodzenia natychmiast przerwij pracę i zgłoś problem przełożonemu.</div>
+      </div>
+    </div>
+
+    <!-- PPE -->
+    <div class="ohs-ppe">
+      <div class="ohs-ppe-title">⚠️ Zawsze stosuj wymagane środki ochrony</div>
+      <div class="ohs-ppe-items">
+        <div class="ohs-ppe-item">
+          <div class="ohs-ppe-em">👟</div>
+          <div class="ohs-ppe-lbl">Обувь</div>
+        </div>
+        <div class="ohs-ppe-item">
+          <div class="ohs-ppe-em">🧤</div>
+          <div class="ohs-ppe-lbl">Перчатки</div>
+        </div>
+        <div class="ohs-ppe-item">
+          <div class="ohs-ppe-em">🦺</div>
+          <div class="ohs-ppe-lbl">Жилет</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert -->
+    <div class="ohs-alert">
+      <div class="ohs-alert-title">🏆 Każdy z nas ma wpływ na bezpieczeństwo!</div>
+      <div class="ohs-alert-text">
+        <b>PAMIĘTAJ!!</b><br>
+        Каждый несчастный случай, травму или порез, полученные на работе, необходимо немедленно сообщить руководителю. При необходимости прекратить работу, обезопасить место происшествия и воспользоваться доступными средствами первой помощи.
+        <br><br>
+        В случае производственной травмы, возникшей в результате <b>грубого нарушения правил охраны труда</b>, в частности: несоблюдения СИЗ, использования недопущенных ножей или сознательного нарушения правил безопасности — работник может лишиться права на:
+        <ul>
+          <li>выравнивание вознаграждения до 100%</li>
+          <li>единовременного возмещения ущерба в связи с производственной травмой</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- More rules placeholder -->
+    <div style="background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px;text-align:center">
+      <div style="font-size:20px;margin-bottom:6px">📋</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Другие правила безопасности</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px">Скоро · Coming Soon</div>
+    </div>
+
+  </div>
+</div>
+
 <!-- NAV -->
-<div class="nav">
+<div class="nav" style="grid-template-columns:repeat(5,1fr)">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
-  <div class="ni"     id="n-notes"  onclick="showPage('page-notes');setNav('n-notes')"><span class="ni-ic">📝</span><span class="ni-lb">Заметки</span></div>
+  <div class="ni"     id="n-safety" onclick="showPage('page-safety');setNav('n-safety')"><span class="ni-ic">🦺</span><span class="ni-lb">Безопасность</span></div>
 </div>
 
 <!-- MODAL: ADD -->
