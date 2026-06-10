@@ -874,7 +874,6 @@ select.fl-in{appearance:none}
       </div>
       <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:2px">Брутто: <span id="ovt-50-b" style="color:var(--sub)">0.00</span> · Нетто: <span id="ovt-50-n" style="color:var(--green)">0.00</span></div>
     </div>
-  </div>
 
   <!-- ИТОГО -->
   <div class="pad gap" style="padding-bottom:24px">
@@ -1064,11 +1063,84 @@ select.fl-in{appearance:none}
     </div>
 
     <!-- More rules placeholder -->
-    <div style="background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px;text-align:center">
+    <div style="background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
       <div style="font-size:20px;margin-bottom:6px">📋</div>
       <div style="font-size:13px;font-weight:700;margin-bottom:4px">Другие правила безопасности</div>
       <div style="font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px">Скоро · Coming Soon</div>
     </div>
+
+    <!-- ═══ ХИМИЯ НА СКЛАДЕ ═══ -->
+    <div class="ohs-header" style="margin:0 -14px;padding:18px 16px 14px;background:linear-gradient(135deg,#0a1020,#060810);border-top:1px solid var(--line);border-bottom:2px solid rgba(249,115,22,.4)">
+      <div class="ohs-logo" style="color:rgba(249,115,22,.7)">✚ AutoDoc · OHS</div>
+      <div class="ohs-title" style="color:var(--orange)">Produkty Chemiczne na Magazynie</div>
+      <div class="ohs-sub">5 Zasad Bezpiecznego Postępowania</div>
+    </div>
+
+    <!-- 5 правил -->
+    <div class="ohs-rule" style="border-color:rgba(249,115,22,.2);background:rgba(249,115,22,.03);margin-top:10px">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title" style="color:var(--orange)">Każde uszkodzenie musi być natychmiast zgłoszone</div>
+        <div class="ohs-rule-text">Любое повреждение упаковки, утечка, разгерметизация, интенсивный запах или отсутствие защиты продукта — немедленно сообщи руководителю.<br><span style="color:var(--dim)">Każde uszkodzenie opakowania, wyciek, nieszczelność, intensywny zapach lub brak zabezpieczenia produktu należy niezwłocznie zgłosić przełożonemu.</span></div>
+      </div>
+    </div>
+
+    <div class="ohs-rule no" style="border-color:rgba(239,68,68,.25)">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Nie podejmuj działań bez decyzji przełożonego</div>
+        <div class="ohs-rule-text">Запрещается трогать, переносить, открывать, вытирать, нейтрализовать или упаковывать повреждённый химический продукт без разрешения руководителя.<br><span style="color:var(--dim)">Zabrania się dotykania, przenoszenia, otwierania, wycierania, neutralizowania lub pakowania uszkodzonego produktu chemicznego bez zgody przełożonego.</span></div>
+      </div>
+    </div>
+
+    <div class="ohs-rule" style="border-color:rgba(59,130,246,.2);background:rgba(59,130,246,.03)">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title" style="color:var(--blue)">Odizoluj i zabezpiecz miejsce</div>
+        <div class="ohs-rule-text">Прекрати работу с продуктом, изолируй место происшествия и жди дальнейших инструкций.<br><span style="color:var(--dim)">Przerwij pracę z produktem, odizoluj miejsce zdarzenia i poczekaj na dalsze instrukcje.</span></div>
+      </div>
+    </div>
+
+    <div class="ohs-rule ok">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Stosuj środki ochrony</div>
+        <div class="ohs-rule-text">При стандартной работе с неповреждённым химическим продуктом применяй требуемые средства защиты, в том числе защитные перчатки.<br><span style="color:var(--dim)">Podczas standardowej pracy z nieuszkodzonym produktem chemicznym stosuj wymagane środki ochrony, w tym rękawice ochronne.</span></div>
+      </div>
+    </div>
+
+    <div class="ohs-rule ok">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">5</div>
+      <div class="ohs-rule-body">
+        <div class="ohs-rule-title">Układaj pojemniki oraz towar prawidłowo</div>
+        <div class="ohs-rule-text">Не вставляй ёмкости одна в другую — это может повредить товар, вызвать утечку химического продукта и создать угрозу для сотрудников.<br><span style="color:var(--dim)">Nie wciskaj pojemników jeden w drugi. Może to spowodować uszkodzenie towaru, wyciek produktu chemicznego oraz zagrożenie dla pracowników.</span></div>
+      </div>
+    </div>
+
+    <!-- Алгоритм действий -->
+    <div class="ohs-ppe" style="margin-top:4px">
+      <div class="ohs-ppe-title" style="color:var(--orange)">🔶 Алгоритм действий при инциденте</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+        <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:10px 4px;text-align:center">
+          <div style="font-size:22px;margin-bottom:4px">👁️</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--orange);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Identyfikuj</div>
+        </div>
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 4px;text-align:center">
+          <div style="font-size:22px;margin-bottom:4px">✋</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--red);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Nie dotykaj</div>
+        </div>
+        <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px 4px;text-align:center">
+          <div style="font-size:22px;margin-bottom:4px">🚧</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--blue);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Zabezpiecz</div>
+        </div>
+        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 4px;text-align:center">
+          <div style="font-size:22px;margin-bottom:4px">📞</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--green);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Zgłoś</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:18px"></div>
 
   </div>
 </div>
