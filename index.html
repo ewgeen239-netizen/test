@@ -1245,10 +1245,26 @@ select.fl-in{appearance:none}
   </div>
 </div>
 
+<!-- ═══════════ RATING ═══════════ -->
+<div class="page" id="page-rating">
+  <div class="top">
+    <div class="top-l"><div class="eyebrow">AutoDoc · Szczecin</div><div class="heading">Рейтинг</div></div>
+    <div class="top-r"><div class="badge green" onclick="rRating()">↻ Обновить</div></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)">
+    <button class="cal-btn" onclick="rankShift(-1)">‹</button>
+    <div id="rank-month" style="font-size:15px;font-weight:800">—</div>
+    <button class="cal-btn" onclick="rankShift(1)">›</button>
+  </div>
+  <div style="padding:10px 16px 6px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">🏆 Топ по бонусу за месяц · zł</div>
+  <div class="pad" style="padding-bottom:84px"><div id="rank-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
+</div>
+
 <!-- NAV -->
-<div class="nav" style="grid-template-columns:repeat(5,1fr)">
+<div class="nav" style="grid-template-columns:repeat(6,1fr)">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
+  <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRating()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
   <div class="ni"     id="n-safety" onclick="showPage('page-safety');setNav('n-safety')"><span class="ni-ic">🦺</span><span class="ni-lb">Безопасность</span></div>
@@ -1357,6 +1373,90 @@ select.fl-in{appearance:none}
 
 </div><!-- /app -->
 <script>
+// ══ SUPABASE · ОБЩИЙ РЕЙТИНГ ══════════════════
+// Меняется через переменные при сборке; по умолчанию — публичный ключ (RLS защищает запись).
+const SB_URL = 'https://mkuwkntdcpfsxhqblkic.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rdXdrbnRkY3Bmc3hocWJsa2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NTc3MDQsImV4cCI6MjA5ODUzMzcwNH0.k0_tWR0SgvWKBWmfkb9Z7qRLhHSAvkmmpGnQWEFm2f8';
+const SB_HEAD = { 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' };
+const esc = s => String(s??'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const MONTHS = ['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const monthLabel = m => { const [y,mo]=m.split('-'); return MONTHS[+mo]+' '+y; };
+const FN_URL = SB_URL+'/functions/v1/submit-rank';   // Edge Function (проверяет initData)
+let rankMonth = null;
+let TG_INIT = '';                                    // сырой подписанный initData от Telegram
+
+// Отправляем свои месячные итоги в общую таблицу (debounce, чтобы не спамить)
+let _rankT = null;
+function pushRank(){ clearTimeout(_rankT); _rankT = setTimeout(_pushRankNow, 800); }
+function _pushRankNow(){
+  if(!DB.uid) return;                       // без Telegram id в рейтинг не попадаем
+  const m = mISO();
+  const es = DB.entries.filter(e => e.shiftDate?.slice(0,7)===m);
+  const bonus  = es.reduce((s,e)=>s+e.c.bonus,0);
+  const peaks  = es.reduce((s,e)=>s+e.peaks,0);
+  const hours  = es.reduce((s,e)=>s+e.hours,0);
+  const shifts = new Set(es.map(e=>e.shiftDate)).size;
+  const ppc    = hours>0 ? peaks/hours : 0;
+  // Быстрый режим: пишем напрямую анон-ключом (RLS разрешает insert/update).
+  // Защищённый режим (Edge Function submit-rank) — см. блок ниже, включается заменой этого fetch.
+  const row = { uid:DB.uid, month:m, name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'👷',
+    photo_url:DB.photoUrl||'', bonus:+bonus.toFixed(2), peaks, hours:+hours.toFixed(1),
+    shifts, ppc:+ppc.toFixed(1), updated_at:new Date().toISOString() };
+  fetch(SB_URL+'/rest/v1/leaderboard', {
+    method:'POST',
+    headers:{ ...SB_HEAD, 'Prefer':'resolution=merge-duplicates' },
+    body:JSON.stringify(row)
+  }).catch(()=>{});
+  // --- защищённый вариант (закомментирован): проверка Telegram-подписи на сервере ---
+  // if(!TG_INIT) return;
+  // const srow = { month:m, name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'👷',
+  //   photo_url:DB.photoUrl||'', bonus:+bonus.toFixed(2), peaks, hours:+hours.toFixed(1), shifts, ppc:+ppc.toFixed(1) };
+  // fetch(FN_URL, { method:'POST',
+  //   headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+  //   body:JSON.stringify({ initData:TG_INIT, row:srow }) }).catch(()=>{});
+}
+
+// Тянем таблицу рейтинга и рисуем
+function rRating(){
+  const wrap = document.getElementById('rank-list');
+  const m = rankMonth || mISO();
+  document.getElementById('rank-month').textContent = monthLabel(m);
+  wrap.innerHTML = '<div class="empty">ЗАГРУЗКА…</div>';
+  fetch(SB_URL+'/rest/v1/leaderboard?month=eq.'+m+'&order=bonus.desc&limit=100', { headers:SB_HEAD })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(rows => renderRank(rows||[]))
+    .catch(()=>{ wrap.innerHTML = '<div class="empty">НЕТ СВЯЗИ С БАЗОЙ</div>'; });
+}
+function renderRank(rows){
+  const wrap = document.getElementById('rank-list');
+  if(!rows.length){ wrap.innerHTML = '<div class="empty">ПОКА НИКОГО · БУДЬ ПЕРВЫМ</div>'; return; }
+  const medal = ['🥇','🥈','🥉'];
+  let h='';
+  rows.forEach((r,i)=>{
+    const me = String(r.uid)===String(DB.uid);
+    const rk = i<3 ? medal[i] : ('#'+(i+1));
+    const av = r.photo_url
+      ? `<img src="${esc(r.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`
+      : esc(r.emoji||'👷');
+    h += `<div class="strow" style="${me?'border-color:var(--accent);background:rgba(232,255,0,.03)':''}">
+      <div style="width:26px;text-align:center;font-weight:800;font-size:14px;color:var(--sub);flex-shrink:0">${rk}</div>
+      <div class="strow-ic" style="background:var(--c3);border:1px solid var(--line2);font-size:16px;overflow:hidden">${av}</div>
+      <div class="strow-body">
+        <div class="strow-name">${esc(r.name||'Аноним')}${me?' <span style="color:var(--accent);font-size:9px">· ТЫ</span>':''}</div>
+        <div class="strow-meta">${r.peaks||0} шт · ${r.shifts||0} смен · ${Number(r.ppc||0).toFixed(1)} pph</div>
+      </div>
+      <div class="strow-r"><div class="strow-bonus" style="color:var(--accent)">${Number(r.bonus||0).toFixed(2)}</div><div class="strow-unit">zł</div></div>
+    </div>`;
+  });
+  wrap.innerHTML = h;
+}
+function rankShift(d){
+  let [y,mo] = (rankMonth||mISO()).split('-').map(Number);
+  mo += d; if(mo<1){mo=12;y--;} if(mo>12){mo=1;y++;}
+  rankMonth = y+'-'+String(mo).padStart(2,'0');
+  rRating();
+}
+
 // ══ CONFIG ════════════════════════════════════
 const ST = {
   os:  {norm:45,  col:'#e8ff00',maxP:86,  ticks:[0,45,68,86],   tr:[[0,45,0],[46,52,.61],[53,59,.631],[60,67,.651],[68,74,.681],[75,81,.70],[82,85,.72],[86,999,.74]]},
@@ -1405,6 +1505,7 @@ const calc=(st,pk,h)=>{ const pph=h>0?pk/h:0,norm=Math.round(ST[st].norm*h),abov
 document.addEventListener('DOMContentLoaded',()=>{
   if(window.Telegram?.WebApp){
     Telegram.WebApp.ready(); Telegram.WebApp.expand();
+    TG_INIT = Telegram.WebApp.initData || '';
     const u=Telegram.WebApp.initDataUnsafe?.user;
     if(u){
       if(!DB.name) DB.name=[u.first_name,u.last_name].filter(Boolean).join(' ');
@@ -1431,6 +1532,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('in-date').value=todayISO();
   rAll();
   showPage('page-profile'); setNav('n-prof');
+  pushRank();
 });
 function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
 
@@ -1495,7 +1597,7 @@ function saveProfile(){
   DB.role=document.getElementById('ep-role').value;
   DB.shift=document.getElementById('ep-shift').value;
   DB.emoji=document.getElementById('ep-em-prev').textContent;
-  sv(); rName(); rProfile(); closeModal('m-edit');
+  sv(); rName(); rProfile(); closeModal('m-edit'); pushRank();
 }
 
 // ══ DASHBOARD ═════════════════════════════════
@@ -1556,7 +1658,7 @@ function rHist(){
     </div>`;
   }).join('');
 }
-function delEntry(id){ DB.entries=DB.entries.filter(e=>e.id!==id); sv(); rAllDash(); rHist(); rProfile(); }
+function delEntry(id){ DB.entries=DB.entries.filter(e=>e.id!==id); sv(); rAllDash(); rHist(); rProfile(); pushRank(); }
 
 // ══ RATES ═════════════════════════════════════
 function rRates(){
@@ -2004,7 +2106,7 @@ function saveEntry(){
   const btn=document.getElementById('sv-btn');
   btn.textContent='✓ Сохранено'; btn.classList.add('ok');
   setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('ok'); closeModal('m-add'); },700);
-  rAllDash(); rHist(); rRates(); rProfile();
+  rAllDash(); rHist(); rRates(); rProfile(); pushRank();
 }
 
 // ══ SALARY ════════════════════════════════════
@@ -2165,7 +2267,7 @@ function rSalary(){
 
 // ══ UTILS ═════════════════════════════════════
 function rName(){ document.getElementById('hdr-name').textContent=DB.name||'Имя'; }
-function saveName(){ DB.name=document.getElementById('in-name').value.trim(); sv(); rName(); rProfile(); closeModal('m-name'); }
+function saveName(){ DB.name=document.getElementById('in-name').value.trim(); sv(); rName(); rProfile(); closeModal('m-name'); pushRank(); }
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function cOvl(e,id){ if(e.target.id===id) closeModal(id); }
