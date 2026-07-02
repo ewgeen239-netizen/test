@@ -1397,23 +1397,17 @@ function _pushRankNow(){
   const hours  = es.reduce((s,e)=>s+e.hours,0);
   const shifts = new Set(es.map(e=>e.shiftDate)).size;
   const ppc    = hours>0 ? peaks/hours : 0;
-  // Быстрый режим: пишем напрямую анон-ключом (RLS разрешает insert/update).
-  // Защищённый режим (Edge Function submit-rank) — см. блок ниже, включается заменой этого fetch.
-  const row = { uid:DB.uid, month:m, name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'👷',
+  // Защищённый режим: пишем через Edge Function, она проверяет подпись Telegram
+  // и пишет service-ролью. Прямая запись анон-ключом закрыта RLS.
+  if(!TG_INIT) return;                        // вне Telegram (нет подписи) — не пишем
+  const row = { month:m, name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'👷',
     photo_url:DB.photoUrl||'', bonus:+bonus.toFixed(2), peaks, hours:+hours.toFixed(1),
-    shifts, ppc:+ppc.toFixed(1), updated_at:new Date().toISOString() };
-  fetch(SB_URL+'/rest/v1/leaderboard', {
+    shifts, ppc:+ppc.toFixed(1) };
+  fetch(FN_URL, {
     method:'POST',
-    headers:{ ...SB_HEAD, 'Prefer':'resolution=merge-duplicates' },
-    body:JSON.stringify(row)
+    headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+    body:JSON.stringify({ initData:TG_INIT, row })
   }).catch(()=>{});
-  // --- защищённый вариант (закомментирован): проверка Telegram-подписи на сервере ---
-  // if(!TG_INIT) return;
-  // const srow = { month:m, name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'👷',
-  //   photo_url:DB.photoUrl||'', bonus:+bonus.toFixed(2), peaks, hours:+hours.toFixed(1), shifts, ppc:+ppc.toFixed(1) };
-  // fetch(FN_URL, { method:'POST',
-  //   headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' },
-  //   body:JSON.stringify({ initData:TG_INIT, row:srow }) }).catch(()=>{});
 }
 
 // Тянем таблицу рейтинга и рисуем

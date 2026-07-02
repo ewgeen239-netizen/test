@@ -19,18 +19,15 @@ create table if not exists public.leaderboard (
 create index if not exists leaderboard_month_bonus_idx
   on public.leaderboard (month, bonus desc);
 
--- RLS.
--- БЫСТРЫЙ РЕЖИМ (по умолчанию): читать и писать можно анон-ключом.
---   Просто и сразу работает. Минус: юзер технически может записать чужой uid.
---   Для командного трекера рисков почти нет.
--- ЗАЩИЩЁННЫЙ РЕЖИМ: убери политики insert/update ниже и деплой Edge Function
---   submit-rank (проверяет подпись Telegram, пишет service-ролью). См. README.
+-- RLS: ЗАЩИЩЁННЫЙ РЕЖИМ (активен).
+-- Читать могут все (анон-ключ). Писать анон-ключом НЕЛЬЗЯ.
+-- Запись только через Edge Function submit-rank: она проверяет подпись Telegram
+-- initData и пишет service-ролью (service_role игнорирует RLS). Подделать чужой uid нельзя.
 alter table public.leaderboard enable row level security;
 
 drop policy if exists "leaderboard read"   on public.leaderboard;
 drop policy if exists "leaderboard insert" on public.leaderboard;
 drop policy if exists "leaderboard update" on public.leaderboard;
 
-create policy "leaderboard read"   on public.leaderboard for select using (true);
-create policy "leaderboard insert" on public.leaderboard for insert with check (true);
-create policy "leaderboard update" on public.leaderboard for update using (true) with check (true);
+create policy "leaderboard read" on public.leaderboard for select using (true);
+-- insert/update политик нет → анон писать не может; service_role (функция) обходит RLS.

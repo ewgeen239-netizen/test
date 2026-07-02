@@ -1,0 +1,4 @@
+project_id = "mkuwkntdcpfsxhqblkic"
+
+[functions.submit-rank]
+verify_jwt = false
