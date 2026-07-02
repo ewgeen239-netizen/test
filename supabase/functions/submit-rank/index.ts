@@ -30,7 +30,7 @@ const hex = (buf: ArrayBuffer) =>
 async function verifyInitData(initData: string) {
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
-  if (!hash) return null;
+  if (!hash) { console.error("verify: нет hash в initData; keys=", [...params.keys()]); return null; }
   params.delete("hash");
 
   const dcs = [...params.entries()]
@@ -38,16 +38,24 @@ async function verifyInitData(initData: string) {
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
 
+  if (!BOT_TOKEN) { console.error("verify: BOT_TOKEN не задан в секретах функции!"); return null; }
+
   const secret = new Uint8Array(await hmac(enc.encode("WebAppData"), enc.encode(BOT_TOKEN)));
   const sig = hex(await hmac(secret, enc.encode(dcs)));
-  if (sig !== hash) return null;
+  if (sig !== hash) {
+    console.error("verify: хеш не сошёлся.",
+      "tokenLen=", BOT_TOKEN.length, "recv=", hash.slice(0, 10), "calc=", sig.slice(0, 10),
+      "fields=", [...params.keys()]);
+    return null;
+  }
 
   const authDate = Number(params.get("auth_date") || 0);
-  if (!authDate || Date.now() / 1000 - authDate > MAX_AGE_SEC) return null;
+  if (!authDate || Date.now() / 1000 - authDate > MAX_AGE_SEC) { console.error("verify: initData протух, auth_date=", authDate); return null; }
 
   try {
     return JSON.parse(params.get("user") || "null");
   } catch {
+    console.error("verify: не распарсить user");
     return null;
   }
 }
@@ -67,6 +75,31 @@ Deno.serve(async (req) => {
 
   const user = await verifyInitData(String(body.initData || ""));
   if (!user?.id) return json({ error: "unauthorized" }, 401);
+
+  // ── фиксация согласия (отказ от ответственности) ──
+  if (body.consent) {
+    const c = body.consent;
+    const crow = {
+      uid: String(user.id),
+      version: String(c.version || "1.0").slice(0, 10),
+      name: String(c.name || user.first_name || "").slice(0, 60),
+      tg_username: user.username ? String(user.username).slice(0, 40) : null,
+      ua: String(c.ua || "").slice(0, 300),
+      accepted_at: new Date().toISOString(),
+    };
+    const cr = await fetch(`${PROJECT_URL}/rest/v1/consents`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=ignore-duplicates",   // первое согласие не перезатираем
+      },
+      body: JSON.stringify(crow),
+    });
+    if (!cr.ok) return json({ error: "db", detail: await cr.text() }, 500);
+    return json({ ok: true, consent: true });
+  }
 
   const r = body.row || {};
   const row = {

@@ -434,6 +434,40 @@ select.fl-in{appearance:none}
 .ohs-alert li{margin-left:14px;margin-top:4px}
 .empty{text-align:center;color:var(--dim);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
 ::-webkit-scrollbar{width:0}
+
+/* ── CONSENT GATE ── */
+.cgate{position:fixed;inset:0;z-index:400;background:var(--bg);display:none;align-items:center;justify-content:center;padding:20px}
+.cgate.on{display:flex}
+.cgate.closing{animation:cgOut .35s ease forwards}
+@keyframes cgOut{to{opacity:0;transform:scale(.98)}}
+.cgate-card{width:100%;max-width:440px;max-height:92vh;display:flex;flex-direction:column;background:var(--c1);border:1px solid var(--line2);border-radius:18px;padding:20px 18px 18px;animation:cgIn .3s ease}
+@keyframes cgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.cgate-badge{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--red);background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);padding:4px 10px;border-radius:20px;align-self:flex-start;text-transform:uppercase}
+.cgate-title{font-size:19px;font-weight:800;letter-spacing:-.3px;margin:12px 0 10px}
+.cgate-body{overflow-y:auto;flex:1;font-size:12.5px;line-height:1.6;color:var(--sub);padding-right:6px}
+.cgate-body p{margin-bottom:9px}
+.cgate-body b{color:var(--text)}
+.cgate-body ul{margin:8px 0 8px 16px}
+.cgate-body li{margin-bottom:6px}
+.cgate-check{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer}
+.cgate-check input{width:18px;height:18px;accent-color:var(--accent);flex-shrink:0}
+.cgate-btn{margin-top:12px;width:100%;padding:14px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:15px;font-weight:800;cursor:pointer;transition:opacity .15s}
+.cgate-btn:disabled{opacity:.35;cursor:not-allowed}
+.cgate-note{text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:.5px;color:var(--dim);margin-top:8px;text-transform:uppercase}
+
+/* ── SPLASH TRANSITION ── */
+.splash{position:fixed;inset:0;z-index:390;background:var(--bg);display:none;align-items:center;justify-content:center;opacity:0}
+.splash.on{display:flex;animation:spIn .3s ease forwards}
+.splash.done{animation:spOut .5s ease forwards}
+@keyframes spIn{to{opacity:1}}
+@keyframes spOut{to{opacity:0}}
+.splash-inner{display:flex;flex-direction:column;align-items:center;gap:14px}
+.splash-logo{font-size:52px;animation:spPulse 1s ease-in-out infinite;filter:drop-shadow(0 0 14px var(--accent))}
+@keyframes spPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.splash-name{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.splash-bar{width:150px;height:3px;background:var(--c3);border-radius:2px;overflow:hidden}
+.splash-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent2),var(--accent));animation:spBar 1.2s ease forwards}
+@keyframes spBar{to{width:100%}}
 </style>
 </head>
 <body>
@@ -1371,6 +1405,36 @@ select.fl-in{appearance:none}
   </div>
 </div>
 
+<!-- ═══════════ CONSENT GATE ═══════════ -->
+<div id="consent-gate" class="cgate">
+  <div class="cgate-card">
+    <div class="cgate-badge">⚠️ Важно · перед входом</div>
+    <div class="cgate-title">Согласие и отказ от ответственности</div>
+    <div class="cgate-body">
+      <p>Это <b>неофициальный вспомогательный инструмент</b>. Он не связан с работодателем и любыми компаниями (в т.ч. AutoDoc Logistic) и не является официальным сервисом.</p>
+      <p>Все данные и расчёты — <b>пики, премия, зарплата, налоги, график, рейтинг</b> — приблизительные и могут содержать ошибки. Это <b>не</b> официальный документ и <b>не</b> финансовая, юридическая или налоговая консультация.</p>
+      <ul>
+        <li>Ты используешь приложение и бота <b>на свой риск</b> и сам(а) отвечаешь за свои решения и их последствия.</li>
+        <li><b>Создатель и бот не несут никакой ответственности</b> за любой прямой или косвенный ущерб, убытки, ошибки в расчётах или претензии, связанные с использованием.</li>
+        <li>Вводимые данные (имя, показатели, факт и время согласия) сохраняются для работы рейтинга и учёта согласия.</li>
+      </ul>
+      <p>Нажимая «Принять и продолжить», ты подтверждаешь, что прочитал(а) и согласен(на) с этими условиями и <b>снимаешь всю ответственность с создателя и бота</b>.</p>
+    </div>
+    <label class="cgate-check"><input type="checkbox" id="cgate-cb" onchange="cgateToggle()"/> Я прочитал(а) и принимаю условия</label>
+    <button class="cgate-btn" id="cgate-btn" disabled onclick="acceptConsent()">Принять и продолжить</button>
+    <div class="cgate-note">Подтверждается один раз · сохраняется</div>
+  </div>
+</div>
+
+<!-- ═══════════ SPLASH ═══════════ -->
+<div id="splash" class="splash">
+  <div class="splash-inner">
+    <div class="splash-logo">⚡</div>
+    <div class="splash-name">AutoDoc Tracker</div>
+    <div class="splash-bar"><div class="splash-fill"></div></div>
+  </div>
+</div>
+
 </div><!-- /app -->
 <script>
 // ══ SUPABASE · ОБЩИЙ РЕЙТИНГ ══════════════════
@@ -1384,6 +1448,7 @@ const monthLabel = m => { const [y,mo]=m.split('-'); return MONTHS[+mo]+' '+y; }
 const FN_URL = SB_URL+'/functions/v1/submit-rank';   // Edge Function (проверяет initData)
 let rankMonth = null;
 let TG_INIT = '';                                    // сырой подписанный initData от Telegram
+const CONSENT_VERSION = '1.0';                       // повысь версию → согласие спросят заново
 
 // Отправляем свои месячные итоги в общую таблицу (debounce, чтобы не спамить)
 let _rankT = null;
@@ -1451,6 +1516,34 @@ function rankShift(d){
   rRating();
 }
 
+// ══ CONSENT (согласие / отказ от ответственности) ══
+function needConsent(){ return !(DB.consent && DB.consent.v === CONSENT_VERSION); }
+function showConsentGate(){ document.getElementById('consent-gate').classList.add('on'); }
+function cgateToggle(){ document.getElementById('cgate-btn').disabled = !document.getElementById('cgate-cb').checked; }
+function acceptConsent(){
+  DB.consent = { v:CONSENT_VERSION, at:new Date().toISOString() };
+  sv();
+  recordConsent();                            // фиксируем на сервере (у создателя)
+  const gate = document.getElementById('consent-gate');
+  gate.classList.add('closing');
+  setTimeout(()=>{ gate.classList.remove('on','closing'); playSplash(); }, 350);
+}
+function playSplash(){
+  const s = document.getElementById('splash');
+  s.classList.add('on');
+  showPage('page-profile'); setNav('n-prof'); rProfile();
+  setTimeout(()=>{ s.classList.add('done'); }, 1200);
+  setTimeout(()=>{ s.classList.remove('on','done'); }, 1700);
+}
+function recordConsent(){
+  if(!TG_INIT) return;                        // без подписи Telegram серверную запись не делаем
+  fetch(FN_URL, {
+    method:'POST',
+    headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+    body:JSON.stringify({ initData:TG_INIT, consent:{ version:CONSENT_VERSION, ua:navigator.userAgent, name:(DB.name||'') } })
+  }).catch(()=>{});
+}
+
 // ══ CONFIG ════════════════════════════════════
 const ST = {
   os:  {norm:45,  col:'#e8ff00',maxP:86,  ticks:[0,45,68,86],   tr:[[0,45,0],[46,52,.61],[53,59,.631],[60,67,.651],[68,74,.681],[75,81,.70],[82,85,.72],[86,999,.74]]},
@@ -1481,7 +1574,7 @@ const SCH = {
 let DB = (()=>{ try{ return JSON.parse(localStorage.getItem('ad_db')||'{}'); }catch{return{};} })();
 DB.entries=DB.entries||[]; DB.name=DB.name||''; DB.uid=DB.uid||'';
 DB.emoji=DB.emoji||'👷'; DB.role=DB.role||'Пакет · Упаковщик'; DB.shift=DB.shift||'DARK 22–6';
-DB.notes=DB.notes||[];
+DB.notes=DB.notes||[]; DB.consent=DB.consent||null;
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
 let curSt='os', dqMode='today', ws='mon';
@@ -1527,6 +1620,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   rAll();
   showPage('page-profile'); setNav('n-prof');
   pushRank();
+  if(needConsent()) showConsentGate();        // первый вход → экран согласия
 });
 function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
 

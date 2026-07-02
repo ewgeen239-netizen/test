@@ -31,3 +31,20 @@ drop policy if exists "leaderboard update" on public.leaderboard;
 
 create policy "leaderboard read" on public.leaderboard for select using (true);
 -- insert/update политик нет → анон писать не может; service_role (функция) обходит RLS.
+
+-- ─────────────────────────────────────────────────────────────
+-- Таблица согласий (отказ от ответственности). Пишет только
+-- Edge Function submit-rank (service_role). Анон читать/писать НЕ может —
+-- записи видит только владелец через Dashboard → Table Editor. Юридический след.
+create table if not exists public.consents (
+  uid         text        not null,
+  version     text        not null,
+  name        text,
+  tg_username text,
+  ua          text,                              -- user-agent устройства
+  accepted_at timestamptz default now(),
+  primary key (uid, version)                     -- одно согласие на юзера/версию
+);
+
+alter table public.consents enable row level security;
+-- ни одной политики → анон-ключ не имеет доступа; service_role (функция) обходит RLS.
