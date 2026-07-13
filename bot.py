@@ -29,13 +29,13 @@ bot = telebot.TeleBot(TOKEN)
 NORM = 45
 THRESHOLDS = [
     (0,  45,  0.000),
-    (46, 52,  0.610),
-    (53, 59,  0.631),
-    (60, 67,  0.651),
-    (68, 74,  0.681),
-    (75, 81,  0.700),
-    (82, 85,  0.720),
-    (86, 999, 0.740),
+    (46, 49,  0.821),
+    (50, 50,  0.871),
+    (51, 53,  0.911),
+    (54, 57,  0.961),
+    (58, 61,  0.991),
+    (62, 67,  1.043),
+    (68, 999, 1.063),
 ]
 
 # ── хранилище (JSON-файл, один файл = все пользователи) ──────
@@ -98,7 +98,7 @@ def get_rate(pph):
     for lo, hi, rate in THRESHOLDS:
         if lo <= pph <= hi:
             return rate
-    return 0.74
+    return THRESHOLDS[-1][2]
 
 def calc(peaks, hours):
     pph       = peaks / hours if hours > 0 else 0
