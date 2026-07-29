@@ -124,13 +124,15 @@ def month_iso():
 def summary_text(entries, label):
     if not entries:
         return f"📭 Записей за <b>{label}</b> нет."
+    # Премия за период — агрегатом: все пики и все часы суммируются,
+    # из них средний ppc → ставка → премия. Не по каждой записи отдельно.
     tp = sum(e["peaks"] for e in entries)
     th = sum(e["hours"] for e in entries)
-    np = sum(e["c"]["norm_pcs"] for e in entries)
-    ab = sum(e["c"]["above"]    for e in entries)
-    bn = sum(e["c"]["bonus"]    for e in entries)
     pph = tp / th if th > 0 else 0
     rate = get_rate(round(pph))
+    np = round(NORM * th)
+    ab = max(0, tp - np)
+    bn = ab * rate
     return (
         f"📊 <b>Итого — {label}</b>\n\n"
         f"📦 Пиков всего:     <b>{tp}</b> шт\n"
