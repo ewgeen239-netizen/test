@@ -1639,6 +1639,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     img.src=DB.photoUrl; img.style.display='block';
     document.getElementById('av-em').style.display='none';
   }
+  pruneOldMonths();                           // авто-очистка пиков за прошлые месяцы
   document.getElementById('hdr-date').textContent=fmt(todayISO());
   document.getElementById('in-date').value=todayISO();
   rAll();
@@ -1647,6 +1648,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(needConsent()) showConsentGate();        // первый вход → экран согласия
 });
 function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
+
+// Каждый новый месяц пики за прошлые месяцы удаляются — остаётся только текущий месяц.
+// Итоги прошлых месяцев сохранены в рейтинге (Supabase, ключ по месяцу).
+function pruneOldMonths(){
+  const cm=mISO();
+  const before=DB.entries.length;
+  DB.entries=DB.entries.filter(e=>e.shiftDate?.slice(0,7)===cm);
+  if(DB.entries.length!==before) sv();
+}
 
 // ══ PROFILE ═══════════════════════════════════
 function rProfile(){
