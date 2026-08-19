@@ -48,3 +48,22 @@ create table if not exists public.consents (
 
 alter table public.consents enable row level security;
 -- ни одной политики → анон-ключ не имеет доступа; service_role (функция) обходит RLS.
+
+-- ─────────────────────────────────────────────────────────────
+-- Реестр пользователей бота (для рассылки /broadcast).
+-- Пишет/читает ТОЛЬКО бот service-ролью. Анон доступа нет (приватно).
+create table if not exists public.bot_users (
+  uid        text        primary key,        -- Telegram user id (= chat id в личке)
+  name       text,
+  username   text,
+  active     boolean     default true,        -- false, если заблокировал бота
+  started_at timestamptz default now()
+);
+
+alter table public.bot_users enable row level security;
+-- политик нет → анон-ключ без доступа; service_role (бот) обходит RLS.
+
+-- перенос уже известных telegram_id из рейтинга (кто пользовался мини-аппом)
+insert into public.bot_users (uid, name, active)
+select uid, name, true from public.leaderboard
+on conflict (uid) do nothing;

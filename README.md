@@ -8,7 +8,7 @@ Telegram Mini App + бот для трекинга пиков OS/PA/SIO/PC, ра
 | Файл | Что делает |
 |------|-----------|
 | `index.html` | Telegram Mini App (хостится на GitHub Pages). Данные — в localStorage. |
-| `bot.py` | Telegram-бот (pyTelegramBotAPI). Меню, ввод смен, `/rating`. |
+| `bot.py` | Telegram-бот (pyTelegramBotAPI). Меню, ввод смен, `/rating`, рассылка. |
 | `supabase_leaderboard.sql` | Схема общей таблицы рейтинга + RLS-политики. |
 | `supabase/functions/submit-rank/` | Edge Function: проверяет подпись Telegram и пишет в таблицу. |
 
@@ -52,6 +52,22 @@ supabase secrets set \
 > `service_role` ключ живёт только в секретах функции — в клиент/репо не попадает.
 > `--no-verify-jwt`, потому что авторизация своя (проверка Telegram-подписи).
 > Анти-накрутка чисел (пересчёт бонуса на сервере из сырых смен) — отдельный шаг, можно добавить позже.
+
+## Рассылка (admin-only)
+
+Бот ведёт реестр пользователей в таблице `bot_users` и умеет рассылать.
+
+- `/start` — регистрирует/реактивирует пользователя.
+- `/stats` — сколько активных (только админ).
+- `/broadcast текст` — разослать всем активным (только админ). Заблокировавшие бота → `active=false`.
+
+Нужно:
+1. Выполнить блок `bot_users` из `supabase_leaderboard.sql` (создаёт таблицу + переносит uid из рейтинга).
+2. Railway → Variables:
+   - `ADMIN_TELEGRAM_IDS` — твой Telegram ID (через запятую, если несколько).
+   - `SUPABASE_SERVICE_KEY` — **service_role** ключ (Settings → API). Секрет, только в env, не в код/репо.
+
+Без `SUPABASE_SERVICE_KEY` рассылка/статы отключены (бот пишет реестр service-ролью, обходя RLS).
 
 ## Запуск бота
 

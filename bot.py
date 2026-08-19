@@ -9,8 +9,9 @@ TOKEN и WEBAPP_URL задаются через переменные окруж�
 
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
+from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
-import json, os, math, html, requests
+import json, os, math, html, requests, time
 
 # ── Читаем из переменных окружения (Railway → Variables) ──────
 # TOKEN задаётся ТОЛЬКО через переменную окружения — не хардкодить (публичный репозиторий!)
@@ -22,8 +23,58 @@ WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://ewgeen239-netizen.github.io/t
 # ── Supabase (общий рейтинг, та же таблица что и Mini App) ────
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://mkuwkntdcpfsxhqblkic.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rdXdrbnRkY3Bmc3hocWJsa2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NTc3MDQsImV4cCI6MjA5ODUzMzcwNH0.k0_tWR0SgvWKBWmfkb9Z7qRLhHSAvkmmpGnQWEFm2f8")
+# service_role — ТОЛЬКО из env (секрет!), нужен для таблицы bot_users (запись/чтение в обход RLS)
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+# ── Админы (рассылка/статы). ID через запятую в ADMIN_TELEGRAM_IDS ──
+ADMIN_IDS = {int(x) for x in os.environ.get("ADMIN_TELEGRAM_IDS", "6166155438").split(",") if x.strip().isdigit()}
 
 bot = telebot.TeleBot(TOKEN)
+
+# ── bot_users (реестр для рассылки) через Supabase service-ролью ──
+def _sb_head(write=False):
+    key = SUPABASE_SERVICE_KEY or SUPABASE_KEY
+    h = {"apikey": key, "Authorization": f"Bearer {key}"}
+    if write:
+        h["Content-Type"] = "application/json"
+    return h
+
+def register_user(u):
+    """Запомнить/реактивировать пользователя при /start."""
+    if not SUPABASE_SERVICE_KEY:
+        return
+    name = " ".join(filter(None, [u.first_name, u.last_name]))
+    row = {"uid": str(u.id), "name": name, "username": u.username or "",
+           "active": True, "started_at": datetime.now().isoformat()}
+    try:
+        requests.post(f"{SUPABASE_URL}/rest/v1/bot_users",
+                      headers={**_sb_head(True), "Prefer": "resolution=merge-duplicates"},
+                      json=row, timeout=10)
+    except Exception:
+        pass
+
+def set_inactive(uid):
+    """Пометить неактивным (заблокировал бота)."""
+    if not SUPABASE_SERVICE_KEY:
+        return
+    try:
+        requests.patch(f"{SUPABASE_URL}/rest/v1/bot_users?uid=eq.{uid}",
+                       headers=_sb_head(True), json={"active": False}, timeout=10)
+    except Exception:
+        pass
+
+def get_active_users():
+    """Список uid активных пользователей."""
+    if not SUPABASE_SERVICE_KEY:
+        return []
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/bot_users",
+                         params={"active": "eq.true", "select": "uid"},
+                         headers=_sb_head(), timeout=15)
+        r.raise_for_status()
+        return [row["uid"] for row in r.json()]
+    except Exception:
+        return []
 
 # ── константы ────────────────────────────────────────────────
 NORM = 45
@@ -189,6 +240,7 @@ def confirm_kb():
 # ── /start ───────────────────────────────────────────────────
 @bot.message_handler(commands=["start", "menu"])
 def cmd_start(msg):
+    register_user(msg.from_user)          # реестр для рассылки
     db   = load_db()
     user = get_user(db, msg.from_user.id)
     name = user["name"] or msg.from_user.first_name or "сотрудник"
@@ -209,6 +261,48 @@ def cmd_rating(msg):
     kb = InlineKeyboardMarkup()
     kb.add(InlineKeyboardButton("↩️ Меню", callback_data="menu"))
     bot.send_message(msg.chat.id, rating_text(), parse_mode="HTML", reply_markup=kb)
+
+# ── /stats (админ) ───────────────────────────────────────────
+@bot.message_handler(commands=["stats"])
+def cmd_stats(msg):
+    if msg.from_user.id not in ADMIN_IDS:
+        return
+    if not SUPABASE_SERVICE_KEY:
+        bot.send_message(msg.chat.id, "⚠️ Не задан SUPABASE_SERVICE_KEY — реестр пользователей недоступен.")
+        return
+    n = len(get_active_users())
+    bot.send_message(msg.chat.id, f"👥 Активных пользователей: <b>{n}</b>", parse_mode="HTML")
+
+# ── /broadcast <текст> (админ) ───────────────────────────────
+@bot.message_handler(commands=["broadcast"])
+def cmd_broadcast(msg):
+    if msg.from_user.id not in ADMIN_IDS:
+        return
+    if not SUPABASE_SERVICE_KEY:
+        bot.send_message(msg.chat.id, "⚠️ Не задан SUPABASE_SERVICE_KEY — рассылка недоступна.")
+        return
+    text = msg.text.partition(" ")[2].strip()
+    if not text:
+        bot.send_message(msg.chat.id, "Использование: <code>/broadcast текст</code>", parse_mode="HTML")
+        return
+    users = get_active_users()
+    bot.send_message(msg.chat.id, f"📤 Рассылаю {len(users)} пользователям…")
+    sent = failed = 0
+    for uid in users:
+        try:
+            bot.send_message(int(uid), text, parse_mode="HTML")
+            sent += 1
+            time.sleep(0.05)                        # ~20 сообщений/сек — лимит Telegram
+        except ApiTelegramException as e:
+            # 403 — заблокировал бота; 400 — чат не найден
+            if e.error_code in (400, 403):
+                set_inactive(uid)
+            failed += 1
+        except Exception:
+            failed += 1
+    bot.send_message(msg.chat.id,
+                     f"📢 Готово. Отправлено: <b>{sent}</b> · ошибок: <b>{failed}</b>",
+                     parse_mode="HTML")
 
 # ── callback-обработчик ──────────────────────────────────────
 @bot.callback_query_handler(func=lambda c: True)
