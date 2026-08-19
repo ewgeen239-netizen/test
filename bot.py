@@ -64,7 +64,7 @@ def set_inactive(uid):
         pass
 
 def get_active_users():
-    """Список uid активных пользователей."""
+    """Список uid активных пользователей из bot_users (нужен service-ключ)."""
     if not SUPABASE_SERVICE_KEY:
         return []
     try:
@@ -73,6 +73,20 @@ def get_active_users():
                          headers=_sb_head(), timeout=15)
         r.raise_for_status()
         return [row["uid"] for row in r.json()]
+    except Exception:
+        return []
+
+def get_broadcast_targets():
+    """Кому слать. Есть service-ключ → реестр bot_users. Иначе fallback —
+    все uid из рейтинга leaderboard (читается анон-ключом, без service-роли)."""
+    if SUPABASE_SERVICE_KEY:
+        return get_active_users()
+    try:
+        r = requests.get(f"{SUPABASE_URL}/rest/v1/leaderboard",
+                         params={"select": "uid"},
+                         headers=_sb_head(), timeout=15)
+        r.raise_for_status()
+        return list({row["uid"] for row in r.json()})   # уникальные uid по всем месяцам
     except Exception:
         return []
 
@@ -267,25 +281,25 @@ def cmd_rating(msg):
 def cmd_stats(msg):
     if msg.from_user.id not in ADMIN_IDS:
         return
-    if not SUPABASE_SERVICE_KEY:
-        bot.send_message(msg.chat.id, "⚠️ Не задан SUPABASE_SERVICE_KEY — реестр пользователей недоступен.")
-        return
-    n = len(get_active_users())
-    bot.send_message(msg.chat.id, f"👥 Активных пользователей: <b>{n}</b>", parse_mode="HTML")
+    n = len(get_broadcast_targets())
+    src = "bot_users" if SUPABASE_SERVICE_KEY else "рейтинг (fallback)"
+    bot.send_message(msg.chat.id,
+                     f"👥 Получателей рассылки: <b>{n}</b>\nИсточник: {src}",
+                     parse_mode="HTML")
 
 # ── /broadcast <текст> (админ) ───────────────────────────────
 @bot.message_handler(commands=["broadcast"])
 def cmd_broadcast(msg):
     if msg.from_user.id not in ADMIN_IDS:
         return
-    if not SUPABASE_SERVICE_KEY:
-        bot.send_message(msg.chat.id, "⚠️ Не задан SUPABASE_SERVICE_KEY — рассылка недоступна.")
-        return
     text = msg.text.partition(" ")[2].strip()
     if not text:
         bot.send_message(msg.chat.id, "Использование: <code>/broadcast текст</code>", parse_mode="HTML")
         return
-    users = get_active_users()
+    users = get_broadcast_targets()
+    if not users:
+        bot.send_message(msg.chat.id, "Нет получателей (пустой список).")
+        return
     bot.send_message(msg.chat.id, f"📤 Рассылаю {len(users)} пользователям…")
     sent = failed = 0
     for uid in users:
