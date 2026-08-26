@@ -383,55 +383,74 @@ select.fl-in{appearance:none}
 .info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
 
-/* ── SAFETY ── */
-.ohs-header{
-  background:linear-gradient(135deg,#1a0808,#0f0505);
-  border-bottom:2px solid rgba(239,68,68,.4);
-  padding:20px 16px 16px;position:relative;overflow:hidden;
+/* ── MAP ── */
+.wmap-info{
+  display:flex;gap:8px;align-items:flex-start;
+  background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);
+  border-radius:10px;padding:10px 12px;margin-bottom:12px;
+  font-size:11px;color:var(--blue);line-height:1.5;
 }
-.ohs-header::before{
-  content:'OHS';position:absolute;right:-8px;top:4px;
-  font-size:64px;font-weight:900;color:rgba(239,68,68,.06);
-  font-family:var(--mono);letter-spacing:-2px;line-height:1;
+.wmap-wrap{
+  position:relative;background:var(--c1);border:1px solid var(--line);
+  border-radius:14px;padding:8px;margin-bottom:12px;overflow:hidden;
 }
-.ohs-logo{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:rgba(239,68,68,.6);text-transform:uppercase;margin-bottom:6px}
-.ohs-title{font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--red);line-height:1;margin-bottom:2px}
-.ohs-sub{font-size:12px;color:var(--sub);font-weight:500}
-.ohs-warn{
-  background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);
-  border-radius:10px;padding:11px 13px;margin-bottom:10px;
-  font-size:12px;font-weight:600;color:var(--text);line-height:1.4;
+.wmap-svg{width:100%;height:auto;display:block}
+.wmap-zone-rect{fill:var(--c2);stroke:var(--line2);stroke-width:1.5}
+.wmap-zone-label{fill:var(--sub);font-family:var(--mono);font-size:7.5px;letter-spacing:.3px;text-transform:uppercase}
+.wmap-traj{stroke:var(--orange);stroke-width:1.6;stroke-dasharray:4 3;fill:none;opacity:.75;animation:wmapDash 1s linear infinite}
+@keyframes wmapDash{to{stroke-dashoffset:-14}}
+.wmap-dot{fill:var(--orange);stroke:#0f0f0f;stroke-width:1.5;transition:cx 1.3s cubic-bezier(.4,0,.2,1),cy 1.3s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 5px rgba(249,115,22,.75))}
+.wmap-dot-pulse{fill:none;stroke:var(--orange);stroke-width:1.2;opacity:.6;transition:cx 1.3s cubic-bezier(.4,0,.2,1),cy 1.3s cubic-bezier(.4,0,.2,1)}
+.wmap-pulse-anim{animation:wmapPulse 1.1s ease-out infinite}
+@keyframes wmapPulse{0%{r:5;opacity:.7}100%{r:13;opacity:0}}
+.wmap-dot-label{fill:var(--text);font-family:var(--mono);font-size:6.5px;font-weight:700;opacity:0;transition:x 1.3s cubic-bezier(.4,0,.2,1),y 1.3s cubic-bezier(.4,0,.2,1),opacity .2s ease}
+.wmap-dot-label.show{opacity:1}
+.wmap-legend{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
+.wmap-legend-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 5px rgba(249,115,22,.8);flex-shrink:0}
+.wmap-people-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+.wmap-people{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.wmap-person{
+  display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid var(--line);
+  border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .15s;
 }
-.ohs-rule{
-  background:var(--c1);border:1px solid var(--line);border-radius:12px;
-  padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;
+.wmap-person:active{border-color:var(--orange)}
+.wmap-person-ic{font-size:20px;flex-shrink:0}
+.wmap-person-body{flex:1;min-width:0}
+.wmap-person-name{font-size:13px;font-weight:700}
+.wmap-person-zone{font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px}
+.wmap-person-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.wmap-person-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .2s}
+.wmap-person-dot.on{background:var(--orange);box-shadow:0 0 6px rgba(249,115,22,.8);animation:wmapDotBlink 1s ease-in-out infinite}
+@keyframes wmapDotBlink{0%,100%{opacity:1}50%{opacity:.35}}
+.wmap-person-go{font-family:var(--mono);font-size:8px;color:var(--sub)}
+.wmap-fab{
+  width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;
+  color:#0f0f0f;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.ohs-rule-icon{font-size:28px;flex-shrink:0;margin-top:2px}
-.ohs-rule-body{}
-.ohs-rule-title{font-size:13px;font-weight:800;letter-spacing:-.2px;margin-bottom:4px;line-height:1.3}
-.ohs-rule-text{font-size:11px;color:var(--sub);line-height:1.5}
-.ohs-rule.ok{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.03)}
-.ohs-rule.ok .ohs-rule-title{color:var(--green)}
-.ohs-rule.no{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.03)}
-.ohs-rule.no .ohs-rule-title{color:var(--red)}
-.ohs-ppe{
-  background:linear-gradient(135deg,#1a1200,#0f0c00);
-  border:1px solid rgba(245,196,0,.25);border-radius:12px;
-  padding:14px;margin-bottom:8px;
+.wmap-feed-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+.wmap-feed{display:flex;flex-direction:column;gap:6px}
+.wmap-feed-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:7px 0;border-bottom:1px solid var(--line)}
+.wmap-feed-row:last-child{border-bottom:none}
+.wmap-feed-dot{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0}
+.wmap-feed-time{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0}
+.wmap-feed-text b{color:var(--text)}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.pill{
+  padding:8px 12px;background:var(--c2);border:1px solid var(--line);border-radius:20px;
+  color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;
 }
-.ohs-ppe-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.ohs-ppe-items{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.ohs-ppe-item{background:rgba(245,196,0,.06);border:1px solid rgba(245,196,0,.15);border-radius:10px;padding:10px 6px;text-align:center}
-.ohs-ppe-em{font-size:26px;margin-bottom:4px}
-.ohs-ppe-lbl{font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:.5px;text-transform:uppercase}
-.ohs-alert{
-  background:linear-gradient(135deg,#1a0f00,#120a00);
-  border:1px solid rgba(245,196,0,.3);border-radius:12px;padding:14px;margin-bottom:8px;
+.pill.sel{background:rgba(249,115,22,.1);border-color:var(--orange);color:var(--orange)}
+.wmap-toast-wrap{position:fixed;top:10px;left:0;right:0;z-index:500;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 14px}
+.wmap-toast{
+  background:var(--c1);border:1px solid rgba(249,115,22,.35);border-radius:12px;
+  padding:10px 16px;font-size:12px;font-weight:600;color:var(--text);
+  box-shadow:0 8px 24px rgba(0,0,0,.4);animation:wmapToastIn .25s ease,wmapToastOut .3s ease 2.7s forwards;
+  display:flex;align-items:center;gap:8px;max-width:100%;
 }
-.ohs-alert-title{font-size:14px;font-weight:800;color:var(--yellow);margin-bottom:8px;display:flex;align-items:center;gap:7px}
-.ohs-alert-text{font-size:11px;color:var(--sub);line-height:1.6}
-.ohs-alert-text b{color:var(--text)}
-.ohs-alert li{margin-left:14px;margin-top:4px}
+.wmap-toast b{color:var(--orange)}
+@keyframes wmapToastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes wmapToastOut{to{opacity:0;transform:translateY(-10px)}}
 .empty{text-align:center;color:var(--dim);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
 ::-webkit-scrollbar{width:0}
 
@@ -1021,269 +1040,59 @@ select.fl-in{appearance:none}
   <div class="pad" style="padding-top:14px;padding-bottom:20px" id="rates-cnt"></div>
 </div>
 
-<!-- ═══════════ SAFETY ═══════════ -->
-<div class="page" id="page-safety">
-  <div class="ohs-header">
-    <div class="ohs-logo">✚ AutoDoc · OHS Reminder</div>
-    <div class="ohs-title">Безопасная работа с ножом</div>
-    <div class="ohs-sub">Bezpieczna obsługa noża bezpiecznego</div>
+<!-- ═══════════ MAP ═══════════ -->
+<div class="page" id="page-map">
+  <div class="top">
+    <div class="top-l"><div class="eyebrow">AutoDoc · Szczecin</div><div class="heading">Карта склада</div></div>
+    <div class="top-r"><div class="badge green" id="map-live-badge">● LIVE</div></div>
   </div>
 
-  <div style="padding:14px 14px 0">
+  <div class="pad" style="padding-top:14px;padding-bottom:90px">
 
-    <div class="ohs-warn">
-      ⚠️ PRZYPOMINAMY O PODSTAWOWYCH ZASADACH BEZPIECZEŃSTWA PODCZAS PRACY Z NOŻEM BEZPIECZNYM
+    <div class="wmap-info">🚧 Базовая схема склада. Позиции сотрудников обновляются по уведомлениям — скоро подключим автоматическое отслеживание в реальном времени.</div>
+
+    <div class="wmap-wrap">
+      <svg class="wmap-svg" id="wmap-svg" viewBox="0 0 320 430" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="8" width="304" height="414" rx="12" style="fill:none;stroke:var(--line2);stroke-width:2"/>
+
+        <rect x="20" y="20" width="140" height="70" rx="8" class="wmap-zone-rect"/>
+        <text x="90" y="59" text-anchor="middle" class="wmap-zone-label">📥 Приёмка</text>
+
+        <rect x="175" y="20" width="125" height="160" rx="8" class="wmap-zone-rect"/>
+        <text x="237" y="103" text-anchor="middle" class="wmap-zone-label">📦 Стеллажи А</text>
+
+        <rect x="20" y="100" width="140" height="100" rx="8" class="wmap-zone-rect"/>
+        <text x="90" y="153" text-anchor="middle" class="wmap-zone-label">🧰 Комплектация</text>
+
+        <rect x="20" y="210" width="140" height="100" rx="8" class="wmap-zone-rect"/>
+        <text x="90" y="263" text-anchor="middle" class="wmap-zone-label">📦 Стеллажи Б</text>
+
+        <rect x="175" y="190" width="125" height="80" rx="8" class="wmap-zone-rect"/>
+        <text x="237" y="233" text-anchor="middle" class="wmap-zone-label">📮 Упаковка</text>
+
+        <rect x="175" y="280" width="125" height="80" rx="8" class="wmap-zone-rect"/>
+        <text x="237" y="323" text-anchor="middle" class="wmap-zone-label">🚚 Отгрузка</text>
+
+        <rect x="20" y="320" width="140" height="50" rx="8" class="wmap-zone-rect"/>
+        <text x="90" y="348" text-anchor="middle" class="wmap-zone-label">🖥 Офис</text>
+
+        <rect x="120" y="385" width="80" height="35" rx="8" class="wmap-zone-rect" style="fill:rgba(232,255,0,.06);stroke:var(--accent2)"/>
+        <text x="160" y="405" text-anchor="middle" class="wmap-zone-label" style="fill:var(--accent)">🚪 Вход/Выход</text>
+
+        <g id="wmap-traj-layer"></g>
+        <g id="wmap-dots-layer"></g>
+      </svg>
     </div>
 
-    <!-- Rule 1 ✅ -->
-    <div class="ohs-rule ok">
-      <div class="ohs-rule-icon">✅</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Używaj wyłącznie noży dopuszczonych przez pracodawcę</div>
-        <div class="ohs-rule-text">Не приноси личные ножи и не используй ножи, не допущенные работодателем.<br>Nie wnoś prywatnych noży ani nie używaj noży niedopuszczonych przez pracodawcę.</div>
-      </div>
-    </div>
+    <div class="wmap-legend"><span class="wmap-legend-dot"></span> оранжевая точка — сотрудник в движении по складу</div>
 
-    <!-- Rule 2 ✅ -->
-    <div class="ohs-rule ok">
-      <div class="ohs-rule-icon">✅</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Sprawdzaj stan techniczny noża przed użyciem</div>
-        <div class="ohs-rule-text">Проверяй механизм выдвижения лезвия, состояние лезвия и блокировку. Не используй повреждённые ножи.<br>Sprawdź mechanizm wysuwania ostrza, stan ostrza oraz blokadę. Nie używaj uszkodzonych noży.</div>
-      </div>
-    </div>
+    <button class="wmap-fab" onclick="openMoveSheet()">📍 Отметить перемещение сотрудника</button>
 
-    <!-- Rule 3 ✅ -->
-    <div class="ohs-rule ok">
-      <div class="ohs-rule-icon">✅</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Tnij zawsze w kierunku od siebie</div>
-        <div class="ohs-rule-text">Режь всегда от себя. Соблюдай безопасное расстояние рук от лезвия и избегай резких движений во время резки.<br>Zachowuj bezpieczną odległość dłoni od ostrza i unikaj gwałtownych ruchów podczas cięcia.</div>
-      </div>
-    </div>
+    <div class="wmap-people-title">Сотрудники</div>
+    <div class="wmap-people" id="wmap-people"></div>
 
-    <!-- Rule 4 ❌ -->
-    <div class="ohs-rule no">
-      <div class="ohs-rule-icon">🚫</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Nie modyfikuj noża i nie korzystaj z uszkodzonego noża</div>
-        <div class="ohs-rule-text">Не заматывай нож лентой, не делай отверстий. В случае повреждения немедленно прекрати работу и сообщи руководителю.<br>Nie oklejaj noża taśmą, nie dokonuj przeróbek. W przypadku uszkodzenia natychmiast przerwij pracę i zgłoś problem przełożonemu.</div>
-      </div>
-    </div>
-
-    <!-- PPE -->
-    <div class="ohs-ppe">
-      <div class="ohs-ppe-title">⚠️ Zawsze stosuj wymagane środki ochrony</div>
-      <div class="ohs-ppe-items">
-        <div class="ohs-ppe-item">
-          <div class="ohs-ppe-em">👟</div>
-          <div class="ohs-ppe-lbl">Обувь</div>
-        </div>
-        <div class="ohs-ppe-item">
-          <div class="ohs-ppe-em">🧤</div>
-          <div class="ohs-ppe-lbl">Перчатки</div>
-        </div>
-        <div class="ohs-ppe-item">
-          <div class="ohs-ppe-em">🦺</div>
-          <div class="ohs-ppe-lbl">Жилет</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Alert -->
-    <div class="ohs-alert">
-      <div class="ohs-alert-title">🏆 Każdy z nas ma wpływ na bezpieczeństwo!</div>
-      <div class="ohs-alert-text">
-        <b>PAMIĘTAJ!!</b><br>
-        Каждый несчастный случай, травму или порез, полученные на работе, необходимо немедленно сообщить руководителю. При необходимости прекратить работу, обезопасить место происшествия и воспользоваться доступными средствами первой помощи.
-        <br><br>
-        В случае производственной травмы, возникшей в результате <b>грубого нарушения правил охраны труда</b>, в частности: несоблюдения СИЗ, использования недопущенных ножей или сознательного нарушения правил безопасности — работник может лишиться права на:
-        <ul>
-          <li>выравнивание вознаграждения до 100%</li>
-          <li>единовременного возмещения ущерба в связи с производственной травмой</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- More rules placeholder -->
-    <div style="background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;text-align:center">
-      <div style="font-size:20px;margin-bottom:6px">📋</div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:4px">Другие правила безопасности</div>
-      <div style="font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:1px">Скоро · Coming Soon</div>
-    </div>
-
-    <!-- ═══ ХИМИЯ НА СКЛАДЕ ═══ -->
-    <div class="ohs-header" style="margin:0 -14px;padding:18px 16px 14px;background:linear-gradient(135deg,#0a1020,#060810);border-top:1px solid var(--line);border-bottom:2px solid rgba(249,115,22,.4)">
-      <div class="ohs-logo" style="color:rgba(249,115,22,.7)">✚ AutoDoc · OHS</div>
-      <div class="ohs-title" style="color:var(--orange)">Produkty Chemiczne na Magazynie</div>
-      <div class="ohs-sub">5 Zasad Bezpiecznego Postępowania</div>
-    </div>
-
-    <!-- 5 правил -->
-    <div class="ohs-rule" style="border-color:rgba(249,115,22,.2);background:rgba(249,115,22,.03);margin-top:10px">
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title" style="color:var(--orange)">Każde uszkodzenie musi być natychmiast zgłoszone</div>
-        <div class="ohs-rule-text">Любое повреждение упаковки, утечка, разгерметизация, интенсивный запах или отсутствие защиты продукта — немедленно сообщи руководителю.<br><span style="color:var(--dim)">Każde uszkodzenie opakowania, wyciek, nieszczelność, intensywny zapach lub brak zabezpieczenia produktu należy niezwłocznie zgłosić przełożonemu.</span></div>
-      </div>
-    </div>
-
-    <div class="ohs-rule no" style="border-color:rgba(239,68,68,.25)">
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Nie podejmuj działań bez decyzji przełożonego</div>
-        <div class="ohs-rule-text">Запрещается трогать, переносить, открывать, вытирать, нейтрализовать или упаковывать повреждённый химический продукт без разрешения руководителя.<br><span style="color:var(--dim)">Zabrania się dotykania, przenoszenia, otwierania, wycierania, neutralizowania lub pakowania uszkodzonego produktu chemicznego bez zgody przełożonego.</span></div>
-      </div>
-    </div>
-
-    <div class="ohs-rule" style="border-color:rgba(59,130,246,.2);background:rgba(59,130,246,.03)">
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title" style="color:var(--blue)">Odizoluj i zabezpiecz miejsce</div>
-        <div class="ohs-rule-text">Прекрати работу с продуктом, изолируй место происшествия и жди дальнейших инструкций.<br><span style="color:var(--dim)">Przerwij pracę z produktem, odizoluj miejsce zdarzenia i poczekaj na dalsze instrukcje.</span></div>
-      </div>
-    </div>
-
-    <div class="ohs-rule ok">
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Stosuj środki ochrony</div>
-        <div class="ohs-rule-text">При стандартной работе с неповреждённым химическим продуктом применяй требуемые средства защиты, в том числе защитные перчатки.<br><span style="color:var(--dim)">Podczas standardowej pracy z nieuszkodzonym produktem chemicznym stosuj wymagane środki ochrony, w tym rękawice ochronne.</span></div>
-      </div>
-    </div>
-
-    <div class="ohs-rule ok">
-      <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0">5</div>
-      <div class="ohs-rule-body">
-        <div class="ohs-rule-title">Układaj pojemniki oraz towar prawidłowo</div>
-        <div class="ohs-rule-text">Не вставляй ёмкости одна в другую — это может повредить товар, вызвать утечку химического продукта и создать угрозу для сотрудников.<br><span style="color:var(--dim)">Nie wciskaj pojemników jeden w drugi. Może to spowodować uszkodzenie towaru, wyciek produktu chemicznego oraz zagrożenie dla pracowników.</span></div>
-      </div>
-    </div>
-
-    <!-- Алгоритм действий -->
-    <div class="ohs-ppe" style="margin-top:4px">
-      <div class="ohs-ppe-title" style="color:var(--orange)">🔶 Алгоритм действий при инциденте</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
-        <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:10px 4px;text-align:center">
-          <div style="font-size:22px;margin-bottom:4px">👁️</div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--orange);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Identyfikuj</div>
-        </div>
-        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:10px 4px;text-align:center">
-          <div style="font-size:22px;margin-bottom:4px">✋</div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--red);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Nie dotykaj</div>
-        </div>
-        <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px 4px;text-align:center">
-          <div style="font-size:22px;margin-bottom:4px">🚧</div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--blue);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Zabezpiecz</div>
-        </div>
-        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 4px;text-align:center">
-          <div style="font-size:22px;margin-bottom:4px">📞</div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--green);letter-spacing:.5px;text-transform:uppercase;font-weight:700">Zgłoś</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="height:18px"></div>
-
-    <!-- ═══ BHP PODSTAWOWE ═══ -->
-    <div class="ohs-header" style="margin:0 -14px;padding:18px 16px 14px;background:linear-gradient(135deg,#100a00,#0a0600);border-top:1px solid var(--line);border-bottom:2px solid rgba(249,115,22,.4)">
-      <div class="ohs-logo" style="color:rgba(249,115,22,.7)">✚ AutoDoc · BHP</div>
-      <div class="ohs-title" style="color:var(--orange)">Podstawowe Zasady BHP</div>
-      <div class="ohs-sub">Na Magazynie · Обязательно для всех</div>
-    </div>
-
-    <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-      <!-- 4 правила BHP -->
-      <div style="background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:28px;flex-shrink:0">🦺</div>
-        <div>
-          <div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:3px">Kamizelka ostrzegawcza</div>
-          <div style="font-size:11px;color:var(--sub)">Жилет должен быть <b style="color:var(--text)">ВСЕГДА ЗАСТЁГНУТ</b> · Kamizelka musi być zawsze zapięta</div>
-        </div>
-      </div>
-      <div style="background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:28px;flex-shrink:0">👟</div>
-        <div>
-          <div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:3px">Obuwie robocze</div>
-          <div style="font-size:11px;color:var(--sub)">На территории склада обязательна <b style="color:var(--text)">защитная рабочая обувь BHP</b> · Na terenie magazynu obowiązuje obuwie ochronne BHP</div>
-        </div>
-      </div>
-      <div style="background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:28px;flex-shrink:0">💇</div>
-        <div>
-          <div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:3px">Włosy</div>
-          <div style="font-size:11px;color:var(--sub)">Длинные волосы должны быть <b style="color:var(--text)">собраны и закреплены</b> · Długie włosy muszą być spięte i zabezpieczone</div>
-        </div>
-      </div>
-      <div style="background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(249,115,22,.03));border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:28px;flex-shrink:0">🪪</div>
-        <div>
-          <div style="font-size:13px;font-weight:800;color:var(--orange);margin-bottom:3px">Identyfikator</div>
-          <div style="font-size:11px;color:var(--sub)">Бейдж носить <b style="color:var(--text)">на шнурке с защитным клипсом</b> · Identyfikator należy nosić na smyczy z klipsem bezpieczeństwa</div>
-        </div>
-      </div>
-      <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:12px 14px">
-        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:2px">⚠️ Обязательно для всех!</div>
-        <div style="font-size:11px;color:var(--sub)">Поwyższe zasady są obowiązkowe i obowiązują wszystkie osoby przebywające na terenie magazynu.</div>
-      </div>
-    </div>
-
-    <!-- ═══ ОДЕЖДА НА СКЛАДЕ ═══ -->
-    <div class="ohs-header" style="margin:14px -14px 0;padding:18px 16px 14px;background:linear-gradient(135deg,#0a0a1a,#060610);border-top:1px solid var(--line);border-bottom:2px solid rgba(59,130,246,.4)">
-      <div class="ohs-logo" style="color:rgba(59,130,246,.7)">✚ AutoDoc · Dress Code</div>
-      <div class="ohs-title" style="color:var(--blue);font-size:18px">Одежда сотрудника на складе</div>
-      <div class="ohs-sub">Zasady prawidłowego ubioru</div>
-    </div>
-
-    <div style="margin-top:10px">
-      <!-- Допустимо -->
-      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px">✅ Допустимо<div style="flex:1;height:1px;background:rgba(34,197,94,.2)"></div></div>
-      <div style="background:var(--c1);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px">
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">💇</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Длинные волосы собираем в кок</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">💍</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Допускаются небольшие серьги без свисающих элементов, близко к ушам</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🧔</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Борода до линии груди или длиннее должна быть скреплена или закреплена</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🪢</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Допустимы только шнурки безопасного типа для идентификаторов или ключей AutoDoc Logistics Sp. z o.o.</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🧣</span><span style="font-size:11px;color:var(--sub);line-height:1.5">В осенне-зимний период — воротник без навесных элементов, плотно прилегающий к шее</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🧥</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Кофта/свитер/рубашка: молния, пуговицы, кнопки должны быть застёгнуты по всей длине. Манжеты также застёгнуты. Шнурки снять со спортивной кофты</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👕</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Футболка только с закрытыми плечами и декольте, спиной и животом</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👖</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Рабочие брюки — узкие, без свисающих ремней, цепочек и украшений. Полные, без заводских или покупных дырок</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🩳</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Допускается использование коротких штанов (шорт) — как минимум до колена</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👟</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Рабочая обувь от работодателя — обязательно зашнурована или застёгнута на липучку/пряжку</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👜</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Разрешается вносить небольшие сумочки (макс. размер ~А5). При выходе через металлодетекторы — показывать охраннику</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid var(--line)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🦺</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Жилет у должностных лиц должен быть застёгнут</span></div>
-      </div>
-
-      <!-- Запрещено носить -->
-      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px">🚫 Запрещено носить<div style="flex:1;height:1px;background:rgba(239,68,68,.2)"></div></div>
-      <div style="background:rgba(239,68,68,.03);border:1px solid rgba(239,68,68,.2);border-radius:12px;overflow:hidden;margin-bottom:10px">
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🧢</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Головные уборы (кепка с козырьком, капюшон)</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🕶</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Солнцезащитные очки</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🧣</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Шарфы и шейные платки, толстые цепи</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👗</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Одежда со свободно свисающими лямками, завязками и цепями</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👗</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Платья и юбки на складе</span></div>
-      </div>
-
-      <!-- Запрещено вносить -->
-      <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px">❌ Запрещено вносить<div style="flex:1;height:1px;background:rgba(239,68,68,.2)"></div></div>
-      <div style="background:rgba(239,68,68,.03);border:1px solid rgba(239,68,68,.2);border-radius:12px;overflow:hidden;margin-bottom:10px">
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🔥</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Зажигалки, спички, табак, сигареты, электронные сигареты и т.д.</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🔪</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Острые предметы: карманные ножи, шампуры, ножи, не являющиеся оборудованием рабочего места</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🫖</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Электроприборы: чайники, обогреватели, зарядные устройства (для телефонов, часов), вентиляторы, лампы</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🎧</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Аудиоустройства: колонки, проводные и беспроводные наушники, радиоприёмники</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">💊</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Лекарства, косметика. Лекарства первой необходимости (ингалятор, инсулин и др.) — обязательно сообщить руководителю</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🍱</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Продукты питания: напитки не в прозрачных/пластиковых/герметичных бутылках и термокружках — показывать охраннику при выходе</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">🔧</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Инструменты, не являющиеся оборудованием рабочего места (не относится к техническому отделу)</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 13px;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px;flex-shrink:0;margin-top:1px">👜</span><span style="font-size:11px;color:var(--sub);line-height:1.5">Сумки, большие сумки, сумки-переноски и рюкзаки</span></div>
-      </div>
-
-      <!-- Важно -->
-      <div style="background:linear-gradient(135deg,#1a0808,#0f0505);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:13px 14px;margin-bottom:18px">
-        <div style="font-size:12px;font-weight:800;color:var(--red);margin-bottom:6px">🚨 ВАЖНО!</div>
-        <div style="font-size:11px;color:var(--sub);line-height:1.6">По просьбе охраны содержимое всех имеющихся предметов должно быть предоставлено для проверки и необходимо предъявить <b style="color:var(--text)">идентификатор сотрудника</b>.<br><br><b style="color:var(--red)">Запрещается выносить любые предметы, принадлежащие AutoDoc Logistics Sp. z o.o.</b><br>Попытки вынести товар или другие предметы будут сообщены в полицию.</div>
-      </div>
-    </div>
-
-    <div style="height:4px"></div>
+    <div class="wmap-feed-title">Лента уведомлений</div>
+    <div class="wmap-feed" id="wmap-feed"><div class="empty">ПОКА НЕТ ПЕРЕМЕЩЕНИЙ</div></div>
 
   </div>
 </div>
@@ -1310,7 +1119,7 @@ select.fl-in{appearance:none}
   <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRating()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
-  <div class="ni"     id="n-safety" onclick="showPage('page-safety');setNav('n-safety')"><span class="ni-ic">🦺</span><span class="ni-lb">Безопасность</span></div>
+  <div class="ni"     id="n-map"    onclick="showPage('page-map');setNav('n-map');rMap()"><span class="ni-ic">🗺️</span><span class="ni-lb">Карта</span></div>
 </div>
 
 <!-- MODAL: ADD -->
@@ -1413,6 +1222,26 @@ select.fl-in{appearance:none}
     <button class="sv-btn" onclick="saveName()">СОХРАНИТЬ</button>
   </div>
 </div>
+
+<!-- MODAL: MOVE (карта склада) -->
+<div class="ovl" id="m-move" onclick="cOvl(event,'m-move')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">📍 Отметить перемещение</div>
+    <div class="fl">
+      <span class="fl-lb">Кто идёт</span>
+      <div class="pill-row" id="move-people-pills"></div>
+    </div>
+    <div class="fl">
+      <span class="fl-lb">Куда идёт</span>
+      <div class="pill-row" id="move-zone-pills"></div>
+    </div>
+    <button class="cgate-btn" id="move-btn" style="background:var(--orange)" onclick="confirmMove()">🟠 Отправить уведомление</button>
+  </div>
+</div>
+
+<!-- TOAST: уведомления о перемещении -->
+<div class="wmap-toast-wrap" id="wmap-toast-wrap"></div>
 
 <!-- ═══════════ CONSENT GATE ═══════════ -->
 <div id="consent-gate" class="cgate">
@@ -1594,6 +1423,7 @@ let DB = (()=>{ try{ return JSON.parse(localStorage.getItem('ad_db')||'{}'); }ca
 DB.entries=DB.entries||[]; DB.name=DB.name||''; DB.uid=DB.uid||'';
 DB.emoji=DB.emoji||'👷'; DB.role=DB.role||'Пакет · Упаковщик'; DB.shift=DB.shift||'DARK 22–6';
 DB.notes=DB.notes||[]; DB.consent=DB.consent||null; DB.group=DB.group||'A';
+DB.map=DB.map||{people:{},feed:[]};
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
 let curSt='os', dqMode='today', ws='mon';
@@ -1652,7 +1482,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   pushRank();
   if(needConsent()) showConsentGate();        // первый вход → экран согласия
 });
-function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
+function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); rMap(); }
 
 // Каждый новый месяц пики за прошлые месяцы удаляются — остаётся только текущий месяц.
 // Итоги прошлых месяцев сохранены в рейтинге (Supabase, ключ по месяцу).
@@ -2410,6 +2240,141 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function cOvl(e,id){ if(e.target.id===id) closeModal(id); }
 function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
 function setNav(id){ document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+
+// ══ MAP (карта склада) ═════════════════════════
+// Голая оболочка карты: статичная схема зон + позиции сотрудников, которые
+// хранятся в DB.map (localStorage) и обновляются вручную через уведомления.
+// Структура готова к замене DB.map.people на реальные координаты с бэкенда.
+const WMAP_ZONES=[
+  {key:'recv',    label:'Приёмка',        icon:'📥', x:90,  y:55},
+  {key:'racksA',  label:'Стеллажи А',     icon:'📦', x:237, y:100},
+  {key:'pick',    label:'Комплектация',   icon:'🧰', x:90,  y:150},
+  {key:'racksB',  label:'Стеллажи Б',     icon:'📦', x:90,  y:260},
+  {key:'pack',    label:'Упаковка',       icon:'📮', x:237, y:230},
+  {key:'ship',    label:'Отгрузка',       icon:'🚚', x:237, y:320},
+  {key:'office',  label:'Офис',           icon:'🖥', x:90,  y:345},
+  {key:'entrance',label:'Вход/Выход',     icon:'🚪', x:160, y:402},
+];
+const WMAP_PEOPLE=['Никита','Ира','Дима','Антон','Михалина'];
+const WMAP_PERSON_ICONS={'Никита':'🧑','Ира':'👩','Дима':'👨','Антон':'🧔','Михалина':'👱‍♀️'};
+let moveSelPerson=null, moveSelZone=null;
+
+function personIcon(name){ return WMAP_PERSON_ICONS[name]||'🧑'; }
+
+function personDefaultPos(idx){ const xs=[130,145,160,175,190]; return {x:xs[idx]??160,y:402}; }
+
+function getPersonState(name){
+  if(!DB.map.people[name]){
+    const p=personDefaultPos(WMAP_PEOPLE.indexOf(name));
+    DB.map.people[name]={x:p.x,y:p.y,zoneKey:'entrance',zoneLabel:'Вход/Выход',moving:false};
+  }
+  return DB.map.people[name];
+}
+
+function rMap(){ renderMapPeopleList(); renderMapDots(); renderMapFeed(); }
+
+function renderMapPeopleList(){
+  const wrap=document.getElementById('wmap-people'); if(!wrap) return;
+  wrap.innerHTML=WMAP_PEOPLE.map(name=>{
+    const st=getPersonState(name);
+    return `<div class="wmap-person" onclick="openMoveSheet('${name}')">
+      <div class="wmap-person-ic">${personIcon(name)}</div>
+      <div class="wmap-person-body">
+        <div class="wmap-person-name">${name}</div>
+        <div class="wmap-person-zone">${st.zoneLabel}</div>
+      </div>
+      <div class="wmap-person-r">
+        <div class="wmap-person-go">Отметить →</div>
+        <div class="wmap-person-dot${st.moving?' on':''}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMapDots(){
+  const layer=document.getElementById('wmap-dots-layer'); if(!layer) return;
+  layer.innerHTML=WMAP_PEOPLE.map(name=>{
+    const st=getPersonState(name);
+    return `<circle class="wmap-dot-pulse${st.moving?' wmap-pulse-anim':''}" data-wpulse="${name}" cx="${st.x}" cy="${st.y}" r="5"></circle>
+      <circle class="wmap-dot" data-wdot="${name}" cx="${st.x}" cy="${st.y}" r="5"></circle>
+      <text class="wmap-dot-label${st.moving?' show':''}" data-wlbl="${name}" x="${st.x}" y="${st.y-9}" text-anchor="middle">${name}</text>`;
+  }).join('');
+}
+
+function renderMapFeed(){
+  const wrap=document.getElementById('wmap-feed'); if(!wrap) return;
+  if(!DB.map.feed.length){ wrap.innerHTML='<div class="empty">ПОКА НЕТ ПЕРЕМЕЩЕНИЙ</div>'; return; }
+  wrap.innerHTML=DB.map.feed.map(f=>`<div class="wmap-feed-row"><span class="wmap-feed-dot"></span><span class="wmap-feed-time">${f.time}</span><span class="wmap-feed-text">🟠 <b>${f.name}</b> → ${f.icon} ${f.zoneLabel}</span></div>`).join('');
+}
+
+function openMoveSheet(presetName){
+  moveSelPerson=presetName||null; moveSelZone=null;
+  renderMovePills();
+  openModal('m-move');
+}
+function renderMovePills(){
+  const pp=document.getElementById('move-people-pills');
+  pp.innerHTML=WMAP_PEOPLE.map(n=>`<div class="pill${moveSelPerson===n?' sel':''}" onclick="selectMovePerson('${n}')">${personIcon(n)} ${n}</div>`).join('');
+  const zp=document.getElementById('move-zone-pills');
+  zp.innerHTML=WMAP_ZONES.map(z=>`<div class="pill${moveSelZone===z.key?' sel':''}" onclick="selectMoveZone('${z.key}')">${z.icon} ${z.label}</div>`).join('');
+}
+function selectMovePerson(n){ moveSelPerson=n; renderMovePills(); }
+function selectMoveZone(k){ moveSelZone=k; renderMovePills(); }
+
+function confirmMove(){
+  if(!moveSelPerson){ showMapToast('⚠️ Выбери, кто идёт'); return; }
+  if(!moveSelZone){ showMapToast('⚠️ Выбери, куда идёт'); return; }
+  const zone=WMAP_ZONES.find(z=>z.key===moveSelZone);
+  const st=getPersonState(moveSelPerson);
+
+  // траектория — пунктирная линия от текущей точки к цели
+  const traj=document.createElementNS('http://www.w3.org/2000/svg','line');
+  traj.setAttribute('x1',st.x); traj.setAttribute('y1',st.y);
+  traj.setAttribute('x2',zone.x); traj.setAttribute('y2',zone.y);
+  traj.setAttribute('class','wmap-traj');
+  const trajLayer=document.getElementById('wmap-traj-layer');
+  if(trajLayer){ trajLayer.appendChild(traj); setTimeout(()=>traj.remove(),1800); }
+
+  // анимированное перемещение оранжевой точки на карте
+  const dot=document.querySelector(`[data-wdot="${moveSelPerson}"]`);
+  const pulse=document.querySelector(`[data-wpulse="${moveSelPerson}"]`);
+  const lbl=document.querySelector(`[data-wlbl="${moveSelPerson}"]`);
+  if(dot){ dot.setAttribute('cx',zone.x); dot.setAttribute('cy',zone.y); }
+  if(pulse){ pulse.setAttribute('cx',zone.x); pulse.setAttribute('cy',zone.y); pulse.classList.add('wmap-pulse-anim'); }
+  if(lbl){ lbl.setAttribute('x',zone.x); lbl.setAttribute('y',zone.y-9); lbl.classList.add('show'); }
+
+  st.x=zone.x; st.y=zone.y; st.zoneKey=zone.key; st.zoneLabel=zone.label; st.moving=true;
+  sv();
+
+  showMapToast(`🟠 <b>${moveSelPerson}</b> идёт → ${zone.icon} ${zone.label}`);
+  pushMoveFeed(moveSelPerson,zone);
+  renderMapPeopleList();
+  closeModal('m-move');
+
+  setTimeout(()=>{
+    st.moving=false; sv();
+    if(pulse) pulse.classList.remove('wmap-pulse-anim');
+    if(lbl) lbl.classList.remove('show');
+    renderMapPeopleList();
+  },2400);
+}
+
+function pushMoveFeed(name,zone){
+  const time=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  DB.map.feed.unshift({name,zoneLabel:zone.label,icon:zone.icon,time});
+  DB.map.feed=DB.map.feed.slice(0,30);
+  sv();
+  renderMapFeed();
+}
+
+function showMapToast(html){
+  const wrap=document.getElementById('wmap-toast-wrap'); if(!wrap) return;
+  const el=document.createElement('div');
+  el.className='wmap-toast';
+  el.innerHTML=html;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
 </script>
 </body>
 </html>
