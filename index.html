@@ -383,27 +383,41 @@ select.fl-in{appearance:none}
 .info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
 
-/* ── MAP ── */
+/* ── MAP (Apple Maps / Yanosik-style live board) ── */
 .wmap-info{
   display:flex;gap:8px;align-items:flex-start;
   background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);
   border-radius:10px;padding:10px 12px;margin-bottom:12px;
   font-size:11px;color:var(--blue);line-height:1.5;
 }
+.wmap-armbar{
+  display:none;align-items:center;gap:8px;
+  background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.4);
+  border-radius:10px;padding:10px 12px;margin-bottom:10px;
+  font-size:12px;font-weight:600;color:var(--text);
+  animation:wmapArmIn .2s ease;
+}
+@keyframes wmapArmIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.wmap-armbar b{color:var(--orange)}
+.wmap-armbar-x{margin-left:auto;background:var(--c2);border:1px solid var(--line);border-radius:20px;color:var(--sub);width:22px;height:22px;flex-shrink:0;cursor:pointer;font-size:12px}
 .wmap-wrap{
   position:relative;background:var(--c1);border:1px solid var(--line);
-  border-radius:14px;padding:8px;margin-bottom:12px;overflow:hidden;
+  border-radius:14px;padding:8px;margin-bottom:10px;overflow:hidden;
 }
-.wmap-svg{width:100%;height:auto;display:block}
-.wmap-zone-rect{fill:var(--c2);stroke:var(--line2);stroke-width:1.5}
-.wmap-zone-label{fill:var(--sub);font-family:var(--mono);font-size:7.5px;letter-spacing:.3px;text-transform:uppercase}
-.wmap-traj{stroke:var(--orange);stroke-width:1.6;stroke-dasharray:4 3;fill:none;opacity:.75;animation:wmapDash 1s linear infinite}
+.wmap-svg{width:100%;height:auto;display:block;cursor:pointer;touch-action:manipulation}
+.wmap-svg.armed{cursor:crosshair}
+.wmap-road{stroke:var(--line2);stroke-width:2;stroke-dasharray:1 6;stroke-linecap:round}
+.wmap-zone-label{fill:var(--sub);font-family:var(--mono);font-size:7.5px;letter-spacing:.3px;text-transform:uppercase;pointer-events:none}
+.wmap-traj{stroke:var(--orange);stroke-width:1.6;stroke-dasharray:4 3;fill:none;opacity:.7;animation:wmapDash 1s linear infinite}
 @keyframes wmapDash{to{stroke-dashoffset:-14}}
-.wmap-dot{fill:var(--orange);stroke:#0f0f0f;stroke-width:1.5;transition:cx 1.3s cubic-bezier(.4,0,.2,1),cy 1.3s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 0 5px rgba(249,115,22,.75))}
-.wmap-dot-pulse{fill:none;stroke:var(--orange);stroke-width:1.2;opacity:.6;transition:cx 1.3s cubic-bezier(.4,0,.2,1),cy 1.3s cubic-bezier(.4,0,.2,1)}
-.wmap-pulse-anim{animation:wmapPulse 1.1s ease-out infinite}
-@keyframes wmapPulse{0%{r:5;opacity:.7}100%{r:13;opacity:0}}
-.wmap-dot-label{fill:var(--text);font-family:var(--mono);font-size:6.5px;font-weight:700;opacity:0;transition:x 1.3s cubic-bezier(.4,0,.2,1),y 1.3s cubic-bezier(.4,0,.2,1),opacity .2s ease}
+.wmap-live-ring{fill:none;stroke:var(--orange);stroke-width:1;opacity:.5;animation:wmapBreathe 2.4s ease-in-out infinite;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1)}
+@keyframes wmapBreathe{0%,100%{r:7;opacity:.5}50%{r:11;opacity:.12}}
+.wmap-ping-ring{fill:none;stroke:var(--orange);stroke-width:1.2;opacity:0;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1)}
+.wmap-ping-ring.on{animation:wmapPing 1s ease-out 2}
+@keyframes wmapPing{0%{r:6;opacity:.8}100%{r:17;opacity:0}}
+.wmap-dot{fill:var(--orange);stroke:#0f0f0f;stroke-width:1.5;r:8;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.wmap-dot-init{fill:#0f0f0f;font-family:var(--mono);font-weight:800;font-size:8px;text-anchor:middle;pointer-events:none;transition:x 1.15s cubic-bezier(.4,0,.2,1),y 1.15s cubic-bezier(.4,0,.2,1)}
+.wmap-dot-label{fill:var(--text);font-family:var(--mono);font-size:7px;font-weight:700;opacity:0;pointer-events:none;transition:x 1.15s cubic-bezier(.4,0,.2,1),y 1.15s cubic-bezier(.4,0,.2,1),opacity .2s ease}
 .wmap-dot-label.show{opacity:1}
 .wmap-legend{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
 .wmap-legend-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 5px rgba(249,115,22,.8);flex-shrink:0}
@@ -411,9 +425,10 @@ select.fl-in{appearance:none}
 .wmap-people{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
 .wmap-person{
   display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid var(--line);
-  border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .15s;
+  border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s;
 }
 .wmap-person:active{border-color:var(--orange)}
+.wmap-person.armed{border-color:var(--orange);background:rgba(249,115,22,.08)}
 .wmap-person-ic{font-size:20px;flex-shrink:0}
 .wmap-person-body{flex:1;min-width:0}
 .wmap-person-name{font-size:13px;font-weight:700}
@@ -423,11 +438,6 @@ select.fl-in{appearance:none}
 .wmap-person-dot.on{background:var(--orange);box-shadow:0 0 6px rgba(249,115,22,.8);animation:wmapDotBlink 1s ease-in-out infinite}
 @keyframes wmapDotBlink{0%,100%{opacity:1}50%{opacity:.35}}
 .wmap-person-go{font-family:var(--mono);font-size:8px;color:var(--sub)}
-.wmap-fab{
-  width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;
-  color:#0f0f0f;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:16px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-}
 .wmap-feed-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
 .wmap-feed{display:flex;flex-direction:column;gap:6px}
 .wmap-feed-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:7px 0;border-bottom:1px solid var(--line)}
@@ -435,12 +445,6 @@ select.fl-in{appearance:none}
 .wmap-feed-dot{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0}
 .wmap-feed-time{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0}
 .wmap-feed-text b{color:var(--text)}
-.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
-.pill{
-  padding:8px 12px;background:var(--c2);border:1px solid var(--line);border-radius:20px;
-  color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;
-}
-.pill.sel{background:rgba(249,115,22,.1);border-color:var(--orange);color:var(--orange)}
 .wmap-toast-wrap{position:fixed;top:10px;left:0;right:0;z-index:500;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 14px}
 .wmap-toast{
   background:var(--c1);border:1px solid rgba(249,115,22,.35);border-radius:12px;
@@ -1049,34 +1053,47 @@ select.fl-in{appearance:none}
 
   <div class="pad" style="padding-top:14px;padding-bottom:90px">
 
-    <div class="wmap-info">🚧 Базовая схема склада. Позиции сотрудников обновляются по уведомлениям — скоро подключим автоматическое отслеживание в реальном времени.</div>
+    <div class="wmap-info">📍 Живая карта склада. Выбери сотрудника внизу и тапни по карте — отметишь, где он сейчас находится.</div>
+
+    <div class="wmap-armbar" id="wmap-armbar">
+      📍 Тапни по карте — отметь <b id="wmap-armbar-name"></b>
+      <button class="wmap-armbar-x" onclick="disarmPerson()">✕</button>
+    </div>
 
     <div class="wmap-wrap">
-      <svg class="wmap-svg" id="wmap-svg" viewBox="0 0 320 430" xmlns="http://www.w3.org/2000/svg">
-        <rect x="8" y="8" width="304" height="414" rx="12" style="fill:none;stroke:var(--line2);stroke-width:2"/>
+      <svg class="wmap-svg" id="wmap-svg" viewBox="0 0 320 430" xmlns="http://www.w3.org/2000/svg" onclick="mapTap(event)">
+        <defs>
+          <pattern id="wmapGrid" width="16" height="16" patternUnits="userSpaceOnUse">
+            <circle cx="1.2" cy="1.2" r="1" fill="var(--line)"/>
+          </pattern>
+        </defs>
+        <rect x="8" y="8" width="304" height="414" rx="12" fill="url(#wmapGrid)" style="stroke:var(--line2);stroke-width:2"/>
 
-        <rect x="20" y="20" width="140" height="70" rx="8" class="wmap-zone-rect"/>
+        <!-- главный проход (условная «дорога») -->
+        <line x1="167" y1="10" x2="167" y2="418" class="wmap-road"/>
+
+        <rect x="20" y="20" width="140" height="70" rx="8" style="fill:var(--blue);fill-opacity:.1;stroke:var(--blue);stroke-opacity:.4"/>
         <text x="90" y="59" text-anchor="middle" class="wmap-zone-label">📥 Приёмка</text>
 
-        <rect x="175" y="20" width="125" height="160" rx="8" class="wmap-zone-rect"/>
+        <rect x="175" y="20" width="125" height="160" rx="8" style="fill:var(--purple);fill-opacity:.1;stroke:var(--purple);stroke-opacity:.4"/>
         <text x="237" y="103" text-anchor="middle" class="wmap-zone-label">📦 Стеллажи А</text>
 
-        <rect x="20" y="100" width="140" height="100" rx="8" class="wmap-zone-rect"/>
+        <rect x="20" y="100" width="140" height="100" rx="8" style="fill:var(--green);fill-opacity:.1;stroke:var(--green);stroke-opacity:.4"/>
         <text x="90" y="153" text-anchor="middle" class="wmap-zone-label">🧰 Комплектация</text>
 
-        <rect x="20" y="210" width="140" height="100" rx="8" class="wmap-zone-rect"/>
+        <rect x="20" y="210" width="140" height="100" rx="8" style="fill:var(--purple);fill-opacity:.1;stroke:var(--purple);stroke-opacity:.4"/>
         <text x="90" y="263" text-anchor="middle" class="wmap-zone-label">📦 Стеллажи Б</text>
 
-        <rect x="175" y="190" width="125" height="80" rx="8" class="wmap-zone-rect"/>
+        <rect x="175" y="190" width="125" height="80" rx="8" style="fill:var(--orange);fill-opacity:.1;stroke:var(--orange);stroke-opacity:.4"/>
         <text x="237" y="233" text-anchor="middle" class="wmap-zone-label">📮 Упаковка</text>
 
-        <rect x="175" y="280" width="125" height="80" rx="8" class="wmap-zone-rect"/>
+        <rect x="175" y="280" width="125" height="80" rx="8" style="fill:var(--blue);fill-opacity:.1;stroke:var(--blue);stroke-opacity:.4"/>
         <text x="237" y="323" text-anchor="middle" class="wmap-zone-label">🚚 Отгрузка</text>
 
-        <rect x="20" y="320" width="140" height="50" rx="8" class="wmap-zone-rect"/>
+        <rect x="20" y="320" width="140" height="50" rx="8" style="fill:var(--sub);fill-opacity:.08;stroke:var(--line2)"/>
         <text x="90" y="348" text-anchor="middle" class="wmap-zone-label">🖥 Офис</text>
 
-        <rect x="120" y="385" width="80" height="35" rx="8" class="wmap-zone-rect" style="fill:rgba(232,255,0,.06);stroke:var(--accent2)"/>
+        <rect x="120" y="385" width="80" height="35" rx="8" style="fill:var(--accent);fill-opacity:.08;stroke:var(--accent2)"/>
         <text x="160" y="405" text-anchor="middle" class="wmap-zone-label" style="fill:var(--accent)">🚪 Вход/Выход</text>
 
         <g id="wmap-traj-layer"></g>
@@ -1084,9 +1101,7 @@ select.fl-in{appearance:none}
       </svg>
     </div>
 
-    <div class="wmap-legend"><span class="wmap-legend-dot"></span> оранжевая точка — сотрудник в движении по складу</div>
-
-    <button class="wmap-fab" onclick="openMoveSheet()">📍 Отметить перемещение сотрудника</button>
+    <div class="wmap-legend"><span class="wmap-legend-dot"></span> оранжевая точка с буквой имени — текущее место сотрудника</div>
 
     <div class="wmap-people-title">Сотрудники</div>
     <div class="wmap-people" id="wmap-people"></div>
@@ -1220,23 +1235,6 @@ select.fl-in{appearance:none}
     <div class="sh-title">Имя</div>
     <div class="fl"><span class="fl-lb">Твоё имя</span><input class="fl-in" type="text" id="in-name" placeholder="Введи имя"/></div>
     <button class="sv-btn" onclick="saveName()">СОХРАНИТЬ</button>
-  </div>
-</div>
-
-<!-- MODAL: MOVE (карта склада) -->
-<div class="ovl" id="m-move" onclick="cOvl(event,'m-move')">
-  <div class="sheet">
-    <div class="sh-handle"></div>
-    <div class="sh-title">📍 Отметить перемещение</div>
-    <div class="fl">
-      <span class="fl-lb">Кто идёт</span>
-      <div class="pill-row" id="move-people-pills"></div>
-    </div>
-    <div class="fl">
-      <span class="fl-lb">Куда идёт</span>
-      <div class="pill-row" id="move-zone-pills"></div>
-    </div>
-    <button class="cgate-btn" id="move-btn" style="background:var(--orange)" onclick="confirmMove()">🟠 Отправить уведомление</button>
   </div>
 </div>
 
@@ -2241,10 +2239,12 @@ function cOvl(e,id){ if(e.target.id===id) closeModal(id); }
 function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
 function setNav(id){ document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
 
-// ══ MAP (карта склада) ═════════════════════════
+// ══ MAP (живая карта склада, в духе Apple Maps / Yanosik) ═════
 // Голая оболочка карты: статичная схема зон + позиции сотрудников, которые
-// хранятся в DB.map (localStorage) и обновляются вручную через уведомления.
-// Структура готова к замене DB.map.people на реальные координаты с бэкенда.
+// хранятся в DB.map (localStorage). Функционал — только отметить, где сейчас
+// находится человек: выбрал сотрудника → тапнул по карте → точка на карте
+// плавно переезжает в место тапа. Структура готова к замене DB.map.people
+// на реальные координаты с бэкенда/трекера.
 const WMAP_ZONES=[
   {key:'recv',    label:'Приёмка',        icon:'📥', x:90,  y:55},
   {key:'racksA',  label:'Стеллажи А',     icon:'📦', x:237, y:100},
@@ -2257,9 +2257,10 @@ const WMAP_ZONES=[
 ];
 const WMAP_PEOPLE=['Никита','Ира','Дима','Антон','Михалина'];
 const WMAP_PERSON_ICONS={'Никита':'🧑','Ира':'👩','Дима':'👨','Антон':'🧔','Михалина':'👱‍♀️'};
-let moveSelPerson=null, moveSelZone=null;
+let wmapArmed=null; // имя сотрудника, для которого ждём тап по карте
 
 function personIcon(name){ return WMAP_PERSON_ICONS[name]||'🧑'; }
+function personInitial(name){ return name.charAt(0).toUpperCase(); }
 
 function personDefaultPos(idx){ const xs=[130,145,160,175,190]; return {x:xs[idx]??160,y:402}; }
 
@@ -2271,20 +2272,26 @@ function getPersonState(name){
   return DB.map.people[name];
 }
 
-function rMap(){ renderMapPeopleList(); renderMapDots(); renderMapFeed(); }
+function nearestZone(x,y){
+  let best=WMAP_ZONES[0], bd=Infinity;
+  for(const z of WMAP_ZONES){ const d=(z.x-x)**2+(z.y-y)**2; if(d<bd){ bd=d; best=z; } }
+  return best;
+}
+
+function rMap(){ renderMapPeopleList(); renderMapDots(); renderMapFeed(); updateArmUI(); }
 
 function renderMapPeopleList(){
   const wrap=document.getElementById('wmap-people'); if(!wrap) return;
   wrap.innerHTML=WMAP_PEOPLE.map(name=>{
     const st=getPersonState(name);
-    return `<div class="wmap-person" onclick="openMoveSheet('${name}')">
+    return `<div class="wmap-person${wmapArmed===name?' armed':''}" onclick="armPerson('${name}')">
       <div class="wmap-person-ic">${personIcon(name)}</div>
       <div class="wmap-person-body">
         <div class="wmap-person-name">${name}</div>
         <div class="wmap-person-zone">${st.zoneLabel}</div>
       </div>
       <div class="wmap-person-r">
-        <div class="wmap-person-go">Отметить →</div>
+        <div class="wmap-person-go">${wmapArmed===name?'Тапни карту':'Отметить →'}</div>
         <div class="wmap-person-dot${st.moving?' on':''}"></div>
       </div>
     </div>`;
@@ -2295,68 +2302,88 @@ function renderMapDots(){
   const layer=document.getElementById('wmap-dots-layer'); if(!layer) return;
   layer.innerHTML=WMAP_PEOPLE.map(name=>{
     const st=getPersonState(name);
-    return `<circle class="wmap-dot-pulse${st.moving?' wmap-pulse-anim':''}" data-wpulse="${name}" cx="${st.x}" cy="${st.y}" r="5"></circle>
-      <circle class="wmap-dot" data-wdot="${name}" cx="${st.x}" cy="${st.y}" r="5"></circle>
-      <text class="wmap-dot-label${st.moving?' show':''}" data-wlbl="${name}" x="${st.x}" y="${st.y-9}" text-anchor="middle">${name}</text>`;
+    return `<circle class="wmap-live-ring" data-wring="${name}" cx="${st.x}" cy="${st.y}" r="7"></circle>
+      <circle class="wmap-ping-ring${st.moving?' on':''}" data-wpulse="${name}" cx="${st.x}" cy="${st.y}" r="6"></circle>
+      <circle class="wmap-dot" data-wdot="${name}" cx="${st.x}" cy="${st.y}"></circle>
+      <text class="wmap-dot-init" data-winit="${name}" x="${st.x}" y="${st.y+3}">${personInitial(name)}</text>
+      <text class="wmap-dot-label${st.moving?' show':''}" data-wlbl="${name}" x="${st.x}" y="${st.y-13}" text-anchor="middle">${name}</text>`;
   }).join('');
 }
 
 function renderMapFeed(){
   const wrap=document.getElementById('wmap-feed'); if(!wrap) return;
-  if(!DB.map.feed.length){ wrap.innerHTML='<div class="empty">ПОКА НЕТ ПЕРЕМЕЩЕНИЙ</div>'; return; }
-  wrap.innerHTML=DB.map.feed.map(f=>`<div class="wmap-feed-row"><span class="wmap-feed-dot"></span><span class="wmap-feed-time">${f.time}</span><span class="wmap-feed-text">🟠 <b>${f.name}</b> → ${f.icon} ${f.zoneLabel}</span></div>`).join('');
+  if(!DB.map.feed.length){ wrap.innerHTML='<div class="empty">ПОКА НЕТ ОТМЕТОК</div>'; return; }
+  wrap.innerHTML=DB.map.feed.map(f=>`<div class="wmap-feed-row"><span class="wmap-feed-dot"></span><span class="wmap-feed-time">${f.time}</span><span class="wmap-feed-text">🟠 <b>${f.name}</b> сейчас у: ${f.icon} ${f.zoneLabel}</span></div>`).join('');
 }
 
-function openMoveSheet(presetName){
-  moveSelPerson=presetName||null; moveSelZone=null;
-  renderMovePills();
-  openModal('m-move');
+// ── выбор сотрудника + тап по карте (как в Yanosik: выбрал → отметил точку) ──
+function armPerson(name){
+  wmapArmed = wmapArmed===name ? null : name;
+  updateArmUI();
+  renderMapPeopleList();
 }
-function renderMovePills(){
-  const pp=document.getElementById('move-people-pills');
-  pp.innerHTML=WMAP_PEOPLE.map(n=>`<div class="pill${moveSelPerson===n?' sel':''}" onclick="selectMovePerson('${n}')">${personIcon(n)} ${n}</div>`).join('');
-  const zp=document.getElementById('move-zone-pills');
-  zp.innerHTML=WMAP_ZONES.map(z=>`<div class="pill${moveSelZone===z.key?' sel':''}" onclick="selectMoveZone('${z.key}')">${z.icon} ${z.label}</div>`).join('');
+function disarmPerson(){ wmapArmed=null; updateArmUI(); renderMapPeopleList(); }
+function updateArmUI(){
+  const bar=document.getElementById('wmap-armbar');
+  const nameEl=document.getElementById('wmap-armbar-name');
+  const svg=document.getElementById('wmap-svg');
+  if(!bar||!nameEl||!svg) return;
+  if(wmapArmed){
+    bar.style.display='flex'; nameEl.textContent=wmapArmed; svg.classList.add('armed');
+  }else{
+    bar.style.display='none'; svg.classList.remove('armed');
+  }
 }
-function selectMovePerson(n){ moveSelPerson=n; renderMovePills(); }
-function selectMoveZone(k){ moveSelZone=k; renderMovePills(); }
 
-function confirmMove(){
-  if(!moveSelPerson){ showMapToast('⚠️ Выбери, кто идёт'); return; }
-  if(!moveSelZone){ showMapToast('⚠️ Выбери, куда идёт'); return; }
-  const zone=WMAP_ZONES.find(z=>z.key===moveSelZone);
-  const st=getPersonState(moveSelPerson);
+function mapTap(evt){
+  if(!wmapArmed){ showMapToast('👇 Сначала выбери сотрудника в списке ниже'); return; }
+  const svg=document.getElementById('wmap-svg');
+  const pt=svg.createSVGPoint();
+  pt.x=evt.clientX; pt.y=evt.clientY;
+  const loc=pt.matrixTransform(svg.getScreenCTM().inverse());
+  const x=Math.max(16,Math.min(304,Math.round(loc.x)));
+  const y=Math.max(16,Math.min(418,Math.round(loc.y)));
+  placePerson(wmapArmed,x,y);
+  disarmPerson();
+}
 
-  // траектория — пунктирная линия от текущей точки к цели
+function placePerson(name,x,y){
+  const st=getPersonState(name);
+  const zone=nearestZone(x,y);
+
+  // траектория — пунктирная линия от текущей точки к месту тапа
   const traj=document.createElementNS('http://www.w3.org/2000/svg','line');
   traj.setAttribute('x1',st.x); traj.setAttribute('y1',st.y);
-  traj.setAttribute('x2',zone.x); traj.setAttribute('y2',zone.y);
+  traj.setAttribute('x2',x); traj.setAttribute('y2',y);
   traj.setAttribute('class','wmap-traj');
   const trajLayer=document.getElementById('wmap-traj-layer');
   if(trajLayer){ trajLayer.appendChild(traj); setTimeout(()=>traj.remove(),1800); }
 
-  // анимированное перемещение оранжевой точки на карте
-  const dot=document.querySelector(`[data-wdot="${moveSelPerson}"]`);
-  const pulse=document.querySelector(`[data-wpulse="${moveSelPerson}"]`);
-  const lbl=document.querySelector(`[data-wlbl="${moveSelPerson}"]`);
-  if(dot){ dot.setAttribute('cx',zone.x); dot.setAttribute('cy',zone.y); }
-  if(pulse){ pulse.setAttribute('cx',zone.x); pulse.setAttribute('cy',zone.y); pulse.classList.add('wmap-pulse-anim'); }
-  if(lbl){ lbl.setAttribute('x',zone.x); lbl.setAttribute('y',zone.y-9); lbl.classList.add('show'); }
+  // плавный переезд оранжевой точки в место тапа
+  const ring=document.querySelector(`[data-wring="${name}"]`);
+  const pulse=document.querySelector(`[data-wpulse="${name}"]`);
+  const dot=document.querySelector(`[data-wdot="${name}"]`);
+  const init=document.querySelector(`[data-winit="${name}"]`);
+  const lbl=document.querySelector(`[data-wlbl="${name}"]`);
+  if(ring){ ring.setAttribute('cx',x); ring.setAttribute('cy',y); }
+  if(pulse){ pulse.setAttribute('cx',x); pulse.setAttribute('cy',y); pulse.classList.remove('on'); void pulse.offsetWidth; pulse.classList.add('on'); }
+  if(dot){ dot.setAttribute('cx',x); dot.setAttribute('cy',y); }
+  if(init){ init.setAttribute('x',x); init.setAttribute('y',y+3); }
+  if(lbl){ lbl.setAttribute('x',x); lbl.setAttribute('y',y-13); lbl.classList.add('show'); }
 
-  st.x=zone.x; st.y=zone.y; st.zoneKey=zone.key; st.zoneLabel=zone.label; st.moving=true;
+  st.x=x; st.y=y; st.zoneKey=zone.key; st.zoneLabel=zone.label; st.moving=true;
   sv();
 
-  showMapToast(`🟠 <b>${moveSelPerson}</b> идёт → ${zone.icon} ${zone.label}`);
-  pushMoveFeed(moveSelPerson,zone);
+  showMapToast(`🟠 <b>${name}</b> отмечен(а) у: ${zone.icon} ${zone.label}`);
+  pushMoveFeed(name,zone);
   renderMapPeopleList();
-  closeModal('m-move');
 
   setTimeout(()=>{
     st.moving=false; sv();
-    if(pulse) pulse.classList.remove('wmap-pulse-anim');
+    if(pulse) pulse.classList.remove('on');
     if(lbl) lbl.classList.remove('show');
     renderMapPeopleList();
-  },2400);
+  },2200);
 }
 
 function pushMoveFeed(name,zone){
