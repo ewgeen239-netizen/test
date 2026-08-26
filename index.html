@@ -406,8 +406,16 @@ select.fl-in{appearance:none}
 }
 .wmap-svg{width:100%;height:auto;display:block;cursor:pointer;touch-action:manipulation}
 .wmap-svg.armed{cursor:crosshair}
-.wmap-road{stroke:var(--line2);stroke-width:2;stroke-dasharray:1 6;stroke-linecap:round}
-.wmap-zone-label{fill:var(--sub);font-family:var(--mono);font-size:7.5px;letter-spacing:.3px;text-transform:uppercase;pointer-events:none}
+.wmap-road{stroke:var(--line2);stroke-width:1.4;stroke-dasharray:1 6;stroke-linecap:round;opacity:.8}
+.wmap-zone-label{fill:var(--sub);font-family:var(--mono);font-size:6.5px;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
+.wmap-wall{fill:none;stroke:var(--line2);stroke-width:1.3}
+.wmap-rack{stroke-width:1;pointer-events:none}
+.wmap-dock{fill:var(--c2);stroke:var(--line2);stroke-width:1.2}
+.wmap-dock-lbl{fill:var(--sub);font-family:var(--mono);font-size:6px;text-anchor:middle;pointer-events:none}
+.wmap-prop{fill:var(--sub);fill-opacity:.35;stroke:none;pointer-events:none}
+.wmap-door-arc{fill:none;stroke:var(--line2);stroke-width:1;stroke-dasharray:2 2;pointer-events:none}
+.wmap-door-leaf{stroke:var(--line2);stroke-width:1.3;pointer-events:none}
+.wmap-compass{fill:var(--dim);font-family:var(--mono);font-size:7px;font-weight:700;pointer-events:none}
 .wmap-traj{stroke:var(--orange);stroke-width:1.6;stroke-dasharray:4 3;fill:none;opacity:.7;animation:wmapDash 1s linear infinite}
 @keyframes wmapDash{to{stroke-dashoffset:-14}}
 .wmap-live-ring{fill:none;stroke:var(--orange);stroke-width:1;opacity:.5;animation:wmapBreathe 2.4s ease-in-out infinite;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1)}
@@ -1067,34 +1075,92 @@ select.fl-in{appearance:none}
             <circle cx="1.2" cy="1.2" r="1" fill="var(--line)"/>
           </pattern>
         </defs>
-        <rect x="8" y="8" width="304" height="414" rx="12" fill="url(#wmapGrid)" style="stroke:var(--line2);stroke-width:2"/>
 
-        <!-- главный проход (условная «дорога») -->
+        <!-- корпус здания -->
+        <rect x="8" y="8" width="304" height="414" rx="3" fill="url(#wmapGrid)" class="wmap-wall"/>
+
+        <!-- главный проход -->
         <line x1="167" y1="10" x2="167" y2="418" class="wmap-road"/>
 
-        <rect x="20" y="20" width="140" height="70" rx="8" style="fill:var(--blue);fill-opacity:.1;stroke:var(--blue);stroke-opacity:.4"/>
-        <text x="90" y="59" text-anchor="middle" class="wmap-zone-label">📥 Приёмка</text>
+        <!-- ═ ПРИЁМКА ═ -->
+        <rect x="20" y="20" width="140" height="70" rx="2" style="fill:var(--blue);fill-opacity:.05" class="wmap-wall"/>
+        <rect x="34" y="12" width="18" height="8" class="wmap-dock"/><text x="43" y="10" class="wmap-dock-lbl">D1</text>
+        <rect x="66" y="12" width="18" height="8" class="wmap-dock"/><text x="75" y="10" class="wmap-dock-lbl">D2</text>
+        <rect x="98" y="12" width="18" height="8" class="wmap-dock"/><text x="107" y="10" class="wmap-dock-lbl">D3</text>
+        <rect x="30" y="76" width="7" height="7" rx="1" class="wmap-prop"/>
+        <rect x="42" y="76" width="7" height="7" rx="1" class="wmap-prop"/>
+        <rect x="54" y="76" width="7" height="7" rx="1" class="wmap-prop"/>
+        <text x="24" y="30" class="wmap-zone-label">Приёмка</text>
 
-        <rect x="175" y="20" width="125" height="160" rx="8" style="fill:var(--purple);fill-opacity:.1;stroke:var(--purple);stroke-opacity:.4"/>
-        <text x="237" y="103" text-anchor="middle" class="wmap-zone-label">📦 Стеллажи А</text>
+        <!-- ═ СТЕЛЛАЖИ А ═ -->
+        <rect x="175" y="20" width="125" height="160" rx="2" style="fill:var(--purple);fill-opacity:.05" class="wmap-wall"/>
+        <text x="179" y="30" class="wmap-zone-label">Стеллажи A</text>
+        <rect x="181" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="204" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="227" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="250" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <g class="wmap-compass" transform="translate(276,28)">
+          <line x1="0" y1="9" x2="0" y2="-3" stroke="var(--dim)" stroke-width="1"/>
+          <path d="M0,-3 L-3,3 L3,3 Z" fill="var(--dim)"/>
+          <text x="0" y="17" text-anchor="middle" font-size="6">N</text>
+        </g>
 
-        <rect x="20" y="100" width="140" height="100" rx="8" style="fill:var(--green);fill-opacity:.1;stroke:var(--green);stroke-opacity:.4"/>
-        <text x="90" y="153" text-anchor="middle" class="wmap-zone-label">🧰 Комплектация</text>
+        <!-- ═ КОМПЛЕКТАЦИЯ ═ -->
+        <rect x="20" y="100" width="140" height="100" rx="2" style="fill:var(--green);fill-opacity:.05" class="wmap-wall"/>
+        <text x="24" y="110" class="wmap-zone-label">Комплектация</text>
+        <rect x="28" y="118" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
+        <rect x="74" y="118" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
+        <rect x="120" y="118" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
+        <rect x="28" y="152" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
+        <rect x="74" y="152" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
+        <rect x="120" y="152" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
 
-        <rect x="20" y="210" width="140" height="100" rx="8" style="fill:var(--purple);fill-opacity:.1;stroke:var(--purple);stroke-opacity:.4"/>
-        <text x="90" y="263" text-anchor="middle" class="wmap-zone-label">📦 Стеллажи Б</text>
+        <!-- ═ СТЕЛЛАЖИ Б ═ -->
+        <rect x="20" y="210" width="140" height="100" rx="2" style="fill:var(--purple);fill-opacity:.05" class="wmap-wall"/>
+        <text x="24" y="220" class="wmap-zone-label">Стеллажи Б</text>
+        <rect x="28" y="228" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="28" y="242" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="28" y="256" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="28" y="270" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
+        <rect x="28" y="284" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
 
-        <rect x="175" y="190" width="125" height="80" rx="8" style="fill:var(--orange);fill-opacity:.1;stroke:var(--orange);stroke-opacity:.4"/>
-        <text x="237" y="233" text-anchor="middle" class="wmap-zone-label">📮 Упаковка</text>
+        <!-- ═ УПАКОВКА ═ -->
+        <rect x="175" y="190" width="125" height="80" rx="2" style="fill:var(--orange);fill-opacity:.05" class="wmap-wall"/>
+        <text x="179" y="200" class="wmap-zone-label">Упаковка</text>
+        <line x1="185" y1="228" x2="285" y2="228" style="stroke:var(--orange);stroke-opacity:.5;stroke-width:1.5"/>
+        <line x1="190" y1="224" x2="190" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="200" y1="224" x2="200" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="210" y1="224" x2="210" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="220" y1="224" x2="220" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="230" y1="224" x2="230" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="240" y1="224" x2="240" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="250" y1="224" x2="250" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="260" y1="224" x2="260" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="270" y1="224" x2="270" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <line x1="280" y1="224" x2="280" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
+        <rect x="190" y="242" width="26" height="14" rx="1" style="fill:var(--orange);fill-opacity:.14;stroke:var(--orange);stroke-opacity:.35" class="wmap-rack"/>
+        <rect x="254" y="242" width="26" height="14" rx="1" style="fill:var(--orange);fill-opacity:.14;stroke:var(--orange);stroke-opacity:.35" class="wmap-rack"/>
 
-        <rect x="175" y="280" width="125" height="80" rx="8" style="fill:var(--blue);fill-opacity:.1;stroke:var(--blue);stroke-opacity:.4"/>
-        <text x="237" y="323" text-anchor="middle" class="wmap-zone-label">🚚 Отгрузка</text>
+        <!-- ═ ОТГРУЗКА ═ -->
+        <rect x="175" y="280" width="125" height="80" rx="2" style="fill:var(--blue);fill-opacity:.05" class="wmap-wall"/>
+        <text x="179" y="290" class="wmap-zone-label">Отгрузка</text>
+        <rect x="300" y="295" width="10" height="18" class="wmap-dock"/><text x="292" y="308" class="wmap-dock-lbl">D4</text>
+        <rect x="300" y="325" width="10" height="18" class="wmap-dock"/><text x="292" y="338" class="wmap-dock-lbl">D5</text>
+        <rect x="255" y="345" width="7" height="7" rx="1" class="wmap-prop"/>
+        <rect x="267" y="345" width="7" height="7" rx="1" class="wmap-prop"/>
 
-        <rect x="20" y="320" width="140" height="50" rx="8" style="fill:var(--sub);fill-opacity:.08;stroke:var(--line2)"/>
-        <text x="90" y="348" text-anchor="middle" class="wmap-zone-label">🖥 Офис</text>
+        <!-- ═ ОФИС ═ -->
+        <rect x="20" y="320" width="140" height="50" rx="2" style="fill:var(--sub);fill-opacity:.06" class="wmap-wall"/>
+        <text x="24" y="330" class="wmap-zone-label">Офис</text>
+        <rect x="34" y="348" width="24" height="10" rx="1" class="wmap-prop"/>
+        <path d="M 150 320 A 12 12 0 0 1 138 332" class="wmap-door-arc"/>
+        <line x1="150" y1="320" x2="138" y2="332" class="wmap-door-leaf"/>
 
-        <rect x="120" y="385" width="80" height="35" rx="8" style="fill:var(--accent);fill-opacity:.08;stroke:var(--accent2)"/>
-        <text x="160" y="405" text-anchor="middle" class="wmap-zone-label" style="fill:var(--accent)">🚪 Вход/Выход</text>
+        <!-- ═ ВХОД / ВЫХОД ═ -->
+        <rect x="120" y="385" width="80" height="35" rx="2" style="fill:var(--accent);fill-opacity:.08;stroke:var(--accent2);stroke-opacity:.5" class="wmap-wall"/>
+        <path d="M 142 420 A 34 34 0 0 1 176 386" class="wmap-door-arc"/>
+        <line x1="142" y1="420" x2="176" y2="386" class="wmap-door-leaf"/>
+        <text x="160" y="393" text-anchor="middle" class="wmap-zone-label" style="fill:var(--accent)">Вход / Выход</text>
 
         <g id="wmap-traj-layer"></g>
         <g id="wmap-dots-layer"></g>
@@ -2262,7 +2328,7 @@ let wmapArmed=null; // имя сотрудника, для которого жд
 function personIcon(name){ return WMAP_PERSON_ICONS[name]||'🧑'; }
 function personInitial(name){ return name.charAt(0).toUpperCase(); }
 
-function personDefaultPos(idx){ const xs=[130,145,160,175,190]; return {x:xs[idx]??160,y:402}; }
+function personDefaultPos(idx){ const xs=[130,145,160,175,190]; return {x:xs[idx]??160,y:411}; }
 
 function getPersonState(name){
   if(!DB.map.people[name]){
