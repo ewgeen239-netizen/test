@@ -216,6 +216,35 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .ab-w{grid-column:1/-1;display:flex;align-items:center;gap:11px;padding:12px 13px}
 .ab-w .ab-ic{margin-bottom:0;font-size:20px}
 
+/* ── QUICK ADD (инлайн-запись смены прямо в панели станции) ── */
+.qa{--qc:var(--accent);--qcbg:rgba(232,255,0,.08);margin:0 14px 12px;background:var(--c1);border:1px solid var(--line);border-radius:14px;padding:13px}
+.qa-t{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:10px}
+.qa-dq{display:flex;gap:6px;margin-bottom:8px}
+.qa-dqb{flex:1;padding:8px;background:var(--c2);border:1px solid var(--line);border-radius:8px;color:var(--sub);font-family:var(--mono);font-size:10px;cursor:pointer;text-align:center;letter-spacing:1px;transition:all .15s}
+.qa-dqb.sel{background:var(--qcbg);border-color:var(--qc);color:var(--qc)}
+.qa-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.qa-f{display:flex;flex-direction:column}
+.qa-lb{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:4px}
+.qa-in{width:100%;background:var(--c2);border:1px solid var(--line2);border-radius:10px;padding:10px 11px;color:var(--text);font-family:var(--mono);font-size:15px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.qa-in:focus{border-color:var(--qc)}
+.qa-in::placeholder{color:var(--dim)}
+.qa-in::-webkit-inner-spin-button{display:none}
+.qa-in::-webkit-calendar-picker-indicator{filter:invert(.55);cursor:pointer}
+.qa-dur{display:flex;align-items:center;justify-content:space-between;background:var(--c2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;transition:all .15s}
+.qa-dur b{color:var(--text);font-size:13px;letter-spacing:0;text-transform:none}
+.qa-dur.on{border-color:var(--qc);background:var(--qcbg)}
+.qa-dur.on b{color:var(--qc)}
+.qa-prev{display:none;background:var(--qcbg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:9px}
+.qa-prev.show{display:block}
+.qa-pr{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;margin-bottom:3px}
+.qa-pr:last-child{margin-bottom:0}
+.qa-pk{color:var(--sub)}
+.qa-pv{color:var(--qc);font-weight:600}
+.qa-save{width:100%;padding:13px;background:var(--accent);border:none;border-radius:11px;color:#000;font-size:14px;font-weight:800;cursor:pointer;transition:all .15s}
+.qa-save:active{opacity:.8}
+.qa-save.ok{background:var(--green);color:#fff}
+.qa-save.err{background:var(--c2);color:var(--orange);border:1px solid rgba(249,115,22,.35)}
+
 /* ── NOTES ── */
 .note-wrap{background:var(--c1);border:1px solid var(--line2);border-radius:12px;padding:2px;display:flex;gap:0}
 .note-ta{flex:1;background:none;border:none;padding:11px 13px;color:var(--text);font-family:var(--sans);font-size:14px;resize:none;outline:none;border-radius:10px;line-height:1.5}
@@ -606,10 +635,10 @@ select.fl-in{appearance:none}
       <div class="bs"><div><div class="bs-lbl">Премия · месяц</div><div class="bs-fx" id="os-fx">— × —</div></div><div class="bs-amt" id="os-bon">0.00<span class="bs-cur">zł</span></div></div>
     </div>
     <div class="mmini"><div class="mc"><div class="mc-v" id="os-mp">—</div><div class="mc-l">Пики</div></div><div class="mc"><div class="mc-v" id="os-mb" style="color:var(--green)">—</div><div class="mc-l">Бонус</div></div><div class="mc"><div class="mc-v" id="os-ms">—</div><div class="mc-l">Смен</div></div></div>
+    <div class="qa" id="qa-os"></div>
     <div class="agrid">
-      <button class="ab" onclick="openAdd('os')"><span class="ab-ic">⚡</span><span class="ab-nm">Добавить</span><span class="ab-sb">Новая запись</span></button>
       <button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button>
-      <button class="ab ab-w" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><div><span class="ab-nm">Ставки OS</span><span class="ab-sb">Бонусная программа</span></div></button>
+      <button class="ab" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><span class="ab-nm">Ставки OS</span><span class="ab-sb">Бонусная программа</span></button>
     </div>
   </div>
 
@@ -627,7 +656,8 @@ select.fl-in{appearance:none}
       <div class="bs"><div><div class="bs-lbl">Премия · месяц</div><div class="bs-fx" id="pa-fx">— × —</div></div><div class="bs-amt" id="pa-bon" style="color:var(--blue)">0.00<span class="bs-cur">zł</span></div></div>
     </div>
     <div class="mmini"><div class="mc"><div class="mc-v" id="pa-mp">—</div><div class="mc-l">Пики</div></div><div class="mc"><div class="mc-v" id="pa-mb" style="color:var(--green)">—</div><div class="mc-l">Бонус</div></div><div class="mc"><div class="mc-v" id="pa-ms">—</div><div class="mc-l">Смен</div></div></div>
-    <div class="agrid"><button class="ab" onclick="openAdd('pa')"><span class="ab-ic">⚡</span><span class="ab-nm">Добавить</span><span class="ab-sb">Новая запись</span></button><button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button><button class="ab ab-w" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><div><span class="ab-nm">Ставки PA</span><span class="ab-sb">Бонусная программа</span></div></button></div>
+    <div class="qa" id="qa-pa"></div>
+    <div class="agrid"><button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button><button class="ab" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><span class="ab-nm">Ставки PA</span><span class="ab-sb">Бонусная программа</span></button></div>
   </div>
 
   <!-- SIO -->
@@ -644,7 +674,8 @@ select.fl-in{appearance:none}
       <div class="bs"><div><div class="bs-lbl">Премия · месяц</div><div class="bs-fx" id="sio-fx">— × —</div></div><div class="bs-amt" id="sio-bon" style="color:var(--purple)">0.00<span class="bs-cur">zł</span></div></div>
     </div>
     <div class="mmini"><div class="mc"><div class="mc-v" id="sio-mp">—</div><div class="mc-l">Пики</div></div><div class="mc"><div class="mc-v" id="sio-mb" style="color:var(--green)">—</div><div class="mc-l">Бонус</div></div><div class="mc"><div class="mc-v" id="sio-ms">—</div><div class="mc-l">Смен</div></div></div>
-    <div class="agrid"><button class="ab" onclick="openAdd('sio')"><span class="ab-ic">⚡</span><span class="ab-nm">Добавить</span><span class="ab-sb">Новая запись</span></button><button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button><button class="ab ab-w" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><div><span class="ab-nm">Ставки SIO</span><span class="ab-sb">Бонусная программа</span></div></button></div>
+    <div class="qa" id="qa-sio"></div>
+    <div class="agrid"><button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button><button class="ab" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><span class="ab-nm">Ставки SIO</span><span class="ab-sb">Бонусная программа</span></button></div>
   </div>
 
   <!-- PC -->
@@ -661,7 +692,8 @@ select.fl-in{appearance:none}
       <div class="bs"><div><div class="bs-lbl">Премия · месяц</div><div class="bs-fx" id="pc-fx">— × —</div></div><div class="bs-amt" id="pc-bon" style="color:var(--orange)">0.00<span class="bs-cur">zł</span></div></div>
     </div>
     <div class="mmini"><div class="mc"><div class="mc-v" id="pc-mp">—</div><div class="mc-l">Пики</div></div><div class="mc"><div class="mc-v" id="pc-mb" style="color:var(--green)">—</div><div class="mc-l">Бонус</div></div><div class="mc"><div class="mc-v" id="pc-ms">—</div><div class="mc-l">Смен</div></div></div>
-    <div class="agrid"><button class="ab" onclick="openAdd('pc')"><span class="ab-ic">⚡</span><span class="ab-nm">Добавить</span><span class="ab-sb">Новая запись</span></button><button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button><button class="ab ab-w" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><div><span class="ab-nm">Ставки PC</span><span class="ab-sb">Бонусная программа</span></div></button></div>
+    <div class="qa" id="qa-pc"></div>
+    <div class="agrid"><button class="ab" onclick="showPage('page-hist');setNav('n-hist')"><span class="ab-ic">📋</span><span class="ab-nm">История</span><span class="ab-sb">Все записи</span></button><button class="ab" onclick="showPage('page-rates');setNav('n-rate')"><span class="ab-ic">📊</span><span class="ab-nm">Ставки PC</span><span class="ab-sb">Бонусная программа</span></button></div>
   </div>
 </div>
 
@@ -1203,33 +1235,6 @@ select.fl-in{appearance:none}
   <div class="ni"     id="n-map"    onclick="showPage('page-map');setNav('n-map');rMap()"><span class="ni-ic">🗺️</span><span class="ni-lb">Карта</span></div>
 </div>
 
-<!-- MODAL: ADD -->
-<div class="ovl" id="m-add" onclick="cOvl(event,'m-add')">
-  <div class="sheet">
-    <div class="sh-handle"></div>
-    <div class="sh-title" id="add-title">Добавить</div>
-    <div class="fl">
-      <span class="fl-lb">Дата смены</span>
-      <div class="dq">
-        <div class="dq-b sel" id="dq-t" onclick="dqSet('today')">СЕГОДНЯ</div>
-        <div class="dq-b"    id="dq-y" onclick="dqSet('yesterday')">ВЧЕРА</div>
-      </div>
-      <input class="fl-in" type="date" id="in-date" onchange="dqClear();upPrev()"/>
-    </div>
-    <div class="fl"><span class="fl-lb">Пики (штук)</span><input class="fl-in" type="number" id="in-peaks" placeholder="380" oninput="upPrev()"/></div>
-    <div class="fl"><span class="fl-lb">Часов отработано</span><input class="fl-in" type="number" step="0.5" id="in-hours" placeholder="8" oninput="upPrev()"/></div>
-    <div class="fl"><span class="fl-lb">Заметка</span><input class="fl-in" type="text" id="in-note" placeholder="необязательно"/></div>
-    <div class="prev-box" id="prev">
-      <div class="prev-row"><span class="prev-k">ppc/h</span><span class="prev-v" id="pv-pph">—</span></div>
-      <div class="prev-row"><span class="prev-k">По норме</span><span class="prev-v" id="pv-norm">—</span></div>
-      <div class="prev-row"><span class="prev-k">Сверхнормы</span><span class="prev-v" id="pv-above">—</span></div>
-      <div class="prev-row"><span class="prev-k">Ставка</span><span class="prev-v" id="pv-rate">—</span></div>
-      <div class="prev-row"><span class="prev-k">Бонус</span><span class="prev-v" id="pv-bon">—</span></div>
-    </div>
-    <button class="sv-btn" id="sv-btn" onclick="saveEntry()">СОХРАНИТЬ</button>
-  </div>
-</div>
-
 <!-- MODAL: PROFILE EDIT -->
 <div class="ovl" id="m-edit" onclick="cOvl(event,'m-edit')">
   <div class="sheet">
@@ -1490,7 +1495,7 @@ DB.notes=DB.notes||[]; DB.consent=DB.consent||null; DB.group=DB.group||'A';
 DB.map=DB.map||{people:{},feed:[]};
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
-let curSt='os', dqMode='today', ws='mon';
+let curSt='os', ws='mon';
 const _n=new Date(); let cY=_n.getFullYear(), cM=_n.getMonth();
 
 const iso=d=>d.toISOString().slice(0,10);
@@ -1540,7 +1545,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   pruneOldMonths();                           // авто-очистка пиков за прошлые месяцы
   document.getElementById('hdr-date').textContent=fmt(todayISO());
-  document.getElementById('in-date').value=todayISO();
+  Object.keys(ST).forEach(renderQuickAdd);   // инлайн-формы записи смены
   rAll();
   showPage('page-profile'); setNav('n-prof');
   pushRank();
@@ -1666,8 +1671,8 @@ function rHist(){
       <div class="hcard-row">
         <div>
           <div class="hchip" style="background:${c}12;color:${c}">${(e.station||'os').toUpperCase()}</div>
-          <div class="hcard-main">${e.peaks} шт · ${e.hours} ч</div>
-          <div class="hcard-meta">${e.c.pph.toFixed(1)} pph · сверх <span style="color:var(--orange)">${e.c.above}</span> · <span style="color:var(--green)">${e.c.bonus.toFixed(2)} zł</span></div>
+          <div class="hcard-main">${e.peaks} шт · ${e.minutes?qaFmtDur(e.minutes):Number(e.hours).toFixed(1)+' ч'}</div>
+          <div class="hcard-meta">${e.from&&e.to?`${e.from}–${e.to} · `:''}${e.c.pph.toFixed(1)} pph · сверх <span style="color:var(--orange)">${e.c.above}</span> · <span style="color:var(--green)">${e.c.bonus.toFixed(2)} zł</span></div>
           ${e.note?`<div class="hcard-note">${e.note}</div>`:''}
         </div>
         <div class="hcard-r">
@@ -2106,37 +2111,116 @@ function openOvtModal(){
   openModal('m-ovt');
 }
 
-// ══ ADD ENTRY ═════════════════════════════════
-function openAdd(st){
-  curSt=st; document.getElementById('add-title').textContent=`Добавить · ${st.toUpperCase()}`;
-  dqSet(dqMode==='custom'?'today':dqMode);
-  ['in-peaks','in-hours','in-note'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('prev').classList.remove('show');
-  openModal('m-add');
+// ══ ADD ENTRY · инлайн-запись прямо в панели станции ══════════
+// Время смены вводится «с … по …» с точностью до минуты; часы
+// считаются автоматически, с учётом перехода через полночь.
+const QA_COLOR={
+  os: {c:'var(--accent)', bg:'rgba(232,255,0,.08)'},
+  pa: {c:'var(--blue)',   bg:'rgba(59,130,246,.10)'},
+  sio:{c:'var(--purple)', bg:'rgba(168,85,247,.10)'},
+  pc: {c:'var(--orange)', bg:'rgba(249,115,22,.10)'},
+};
+const qaMode={};   // режим даты по станции: today | yesterday | custom
+
+// минуты между «ЧЧ:ММ» и «ЧЧ:ММ»; если конец раньше начала — смена
+// перешла через полночь, добавляем сутки
+function qaMinutes(from,to){
+  if(!from||!to) return 0;
+  const [fh,fm]=from.split(':').map(Number), [th,tm]=to.split(':').map(Number);
+  if(![fh,fm,th,tm].every(Number.isFinite)) return 0;
+  let d=(th*60+tm)-(fh*60+fm);
+  if(d<0) d+=1440;
+  return d;
 }
-function dqSet(m){ dqMode=m; document.getElementById('dq-t').classList.toggle('sel',m==='today'); document.getElementById('dq-y').classList.toggle('sel',m==='yesterday'); document.getElementById('in-date').value=m==='today'?todayISO():yestISO(); upPrev(); }
-function dqClear(){ dqMode='custom'; document.getElementById('dq-t').classList.remove('sel'); document.getElementById('dq-y').classList.remove('sel'); }
-function upPrev(){
-  const p=Number(document.getElementById('in-peaks').value),h=Number(document.getElementById('in-hours').value);
-  const box=document.getElementById('prev');
-  if(!p||!h||h<=0){ box.classList.remove('show'); return; }
-  const c=calc(curSt,p,h); box.classList.add('show');
-  document.getElementById('pv-pph').textContent=c.pph.toFixed(1)+' pph';
-  document.getElementById('pv-norm').textContent=c.norm+' шт';
-  document.getElementById('pv-above').textContent=c.above+' шт';
-  document.getElementById('pv-rate').textContent=c.rate.toFixed(3)+' zł/шт';
-  document.getElementById('pv-bon').textContent=c.bonus.toFixed(2)+' zł';
+const qaFmtDur=m=>`${Math.floor(m/60)} ч ${String(m%60).padStart(2,'0')} мин`;
+const qaEl=(st,k)=>document.getElementById(`qa-${st}-${k}`);
+
+function renderQuickAdd(st){
+  const box=document.getElementById('qa-'+st); if(!box) return;
+  const col=QA_COLOR[st]||QA_COLOR.os;
+  box.style.setProperty('--qc',col.c);
+  box.style.setProperty('--qcbg',col.bg);
+  box.innerHTML=`
+    <div class="qa-t">⚡ Записать смену · ${st.toUpperCase()}</div>
+    <div class="qa-dq">
+      <div class="qa-dqb" id="qa-${st}-t" onclick="qaDate('${st}','today')">СЕГОДНЯ</div>
+      <div class="qa-dqb" id="qa-${st}-y" onclick="qaDate('${st}','yesterday')">ВЧЕРА</div>
+    </div>
+    <div class="qa-f" style="margin-bottom:8px">
+      <span class="qa-lb">Дата смены</span>
+      <input class="qa-in" type="date" id="qa-${st}-d" onchange="qaCustom('${st}')"/>
+    </div>
+    <div class="qa-row">
+      <div class="qa-f"><span class="qa-lb">Начало</span><input class="qa-in" type="time" step="60" id="qa-${st}-f" oninput="qaUp('${st}')" onchange="qaUp('${st}')"/></div>
+      <div class="qa-f"><span class="qa-lb">Конец</span><input class="qa-in" type="time" step="60" id="qa-${st}-o" oninput="qaUp('${st}')" onchange="qaUp('${st}')"/></div>
+    </div>
+    <div class="qa-dur" id="qa-${st}-dur"><span>Отработано</span><b>—</b></div>
+    <div class="qa-f" style="margin-bottom:9px">
+      <span class="qa-lb">Пики (штук)</span>
+      <input class="qa-in" type="number" inputmode="numeric" placeholder="380" id="qa-${st}-p" oninput="qaUp('${st}')"/>
+    </div>
+    <div class="qa-prev" id="qa-${st}-prev">
+      <div class="qa-pr"><span class="qa-pk">Темп</span><span class="qa-pv" id="qa-${st}-pph">—</span></div>
+      <div class="qa-pr"><span class="qa-pk">По норме</span><span class="qa-pv" id="qa-${st}-norm">—</span></div>
+      <div class="qa-pr"><span class="qa-pk">Сверхнормы</span><span class="qa-pv" id="qa-${st}-abv">—</span></div>
+      <div class="qa-pr"><span class="qa-pk">Ставка</span><span class="qa-pv" id="qa-${st}-rate">—</span></div>
+      <div class="qa-pr"><span class="qa-pk">Премия</span><span class="qa-pv" id="qa-${st}-bon">—</span></div>
+    </div>
+    <button class="qa-save" id="qa-${st}-save" onclick="qaSave('${st}')">СОХРАНИТЬ</button>`;
+  qaDate(st, qaMode[st]==='custom' ? 'today' : (qaMode[st]||'today'));
 }
-function saveEntry(){
-  const p=Number(document.getElementById('in-peaks').value),h=Number(document.getElementById('in-hours').value);
-  const d=document.getElementById('in-date').value||todayISO(),note=document.getElementById('in-note').value.trim();
-  if(!p||!h||h<=0) return;
-  const c=calc(curSt,p,h),now=new Date();
-  DB.entries.push({id:Date.now(),station:curSt,peaks:p,hours:h,shiftDate:d,note,c,addedAt:now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
+
+function qaDate(st,mode){
+  qaMode[st]=mode;
+  qaEl(st,'t').classList.toggle('sel',mode==='today');
+  qaEl(st,'y').classList.toggle('sel',mode==='yesterday');
+  qaEl(st,'d').value = mode==='yesterday' ? yestISO() : todayISO();
+  qaUp(st);
+}
+function qaCustom(st){
+  qaMode[st]='custom';
+  qaEl(st,'t').classList.remove('sel');
+  qaEl(st,'y').classList.remove('sel');
+  qaUp(st);
+}
+
+function qaUp(st){
+  const min=qaMinutes(qaEl(st,'f').value, qaEl(st,'o').value), h=min/60;
+  const p=Number(qaEl(st,'p').value);
+  const dur=qaEl(st,'dur');
+  dur.classList.toggle('on',min>0);
+  dur.querySelector('b').textContent = min>0 ? `${qaFmtDur(min)} · ${h.toFixed(2)} ч` : '—';
+  const box=qaEl(st,'prev');
+  if(!p||min<=0){ box.classList.remove('show'); return; }
+  const c=calc(st,p,h); box.classList.add('show');
+  qaEl(st,'pph').textContent  = c.pph.toFixed(1)+' pph';
+  qaEl(st,'norm').textContent = c.norm+' шт';
+  qaEl(st,'abv').textContent  = c.above+' шт';
+  qaEl(st,'rate').textContent = c.rate.toFixed(3)+' zł/шт';
+  qaEl(st,'bon').textContent  = c.bonus.toFixed(2)+' zł';
+}
+
+function qaSave(st){
+  const from=qaEl(st,'f').value, to=qaEl(st,'o').value;
+  const min=qaMinutes(from,to), h=min/60;
+  const p=Number(qaEl(st,'p').value);
+  const d=qaEl(st,'d').value||todayISO();
+  const btn=qaEl(st,'save');
+  if(min<=0||!p){
+    btn.textContent = min<=0 ? 'УКАЖИ ВРЕМЯ' : 'УКАЖИ ПИКИ';
+    btn.classList.add('err');
+    setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('err'); },1300);
+    return;
+  }
+  const c=calc(st,p,h), now=new Date();
+  DB.entries.push({id:Date.now(),station:st,peaks:p,hours:h,minutes:min,from,to,shiftDate:d,note:'',c,
+    addedAt:now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
   sv();
-  const btn=document.getElementById('sv-btn');
   btn.textContent='✓ Сохранено'; btn.classList.add('ok');
-  setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('ok'); closeModal('m-add'); },700);
+  setTimeout(()=>{ btn.textContent='СОХРАНИТЬ'; btn.classList.remove('ok'); },900);
+  // чистим форму под следующую запись, дату оставляем
+  qaEl(st,'f').value=''; qaEl(st,'o').value=''; qaEl(st,'p').value='';
+  qaUp(st);
   rAllDash(); rHist(); rRates(); rProfile(); pushRank();
 }
 
