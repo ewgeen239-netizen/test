@@ -223,13 +223,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .qa-dqb{flex:1;padding:8px;background:var(--c2);border:1px solid var(--line);border-radius:8px;color:var(--sub);font-family:var(--mono);font-size:10px;cursor:pointer;text-align:center;letter-spacing:1px;transition:all .15s}
 .qa-dqb.sel{background:var(--qcbg);border-color:var(--qc);color:var(--qc)}
 .qa-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.qa-f{display:flex;flex-direction:column}
+.qa-f{display:flex;flex-direction:column;min-width:0}
 .qa-lb{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:4px}
-.qa-in{width:100%;background:var(--c2);border:1px solid var(--line2);border-radius:10px;padding:10px 11px;color:var(--text);font-family:var(--mono);font-size:15px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
+.qa-in{width:100%;max-width:100%;min-width:0;background:var(--c2);border:1px solid var(--line2);border-radius:10px;padding:10px 11px;color:var(--text);font-family:var(--mono);font-size:15px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
 .qa-in:focus{border-color:var(--qc)}
 .qa-in::placeholder{color:var(--dim)}
 .qa-in::-webkit-inner-spin-button{display:none}
-.qa-in::-webkit-calendar-picker-indicator{filter:invert(.55);cursor:pointer}
+/* нативные дата/время: контент и иконка пикера шире обычного текста —
+   уменьшаем шрифт и поля, чтобы ничего не упиралось в рамку */
+.qa-in[type=date],.qa-in[type=time]{font-size:13px;padding:10px 8px;letter-spacing:-.2px}
+.qa-in::-webkit-calendar-picker-indicator{filter:invert(.55);cursor:pointer;width:13px;height:13px;padding:0;margin:0 0 0 2px;flex-shrink:0}
+.qa-in::-webkit-date-and-time-value{text-align:left;margin:0}
+@media (max-width:359px){
+  .qa{padding:11px}
+  .qa-row{gap:6px}
+  .qa-in[type=date],.qa-in[type=time]{font-size:12px;padding:10px 6px}
+}
 .qa-dur{display:flex;align-items:center;justify-content:space-between;background:var(--c2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;transition:all .15s}
 .qa-dur b{color:var(--text);font-size:13px;letter-spacing:0;text-transform:none}
 .qa-dur.on{border-color:var(--qc);background:var(--qcbg)}
