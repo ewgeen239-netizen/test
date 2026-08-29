@@ -21,8 +21,8 @@ if not TOKEN:
 WEBAPP_URL = os.environ.get("WEBAPP_URL", "https://ewgeen239-netizen.github.io/test/")
 
 # ── Supabase (общий рейтинг, та же таблица что и Mini App) ────
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://mkuwkntdcpfsxhqblkic.supabase.co")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rdXdrbnRkY3Bmc3hocWJsa2ljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NTc3MDQsImV4cCI6MjA5ODUzMzcwNH0.k0_tWR0SgvWKBWmfkb9Z7qRLhHSAvkmmpGnQWEFm2f8")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://xnmgqdqmuvkwphtjkmad.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_fV4alQ3FDejFFPOUO2SBPA_t-RFngMn")
 # service_role — ТОЛЬКО из env (секрет!), нужен для таблицы bot_users (запись/чтение в обход RLS)
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
