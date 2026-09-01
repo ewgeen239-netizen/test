@@ -277,11 +277,52 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .hcard-dt{font-family:var(--mono);font-size:9px;color:var(--dim)}
 .del-btn{background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer;display:block;margin-left:auto;margin-top:5px}
 
+/* ── HISTORY: смены + архив ── */
+.hs-tabs{display:flex;gap:6px;margin-bottom:12px}
+.hs-tab{flex:1;padding:9px 4px;background:var(--c2);border:1px solid var(--line);border-radius:9px;color:var(--sub);font-family:var(--mono);font-size:9.5px;letter-spacing:1px;cursor:pointer;text-align:center;transition:all .15s}
+.hs-tab.act{background:rgba(232,255,0,.08);border-color:var(--accent);color:var(--accent)}
+.hs-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.hs-sum-c{background:var(--c1);border:1px solid var(--line);border-radius:11px;padding:10px 6px;text-align:center}
+.hs-sum-v{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.hs-sum-l{font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--sub);text-transform:uppercase;margin-top:2px}
+.hs-card{background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:7px}
+.hs-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.hs-date{font-size:13px;font-weight:700}
+.hs-dow{font-family:var(--mono);font-size:9px;color:var(--sub);margin-left:6px;text-transform:uppercase}
+.hs-peaks{font-size:19px;font-weight:800;letter-spacing:-.6px}
+.hs-peaks i{font-style:normal;font-size:10px;color:var(--sub);font-weight:600;margin-left:2px}
+/* столбик = пики смены относительно лучшей смены месяца; сегменты — станции */
+.hs-bar{height:6px;background:var(--c3);border-radius:3px;margin-bottom:9px;overflow:hidden}
+.hs-fill{height:100%;display:flex;gap:2px}
+.hs-seg{height:100%;border-radius:3px}
+.hs-st{display:flex;flex-wrap:wrap;gap:5px}
+.hs-chip{display:flex;align-items:center;gap:6px;background:var(--c2);border:1px solid var(--line);border-radius:8px;padding:5px 7px}
+.hs-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.hs-nm{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.5px}
+.hs-v{font-family:var(--mono);font-size:11px;color:var(--text);font-weight:600}
+.hs-t{font-family:var(--mono);font-size:8px;color:var(--sub)}
+.hs-x{background:none;border:none;color:var(--dim);font-size:14px;cursor:pointer;padding:0;line-height:1;margin-left:1px}
+.hs-foot{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding-top:8px;border-top:1px solid var(--line);font-family:var(--mono);font-size:9px;color:var(--sub)}
+.hs-bonus{color:var(--green);font-weight:700;font-size:11px}
+/* архив месяцев */
+.ar-card{background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:8px}
+.ar-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.ar-m{font-size:14px;font-weight:800}
+.ar-b{font-size:17px;font-weight:800;color:var(--green);letter-spacing:-.5px}
+.ar-b i{font-style:normal;font-size:9px;color:var(--sub);margin-left:2px}
+.ar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ar-c{background:var(--c2);border-radius:8px;padding:7px 3px;text-align:center}
+.ar-v{font-family:var(--mono);font-size:12px;font-weight:700}
+.ar-l{font-family:var(--mono);font-size:6.5px;color:var(--sub);text-transform:uppercase;margin-top:2px;letter-spacing:.5px}
+.ar-st{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;padding-top:9px;border-top:1px solid var(--line)}
+.ar-hint{text-align:center;font-size:11px;color:var(--sub);line-height:1.5;padding:0 20px}
+
 /* ── SCHEDULE ── */
 .shift-tabs{display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .shift-tabs::-webkit-scrollbar{display:none}
 .shtab{flex-shrink:0;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--line);color:var(--sub);background:var(--c2);letter-spacing:.5px;transition:all .15s}
 .shtab.act-dark{background:#1a2a4a;color:#60a5fa;border-color:#2a4a7a}
+.shtab.act-orange{background:#3a2410;color:#fb923c;border-color:#7a4a2a}
 .shtab.soon{opacity:.25;cursor:not-allowed}
 
 .shpanel{display:none;padding:14px}.shpanel.act{display:block}
@@ -735,8 +776,8 @@ select.fl-in{appearance:none}
   <!-- SHIFTS PANEL -->
   <div id="sched-panel-shifts">
     <div class="shift-tabs">
-      <div class="shtab act-dark" onclick="switchShift('dark')">🌙 DARK</div>
-      <div class="shtab soon">🟠 ORANGE <span style="font-size:8px;opacity:.5">скоро</span></div>
+      <div class="shtab act-dark" id="sht-dark"   onclick="switchShift('dark')">🌙 DARK</div>
+      <div class="shtab"          id="sht-orange" onclick="switchShift('orange')">🟠 ORANGE</div>
       <div class="shtab soon">🟢 GREEN <span style="font-size:8px;opacity:.5">скоро</span></div>
     </div>
 
@@ -759,16 +800,11 @@ select.fl-in{appearance:none}
       </div>
       <div id="grp-row" style="display:none;align-items:center;gap:6px;margin-bottom:10px">
         <div class="ws-lbl">Группа:</div>
-        <div class="ws-btns" id="grp-btns">
-          <button class="ws-btn" data-g="A" onclick="setGroup('A')">A</button>
-          <button class="ws-btn" data-g="B" onclick="setGroup('B')">B</button>
-          <button class="ws-btn" data-g="C" onclick="setGroup('C')">C</button>
-          <button class="ws-btn" data-g="D" onclick="setGroup('D')">D</button>
-        </div>
+        <div class="ws-btns" id="grp-btns"></div>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
       <div class="cal-legend">
-        <div class="leg"><div class="leg-d" style="background:rgba(59,130,246,.4)"></div>22:00–6:00</div>
+        <div class="leg"><div class="leg-d" style="background:rgba(59,130,246,.4)"></div><span id="leg-time">22:00–6:00</span></div>
         <div class="leg"><div class="leg-d" style="background:var(--c3)"></div>Выходной</div>
         <div class="leg"><div class="leg-d" style="background:rgba(239,68,68,.3)"></div>Праздник</div>
         <div class="leg"><div class="leg-d" style="background:rgba(168,85,247,.35)"></div>Отпуск</div>
@@ -797,8 +833,6 @@ select.fl-in{appearance:none}
       </div>
     </div>
 
-    <div class="shpanel" id="sh-orange"><div class="soon-box"><div class="soon-box-ic">🟠</div><div class="soon-box-t">Orange Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
-    <div class="shpanel" id="sh-green"><div class="soon-box"><div class="soon-box-ic">🟢</div><div class="soon-box-t">Green Shift</div><div class="soon-box-s">Скоро · Coming Soon</div></div></div>
   </div>
 
   <!-- BUS PANEL -->
@@ -1081,9 +1115,13 @@ select.fl-in{appearance:none}
 <!-- ═══════════ HISTORY ═══════════ -->
 <div class="page" id="page-hist">
   <div class="bbar"><button class="bbar-btn" onclick="showPage('page-dash');setNav('n-dash')">← Назад</button><div class="bbar-title">История</div></div>
-  <div class="pad" style="padding-top:14px">
-    <div id="hist-list"></div>
-    <div id="hist-empty" class="empty" style="display:none">НЕТ ЗАПИСЕЙ</div>
+  <div class="pad" style="padding-top:14px;padding-bottom:84px">
+    <div class="hs-tabs">
+      <div class="hs-tab act" id="hs-tab-cur" onclick="switchHist('cur')">ТЕКУЩИЙ МЕСЯЦ</div>
+      <div class="hs-tab"     id="hs-tab-arc" onclick="switchHist('arc')">АРХИВ</div>
+    </div>
+    <div id="hist-cur"></div>
+    <div id="hist-arc" style="display:none"></div>
   </div>
 </div>
 
@@ -1373,8 +1411,14 @@ function monthSnapshot(m){
   const peaks  = es.reduce((s,e)=>s+e.peaks,0);
   const hours  = es.reduce((s,e)=>s+e.hours,0);
   const shifts = new Set(es.map(e=>e.shiftDate)).size;
+  // раскладка по станциям — нужна архиву, на сервер не уходит
+  const st={};
+  Object.keys(ST).forEach(k=>{
+    const a=monthAgg(k,m);
+    if(a.P) st[k]={peaks:a.P,hours:+a.H.toFixed(1),bonus:+a.bonus.toFixed(2),ppc:+a.pph.toFixed(1)};
+  });
   return { bonus:+monthTotalBonus(m).toFixed(2), peaks, hours:+hours.toFixed(1),
-           shifts, ppc:+(hours>0?peaks/hours:0).toFixed(1) };
+           shifts, ppc:+(hours>0?peaks/hours:0).toFixed(1), st };
 }
 
 // Одна строка рейтинга за конкретный месяц. Пишем через Edge Function:
@@ -1383,8 +1427,9 @@ function monthSnapshot(m){
 // позволяет дозаливать архив, а не только текущий месяц.
 function pushMonthRow(m, snap){
   if(!TG_INIT) return Promise.reject();       // вне Telegram подписи нет — не пишем
+  const { bonus, peaks, hours, shifts, ppc } = snap;   // st — локальный, не шлём
   const row = { month:m, name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'👷',
-                photo_url:DB.photoUrl||'', ...snap };
+                photo_url:DB.photoUrl||'', bonus, peaks, hours, shifts, ppc };
   return fetch(FN_URL, {
     method:'POST',
     headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' },
@@ -1544,11 +1589,32 @@ const SCH = {
   '2026-12': {w:[1,2,3,6,7,8,9,10,13,14,15,16,17,21,22,23,27,28,29,30],h:{'24':'Wigilia','25':'Boże Narodzenie','26':'Boże Narodzenie','31':'Wolne za święto'}}
 };
 
+// ORANGE — дневная бригада, подгруппы A–F, время смены меняется по неделям.
+// t: день → время смены (у DARK время одно на весь месяц, тут — по дням).
+// Сентябрь 2026 расписан по фото: A/B/C выходят 22 дня, D/E/F — 21.
+const SCH_ORANGE = {
+  '2026-09': {
+    h:{},
+    t:{'1':'14–22', '2':'14–22', '3':'14–22', '4':'14–22', '5':'14–22', '7':'06–14', '8':'06–14', '9':'06–14', '10':'06–14', '11':'06–14', '12':'06–14', '14':'14–22', '15':'14–22', '16':'14–22', '17':'14–22', '18':'14–22', '19':'14–22', '21':'06–14', '22':'06–14', '23':'06–14', '24':'06–14', '25':'06–14', '26':'06–14', '28':'14–22', '29':'14–22', '30':'14–22'},
+    groups:{
+      A:[1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 29, 30], B:[1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 29, 30], C:[1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 29, 30],
+      D:[1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 15, 16, 17, 21, 22, 23, 24, 25, 28, 29, 30], E:[1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 15, 16, 17, 21, 22, 23, 24, 25, 28, 29, 30], F:[1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 15, 16, 17, 21, 22, 23, 24, 25, 28, 29, 30]
+    }
+  }
+};
+
+// Бригады: у каждой свой календарь, набор подгрупп и время смены по умолчанию.
+const TEAMS = {
+  dark:   { label:'DARK',   defT:'22–6',  legend:'22:00–6:00',    sch:SCH,        groups:['A','B','C','D'] },
+  orange: { label:'ORANGE', defT:'06–14', legend:'06–14 / 14–22', sch:SCH_ORANGE, groups:['A','B','C','D','E','F'] },
+};
+
 // ══ STATE ═════════════════════════════════════
 let DB = (()=>{ try{ return JSON.parse(localStorage.getItem('ad_db')||'{}'); }catch{return{};} })();
 DB.entries=DB.entries||[]; DB.name=DB.name||''; DB.uid=DB.uid||'';
 DB.emoji=DB.emoji||'👷'; DB.role=DB.role||'Пакет · Упаковщик'; DB.shift=DB.shift||'DARK 22–6';
 DB.notes=DB.notes||[]; DB.consent=DB.consent||null; DB.group=DB.group||'A';
+DB.team=DB.team||'dark';    // выбранная бригада: dark | orange
 DB.map=DB.map||{people:{},feed:[]};
 DB.archive=DB.archive||{};      // месячные итоги за прошлые месяцы (пики стёрты)
 DB.gen=DB.gen||null;            // поколение базы, в которое уже залили локальные данные
@@ -1728,31 +1794,119 @@ function rDash(st){
 }
 
 // ══ HISTORY ═══════════════════════════════════
-function rHist(){
-  const list=document.getElementById('hist-list'),emp=document.getElementById('hist-empty');
-  const es=[...DB.entries].reverse();
-  if(!es.length){ list.innerHTML=''; emp.style.display='block'; return; }
-  emp.style.display='none';
-  const stC={os:'#e8ff00',pa:'#3b82f6',sio:'#a855f7',pc:'#f97316'};
-  list.innerHTML=es.map(e=>{
-    const c=stC[e.station]||'#e8ff00';
-    return `<div class="hcard" style="border-left:3px solid ${c}">
-      <div class="hcard-row">
-        <div>
-          <div class="hchip" style="background:${c}12;color:${c}">${(e.station||'os').toUpperCase()}</div>
-          <div class="hcard-main">${e.peaks} шт · ${e.minutes?qaFmtDur(e.minutes):Number(e.hours).toFixed(1)+' ч'}</div>
-          <div class="hcard-meta">${e.from&&e.to?`${e.from}–${e.to} · `:''}${e.c.pph.toFixed(1)} pph · сверх <span style="color:var(--orange)">${e.c.above}</span> · <span style="color:var(--green)">${e.c.bonus.toFixed(2)} zł</span></div>
-          ${e.note?`<div class="hcard-note">${e.note}</div>`:''}
-        </div>
-        <div class="hcard-r">
-          <div class="hcard-dt">${fmt(e.shiftDate)}</div>
-          <div class="hcard-dt">${e.addedAt||''}</div>
-          <button class="del-btn" onclick="delEntry(${e.id})">×</button>
-        </div>
+let histTab='cur';
+function switchHist(t){
+  histTab=t;
+  document.getElementById('hs-tab-cur').classList.toggle('act',t==='cur');
+  document.getElementById('hs-tab-arc').classList.toggle('act',t==='arc');
+  document.getElementById('hist-cur').style.display = t==='cur'?'block':'none';
+  document.getElementById('hist-arc').style.display = t==='arc'?'block':'none';
+}
+function rHist(){ rHistShifts(); rHistArchive(); }
+
+const HDOW=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const durTxt=e=>{ const m=e.minutes||Math.round((e.hours||0)*60); return `${Math.floor(m/60)}ч ${String(m%60).padStart(2,'0')}м`; };
+
+// ── ТЕКУЩИЙ МЕСЯЦ: одна карточка на смену, а не на запись ──
+// Человек за смену может работать на нескольких процессах, поэтому
+// записи группируются по дате смены: сверху сумма пиков за смену,
+// столбик показывает её величину относительно лучшей смены месяца,
+// внутри — раскладка по станциям. У каждой станции есть текстовый код,
+// а не только цвет: PA и SIO неразличимы при дальтонизме.
+function rHistShifts(){
+  const wrap=document.getElementById('hist-cur'); if(!wrap) return;
+  const m=mISO();
+  const es=DB.entries.filter(e=>e.shiftDate?.slice(0,7)===m);
+  if(!es.length){ wrap.innerHTML='<div class="empty">НЕТ ЗАПИСЕЙ ЗА МЕСЯЦ</div>'; return; }
+
+  const byDay={};
+  es.forEach(e=>{ (byDay[e.shiftDate]=byDay[e.shiftDate]||[]).push(e); });
+  const days=Object.keys(byDay).sort().reverse();
+  const dayPeaks=d=>byDay[d].reduce((s,e)=>s+e.peaks,0);
+  const best=Math.max(...days.map(dayPeaks),1);
+  const totalP=es.reduce((s,e)=>s+e.peaks,0);
+  const totalH=es.reduce((s,e)=>s+e.hours,0);
+
+  let h=`<div class="hs-sum">
+    <div class="hs-sum-c"><div class="hs-sum-v">${totalP}</div><div class="hs-sum-l">пиков</div></div>
+    <div class="hs-sum-c"><div class="hs-sum-v">${days.length}</div><div class="hs-sum-l">смен</div></div>
+    <div class="hs-sum-c"><div class="hs-sum-v">${Math.round(totalP/days.length)}</div><div class="hs-sum-l">в среднем</div></div>
+  </div>`;
+
+  h+=days.map(d=>{
+    const list=byDay[d].slice().sort((a,b)=>b.peaks-a.peaks);
+    const p=dayPeaks(d);
+    const hrs=list.reduce((s,e)=>s+e.hours,0);
+    const bon=list.reduce((s,e)=>s+(e.c?.bonus||0),0);
+    const pph=hrs>0?p/hrs:0;
+    const dt=new Date(d+'T00:00:00');
+    const segs=list.map(e=>`<div class="hs-seg" style="flex:${e.peaks};background:${ST[e.station]?.col||'var(--accent)'}"></div>`).join('');
+    const chips=list.map(e=>{
+      const col=ST[e.station]?.col||'var(--accent)';
+      return `<div class="hs-chip">
+        <span class="hs-dot" style="background:${col}"></span>
+        <span class="hs-nm" style="color:${col}">${(e.station||'os').toUpperCase()}</span>
+        <span class="hs-v">${e.peaks}</span>
+        <span class="hs-t">шт · ${durTxt(e)}${e.from&&e.to?` · ${e.from}–${e.to}`:''}</span>
+        <button class="hs-x" onclick="delEntry(${e.id})" title="Удалить запись">×</button>
+      </div>`;
+    }).join('');
+    return `<div class="hs-card">
+      <div class="hs-head">
+        <div><span class="hs-date">${fmt(d)}</span><span class="hs-dow">${HDOW[dt.getDay()]}</span></div>
+        <div class="hs-peaks">${p}<i>шт</i></div>
+      </div>
+      <div class="hs-bar"><div class="hs-fill" style="width:${Math.max(4,Math.round(p/best*100))}%">${segs}</div></div>
+      <div class="hs-st">${chips}</div>
+      <div class="hs-foot">
+        <span>${hrs.toFixed(1)} ч · ${pph.toFixed(1)} pph</span>
+        <span class="hs-bonus">${bon.toFixed(2)} zł</span>
       </div>
     </div>`;
   }).join('');
+
+  wrap.innerHTML=h;
 }
+
+// ── АРХИВ: итоги прошлых месяцев ──
+// Сырые пики за прошлые месяцы стираются (pruneOldMonths), но месячный
+// итог остаётся в DB.archive — его и показываем.
+function rHistArchive(){
+  const wrap=document.getElementById('hist-arc'); if(!wrap) return;
+  const months=Object.keys(DB.archive||{}).sort().reverse();
+  if(!months.length){
+    wrap.innerHTML=`<div class="empty" style="padding-bottom:10px">АРХИВ ПУСТ</div>
+      <div class="ar-hint">Итог месяца попадает сюда автоматически, когда начинается новый: сами записи очищаются, а сумма пиков, часов и премии сохраняется.</div>`;
+    return;
+  }
+  wrap.innerHTML=months.map(mk=>{
+    const a=DB.archive[mk]||{};
+    const st=a.st||{};
+    const chips=Object.keys(st).map(k=>{
+      const col=ST[k]?.col||'var(--accent)';
+      return `<div class="hs-chip">
+        <span class="hs-dot" style="background:${col}"></span>
+        <span class="hs-nm" style="color:${col}">${k.toUpperCase()}</span>
+        <span class="hs-v">${st[k].peaks}</span>
+        <span class="hs-t">шт · ${st[k].bonus.toFixed(2)} zł</span>
+      </div>`;
+    }).join('');
+    return `<div class="ar-card">
+      <div class="ar-head">
+        <div class="ar-m">${monthLabel(mk)}</div>
+        <div class="ar-b">${(a.bonus||0).toFixed(2)}<i>zł</i></div>
+      </div>
+      <div class="ar-grid">
+        <div class="ar-c"><div class="ar-v">${a.peaks||0}</div><div class="ar-l">пиков</div></div>
+        <div class="ar-c"><div class="ar-v">${a.hours||0}</div><div class="ar-l">часов</div></div>
+        <div class="ar-c"><div class="ar-v">${a.shifts||0}</div><div class="ar-l">смен</div></div>
+        <div class="ar-c"><div class="ar-v">${a.ppc||0}</div><div class="ar-l">ppc/h</div></div>
+      </div>
+      ${chips?`<div class="ar-st">${chips}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
 function delEntry(id){ DB.entries=DB.entries.filter(e=>e.id!==id); sv(); rAllDash(); rHist(); rProfile(); pushRank(); }
 
 // ══ RATES ═════════════════════════════════════
@@ -2083,15 +2237,19 @@ function setWS(v){
 function rCal(){
   const mk=`${cY}-${String(cM+1).padStart(2,'0')}`;
   document.getElementById('cal-title').textContent=`${MN[cM]} ${cY}`;
-  const raw=SCH[mk];
-  // месяц с группами (A/B/C/D) → берём смены выбранной группы
-  const grp=DB.group||'A';
+  const team=TEAMS[DB.team]||TEAMS.dark;
+  const raw=team.sch[mk];
+  document.getElementById('leg-time').textContent=team.legend;
+  // месяц с подгруппами → берём смены выбранной; список подгрупп зависит от бригады
+  let grp=DB.group||'A';
+  if(!team.groups.includes(grp)){ grp=team.groups[0]; DB.group=grp; sv(); }
   const grpRow=document.getElementById('grp-row');
   if(raw?.groups){
     grpRow.style.display='flex';
-    document.querySelectorAll('#grp-btns .ws-btn').forEach(b=>b.classList.toggle('act',b.dataset.g===grp));
+    document.getElementById('grp-btns').innerHTML=team.groups.map(g=>
+      `<button class="ws-btn${g===grp?' act':''}" data-g="${g}" onclick="setGroup('${g}')">${g}</button>`).join('');
   } else { grpRow.style.display='none'; }
-  const data = raw ? (raw.groups ? {w:raw.groups[grp]||[], h:raw.h||{}} : raw) : null;
+  const data = raw ? (raw.groups ? {w:raw.groups[grp]||[], h:raw.h||{}, t:raw.t||{}} : raw) : null;
   const grid=document.getElementById('cal-grid'), today=todayISO();
   const urlopDays = DB.urlop?.[mk] || {};
   // собираем доп.часы за этот месяц по дням
@@ -2113,7 +2271,7 @@ function rCal(){
     const hasOvt=ovtByDay[d];
     let type='free', tt='WOLNE';
     if(urlopDays[d]){ type='urlop'; tt='URLOP'; }
-    else if(data){ const hv=data.h?.[String(d)]; if(hv){type='holiday';tt='ŚWIĘTO';} else if(data.w?.includes(d)){type='work';tt='22–6';} }
+    else if(data){ const hv=data.h?.[String(d)]; if(hv){type='holiday';tt='ŚWIĘTO';} else if(data.w?.includes(d)){type='work';tt=data.t?.[String(d)]||team.defT;} }
     // доп.часы поверх базового типа
     let cellClass = type;
     let cellContent = tt;
@@ -2170,7 +2328,15 @@ function calPrev(){ if(cM===0){cM=11;cY--;}else cM--; rCal(); }
 function calNext(){ if(cM===11){cM=0;cY++;}else cM++; rCal(); }
 function setGroup(g){ DB.group=g; sv(); rCal(); }
 function calGoNow(){ const n=new Date();cY=n.getFullYear();cM=n.getMonth();rCal(); }
-function switchShift(s){ document.querySelectorAll('.shpanel').forEach(p=>p.classList.remove('act')); document.getElementById('sh-'+s).classList.add('act'); }
+function switchShift(s){
+  if(!TEAMS[s]) return;                                   // GREEN пока заглушка
+  DB.team=s;
+  if(!TEAMS[s].groups.includes(DB.group)) DB.group=TEAMS[s].groups[0];  // E/F есть только у ORANGE
+  sv();
+  document.getElementById('sht-dark').className   = 'shtab'+(s==='dark'  ?' act-dark'  :'');
+  document.getElementById('sht-orange').className = 'shtab'+(s==='orange'?' act-orange':'');
+  rCal();
+}
 
 // init overtime modal
 function openOvtModal(){
