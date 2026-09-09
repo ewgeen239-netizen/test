@@ -462,86 +462,6 @@ select.fl-in{appearance:none}
 .info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
 
-/* ── MAP (Apple Maps / Yanosik-style live board) ── */
-.wmap-info{
-  display:flex;gap:8px;align-items:flex-start;
-  background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);
-  border-radius:10px;padding:10px 12px;margin-bottom:12px;
-  font-size:11px;color:var(--blue);line-height:1.5;
-}
-.wmap-armbar{
-  display:none;align-items:center;gap:8px;
-  background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.4);
-  border-radius:10px;padding:10px 12px;margin-bottom:10px;
-  font-size:12px;font-weight:600;color:var(--text);
-  animation:wmapArmIn .2s ease;
-}
-@keyframes wmapArmIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.wmap-armbar b{color:var(--orange)}
-.wmap-armbar-x{margin-left:auto;background:var(--c2);border:1px solid var(--line);border-radius:20px;color:var(--sub);width:22px;height:22px;flex-shrink:0;cursor:pointer;font-size:12px}
-.wmap-wrap{
-  position:relative;background:var(--c1);border:1px solid var(--line);
-  border-radius:14px;padding:8px;margin-bottom:10px;overflow:hidden;
-}
-.wmap-svg{width:100%;height:auto;display:block;cursor:pointer;touch-action:manipulation}
-.wmap-svg.armed{cursor:crosshair}
-.wmap-road{stroke:var(--line2);stroke-width:1.4;stroke-dasharray:1 6;stroke-linecap:round;opacity:.8}
-.wmap-zone-label{fill:var(--sub);font-family:var(--mono);font-size:6.5px;letter-spacing:.5px;text-transform:uppercase;pointer-events:none}
-.wmap-wall{fill:none;stroke:var(--line2);stroke-width:1.3}
-.wmap-rack{stroke-width:1;pointer-events:none}
-.wmap-dock{fill:var(--c2);stroke:var(--line2);stroke-width:1.2}
-.wmap-dock-lbl{fill:var(--sub);font-family:var(--mono);font-size:6px;text-anchor:middle;pointer-events:none}
-.wmap-prop{fill:var(--sub);fill-opacity:.35;stroke:none;pointer-events:none}
-.wmap-door-arc{fill:none;stroke:var(--line2);stroke-width:1;stroke-dasharray:2 2;pointer-events:none}
-.wmap-door-leaf{stroke:var(--line2);stroke-width:1.3;pointer-events:none}
-.wmap-compass{fill:var(--dim);font-family:var(--mono);font-size:7px;font-weight:700;pointer-events:none}
-.wmap-traj{stroke:var(--orange);stroke-width:1.6;stroke-dasharray:4 3;fill:none;opacity:.7;animation:wmapDash 1s linear infinite}
-@keyframes wmapDash{to{stroke-dashoffset:-14}}
-.wmap-live-ring{fill:none;stroke:var(--orange);stroke-width:1;opacity:.5;animation:wmapBreathe 2.4s ease-in-out infinite;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1)}
-@keyframes wmapBreathe{0%,100%{r:7;opacity:.5}50%{r:11;opacity:.12}}
-.wmap-ping-ring{fill:none;stroke:var(--orange);stroke-width:1.2;opacity:0;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1)}
-.wmap-ping-ring.on{animation:wmapPing 1s ease-out 2}
-@keyframes wmapPing{0%{r:6;opacity:.8}100%{r:17;opacity:0}}
-.wmap-dot{fill:var(--orange);stroke:#0f0f0f;stroke-width:1.5;r:8;transition:cx 1.15s cubic-bezier(.4,0,.2,1),cy 1.15s cubic-bezier(.4,0,.2,1);filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-.wmap-dot-init{fill:#0f0f0f;font-family:var(--mono);font-weight:800;font-size:8px;text-anchor:middle;pointer-events:none;transition:x 1.15s cubic-bezier(.4,0,.2,1),y 1.15s cubic-bezier(.4,0,.2,1)}
-.wmap-dot-label{fill:var(--text);font-family:var(--mono);font-size:7px;font-weight:700;opacity:0;pointer-events:none;transition:x 1.15s cubic-bezier(.4,0,.2,1),y 1.15s cubic-bezier(.4,0,.2,1),opacity .2s ease}
-.wmap-dot-label.show{opacity:1}
-.wmap-legend{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px}
-.wmap-legend-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 5px rgba(249,115,22,.8);flex-shrink:0}
-.wmap-people-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
-.wmap-people{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.wmap-person{
-  display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid var(--line);
-  border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s;
-}
-.wmap-person:active{border-color:var(--orange)}
-.wmap-person.armed{border-color:var(--orange);background:rgba(249,115,22,.08)}
-.wmap-person-ic{font-size:20px;flex-shrink:0}
-.wmap-person-body{flex:1;min-width:0}
-.wmap-person-name{font-size:13px;font-weight:700}
-.wmap-person-zone{font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px}
-.wmap-person-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.wmap-person-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:background .2s}
-.wmap-person-dot.on{background:var(--orange);box-shadow:0 0 6px rgba(249,115,22,.8);animation:wmapDotBlink 1s ease-in-out infinite}
-@keyframes wmapDotBlink{0%,100%{opacity:1}50%{opacity:.35}}
-.wmap-person-go{font-family:var(--mono);font-size:8px;color:var(--sub)}
-.wmap-feed-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
-.wmap-feed{display:flex;flex-direction:column;gap:6px}
-.wmap-feed-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:7px 0;border-bottom:1px solid var(--line)}
-.wmap-feed-row:last-child{border-bottom:none}
-.wmap-feed-dot{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0}
-.wmap-feed-time{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0}
-.wmap-feed-text b{color:var(--text)}
-.wmap-toast-wrap{position:fixed;top:10px;left:0;right:0;z-index:500;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 14px}
-.wmap-toast{
-  background:var(--c1);border:1px solid rgba(249,115,22,.35);border-radius:12px;
-  padding:10px 16px;font-size:12px;font-weight:600;color:var(--text);
-  box-shadow:0 8px 24px rgba(0,0,0,.4);animation:wmapToastIn .25s ease,wmapToastOut .3s ease 2.7s forwards;
-  display:flex;align-items:center;gap:8px;max-width:100%;
-}
-.wmap-toast b{color:var(--orange)}
-@keyframes wmapToastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
-@keyframes wmapToastOut{to{opacity:0;transform:translateY(-10px)}}
 .empty{text-align:center;color:var(--dim);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
 ::-webkit-scrollbar{width:0}
 
@@ -1131,132 +1051,6 @@ select.fl-in{appearance:none}
   <div class="pad" style="padding-top:14px;padding-bottom:20px" id="rates-cnt"></div>
 </div>
 
-<!-- ═══════════ MAP ═══════════ -->
-<div class="page" id="page-map">
-  <div class="top">
-    <div class="top-l"><div class="eyebrow">AutoDoc · Szczecin</div><div class="heading">Карта склада</div></div>
-    <div class="top-r"><div class="badge green" id="map-live-badge">● LIVE</div></div>
-  </div>
-
-  <div class="pad" style="padding-top:14px;padding-bottom:90px">
-
-    <div class="wmap-info">📍 Живая карта склада. Выбери сотрудника внизу и тапни по карте — отметишь, где он сейчас находится.</div>
-
-    <div class="wmap-armbar" id="wmap-armbar">
-      📍 Тапни по карте — отметь <b id="wmap-armbar-name"></b>
-      <button class="wmap-armbar-x" onclick="disarmPerson()">✕</button>
-    </div>
-
-    <div class="wmap-wrap">
-      <svg class="wmap-svg" id="wmap-svg" viewBox="0 0 320 430" xmlns="http://www.w3.org/2000/svg" onclick="mapTap(event)">
-        <defs>
-          <pattern id="wmapGrid" width="16" height="16" patternUnits="userSpaceOnUse">
-            <circle cx="1.2" cy="1.2" r="1" fill="var(--line)"/>
-          </pattern>
-        </defs>
-
-        <!-- корпус здания -->
-        <rect x="8" y="8" width="304" height="414" rx="3" fill="url(#wmapGrid)" class="wmap-wall"/>
-
-        <!-- главный проход -->
-        <line x1="167" y1="10" x2="167" y2="418" class="wmap-road"/>
-
-        <!-- ═ ПРИЁМКА ═ -->
-        <rect x="20" y="20" width="140" height="70" rx="2" style="fill:var(--blue);fill-opacity:.05" class="wmap-wall"/>
-        <rect x="34" y="12" width="18" height="8" class="wmap-dock"/><text x="43" y="10" class="wmap-dock-lbl">D1</text>
-        <rect x="66" y="12" width="18" height="8" class="wmap-dock"/><text x="75" y="10" class="wmap-dock-lbl">D2</text>
-        <rect x="98" y="12" width="18" height="8" class="wmap-dock"/><text x="107" y="10" class="wmap-dock-lbl">D3</text>
-        <rect x="30" y="76" width="7" height="7" rx="1" class="wmap-prop"/>
-        <rect x="42" y="76" width="7" height="7" rx="1" class="wmap-prop"/>
-        <rect x="54" y="76" width="7" height="7" rx="1" class="wmap-prop"/>
-        <text x="24" y="30" class="wmap-zone-label">Приёмка</text>
-
-        <!-- ═ СТЕЛЛАЖИ А ═ -->
-        <rect x="175" y="20" width="125" height="160" rx="2" style="fill:var(--purple);fill-opacity:.05" class="wmap-wall"/>
-        <text x="179" y="30" class="wmap-zone-label">Стеллажи A</text>
-        <rect x="181" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="204" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="227" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="250" y="38" width="9" height="136" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <g class="wmap-compass" transform="translate(276,28)">
-          <line x1="0" y1="9" x2="0" y2="-3" stroke="var(--dim)" stroke-width="1"/>
-          <path d="M0,-3 L-3,3 L3,3 Z" fill="var(--dim)"/>
-          <text x="0" y="17" text-anchor="middle" font-size="6">N</text>
-        </g>
-
-        <!-- ═ КОМПЛЕКТАЦИЯ ═ -->
-        <rect x="20" y="100" width="140" height="100" rx="2" style="fill:var(--green);fill-opacity:.05" class="wmap-wall"/>
-        <text x="24" y="110" class="wmap-zone-label">Комплектация</text>
-        <rect x="28" y="118" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
-        <rect x="74" y="118" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
-        <rect x="120" y="118" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
-        <rect x="28" y="152" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
-        <rect x="74" y="152" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
-        <rect x="120" y="152" width="32" height="16" rx="1" style="fill:var(--green);fill-opacity:.18;stroke:var(--green);stroke-opacity:.4" class="wmap-rack"/>
-
-        <!-- ═ СТЕЛЛАЖИ Б ═ -->
-        <rect x="20" y="210" width="140" height="100" rx="2" style="fill:var(--purple);fill-opacity:.05" class="wmap-wall"/>
-        <text x="24" y="220" class="wmap-zone-label">Стеллажи Б</text>
-        <rect x="28" y="228" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="28" y="242" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="28" y="256" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="28" y="270" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-        <rect x="28" y="284" width="124" height="7" rx="1" style="fill:var(--purple);fill-opacity:.22;stroke:var(--purple);stroke-opacity:.45" class="wmap-rack"/>
-
-        <!-- ═ УПАКОВКА ═ -->
-        <rect x="175" y="190" width="125" height="80" rx="2" style="fill:var(--orange);fill-opacity:.05" class="wmap-wall"/>
-        <text x="179" y="200" class="wmap-zone-label">Упаковка</text>
-        <line x1="185" y1="228" x2="285" y2="228" style="stroke:var(--orange);stroke-opacity:.5;stroke-width:1.5"/>
-        <line x1="190" y1="224" x2="190" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="200" y1="224" x2="200" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="210" y1="224" x2="210" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="220" y1="224" x2="220" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="230" y1="224" x2="230" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="240" y1="224" x2="240" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="250" y1="224" x2="250" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="260" y1="224" x2="260" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="270" y1="224" x2="270" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <line x1="280" y1="224" x2="280" y2="232" style="stroke:var(--orange);stroke-opacity:.35;stroke-width:1"/>
-        <rect x="190" y="242" width="26" height="14" rx="1" style="fill:var(--orange);fill-opacity:.14;stroke:var(--orange);stroke-opacity:.35" class="wmap-rack"/>
-        <rect x="254" y="242" width="26" height="14" rx="1" style="fill:var(--orange);fill-opacity:.14;stroke:var(--orange);stroke-opacity:.35" class="wmap-rack"/>
-
-        <!-- ═ ОТГРУЗКА ═ -->
-        <rect x="175" y="280" width="125" height="80" rx="2" style="fill:var(--blue);fill-opacity:.05" class="wmap-wall"/>
-        <text x="179" y="290" class="wmap-zone-label">Отгрузка</text>
-        <rect x="300" y="295" width="10" height="18" class="wmap-dock"/><text x="292" y="308" class="wmap-dock-lbl">D4</text>
-        <rect x="300" y="325" width="10" height="18" class="wmap-dock"/><text x="292" y="338" class="wmap-dock-lbl">D5</text>
-        <rect x="255" y="345" width="7" height="7" rx="1" class="wmap-prop"/>
-        <rect x="267" y="345" width="7" height="7" rx="1" class="wmap-prop"/>
-
-        <!-- ═ ОФИС ═ -->
-        <rect x="20" y="320" width="140" height="50" rx="2" style="fill:var(--sub);fill-opacity:.06" class="wmap-wall"/>
-        <text x="24" y="330" class="wmap-zone-label">Офис</text>
-        <rect x="34" y="348" width="24" height="10" rx="1" class="wmap-prop"/>
-        <path d="M 150 320 A 12 12 0 0 1 138 332" class="wmap-door-arc"/>
-        <line x1="150" y1="320" x2="138" y2="332" class="wmap-door-leaf"/>
-
-        <!-- ═ ВХОД / ВЫХОД ═ -->
-        <rect x="120" y="385" width="80" height="35" rx="2" style="fill:var(--accent);fill-opacity:.08;stroke:var(--accent2);stroke-opacity:.5" class="wmap-wall"/>
-        <path d="M 142 420 A 34 34 0 0 1 176 386" class="wmap-door-arc"/>
-        <line x1="142" y1="420" x2="176" y2="386" class="wmap-door-leaf"/>
-        <text x="160" y="393" text-anchor="middle" class="wmap-zone-label" style="fill:var(--accent)">Вход / Выход</text>
-
-        <g id="wmap-traj-layer"></g>
-        <g id="wmap-dots-layer"></g>
-      </svg>
-    </div>
-
-    <div class="wmap-legend"><span class="wmap-legend-dot"></span> оранжевая точка с буквой имени — текущее место сотрудника</div>
-
-    <div class="wmap-people-title">Сотрудники</div>
-    <div class="wmap-people" id="wmap-people"></div>
-
-    <div class="wmap-feed-title">Лента уведомлений</div>
-    <div class="wmap-feed" id="wmap-feed"><div class="empty">ПОКА НЕТ ПЕРЕМЕЩЕНИЙ</div></div>
-
-  </div>
-</div>
-
 <!-- ═══════════ RATING ═══════════ -->
 <div class="page" id="page-rating">
   <div class="top">
@@ -1273,13 +1067,12 @@ select.fl-in{appearance:none}
 </div>
 
 <!-- NAV -->
-<div class="nav" style="grid-template-columns:repeat(6,1fr)">
+<div class="nav">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
   <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRating()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
-  <div class="ni"     id="n-map"    onclick="showPage('page-map');setNav('n-map');rMap()"><span class="ni-ic">🗺️</span><span class="ni-lb">Карта</span></div>
 </div>
 
 <!-- MODAL: PROFILE EDIT -->
@@ -1355,9 +1148,6 @@ select.fl-in{appearance:none}
     <button class="sv-btn" onclick="saveName()">СОХРАНИТЬ</button>
   </div>
 </div>
-
-<!-- TOAST: уведомления о перемещении -->
-<div class="wmap-toast-wrap" id="wmap-toast-wrap"></div>
 
 <!-- ═══════════ CONSENT GATE ═══════════ -->
 <div id="consent-gate" class="cgate">
@@ -1630,7 +1420,6 @@ DB.entries=DB.entries||[]; DB.name=DB.name||''; DB.uid=DB.uid||'';
 DB.emoji=DB.emoji||'👷'; DB.role=DB.role||'Пакет · Упаковщик'; DB.shift=DB.shift||'DARK 22–6';
 DB.notes=DB.notes||[]; DB.consent=DB.consent||null; DB.group=DB.group||'A';
 DB.team=DB.team||'dark';    // выбранная бригада: dark | orange
-DB.map=DB.map||{people:{},feed:[]};
 DB.archive=DB.archive||{};      // месячные итоги за прошлые месяцы (пики стёрты)
 DB.gen=DB.gen||null;            // поколение базы, в которое уже залили локальные данные
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
@@ -1693,7 +1482,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(DB.gen === DB_GEN) pushRank(); else restoreToDB();
   if(needConsent()) showConsentGate();        // первый вход → экран согласия
 });
-function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); rMap(); }
+function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
 
 // Каждый новый месяц пики за прошлые месяцы удаляются — остаётся только текущий месяц.
 // Итоги прошлых месяцев сохранены в рейтинге (Supabase, ключ по месяцу).
@@ -2640,169 +2429,6 @@ function cOvl(e,id){ if(e.target.id===id) closeModal(id); }
 function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
 function setNav(id){ document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
 
-// ══ MAP (живая карта склада, в духе Apple Maps / Yanosik) ═════
-// Голая оболочка карты: статичная схема зон + позиции сотрудников, которые
-// хранятся в DB.map (localStorage). Функционал — только отметить, где сейчас
-// находится человек: выбрал сотрудника → тапнул по карте → точка на карте
-// плавно переезжает в место тапа. Структура готова к замене DB.map.people
-// на реальные координаты с бэкенда/трекера.
-const WMAP_ZONES=[
-  {key:'recv',    label:'Приёмка',        icon:'📥', x:90,  y:55},
-  {key:'racksA',  label:'Стеллажи А',     icon:'📦', x:237, y:100},
-  {key:'pick',    label:'Комплектация',   icon:'🧰', x:90,  y:150},
-  {key:'racksB',  label:'Стеллажи Б',     icon:'📦', x:90,  y:260},
-  {key:'pack',    label:'Упаковка',       icon:'📮', x:237, y:230},
-  {key:'ship',    label:'Отгрузка',       icon:'🚚', x:237, y:320},
-  {key:'office',  label:'Офис',           icon:'🖥', x:90,  y:345},
-  {key:'entrance',label:'Вход/Выход',     icon:'🚪', x:160, y:402},
-];
-const WMAP_PEOPLE=['Никита','Ира','Дима','Антон','Михалина'];
-const WMAP_PERSON_ICONS={'Никита':'🧑','Ира':'👩','Дима':'👨','Антон':'🧔','Михалина':'👱‍♀️'};
-let wmapArmed=null; // имя сотрудника, для которого ждём тап по карте
-
-function personIcon(name){ return WMAP_PERSON_ICONS[name]||'🧑'; }
-function personInitial(name){ return name.charAt(0).toUpperCase(); }
-
-function personDefaultPos(idx){ const xs=[130,145,160,175,190]; return {x:xs[idx]??160,y:411}; }
-
-function getPersonState(name){
-  if(!DB.map.people[name]){
-    const p=personDefaultPos(WMAP_PEOPLE.indexOf(name));
-    DB.map.people[name]={x:p.x,y:p.y,zoneKey:'entrance',zoneLabel:'Вход/Выход',moving:false};
-  }
-  return DB.map.people[name];
-}
-
-function nearestZone(x,y){
-  let best=WMAP_ZONES[0], bd=Infinity;
-  for(const z of WMAP_ZONES){ const d=(z.x-x)**2+(z.y-y)**2; if(d<bd){ bd=d; best=z; } }
-  return best;
-}
-
-function rMap(){ renderMapPeopleList(); renderMapDots(); renderMapFeed(); updateArmUI(); }
-
-function renderMapPeopleList(){
-  const wrap=document.getElementById('wmap-people'); if(!wrap) return;
-  wrap.innerHTML=WMAP_PEOPLE.map(name=>{
-    const st=getPersonState(name);
-    return `<div class="wmap-person${wmapArmed===name?' armed':''}" onclick="armPerson('${name}')">
-      <div class="wmap-person-ic">${personIcon(name)}</div>
-      <div class="wmap-person-body">
-        <div class="wmap-person-name">${name}</div>
-        <div class="wmap-person-zone">${st.zoneLabel}</div>
-      </div>
-      <div class="wmap-person-r">
-        <div class="wmap-person-go">${wmapArmed===name?'Тапни карту':'Отметить →'}</div>
-        <div class="wmap-person-dot${st.moving?' on':''}"></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderMapDots(){
-  const layer=document.getElementById('wmap-dots-layer'); if(!layer) return;
-  layer.innerHTML=WMAP_PEOPLE.map(name=>{
-    const st=getPersonState(name);
-    return `<circle class="wmap-live-ring" data-wring="${name}" cx="${st.x}" cy="${st.y}" r="7"></circle>
-      <circle class="wmap-ping-ring${st.moving?' on':''}" data-wpulse="${name}" cx="${st.x}" cy="${st.y}" r="6"></circle>
-      <circle class="wmap-dot" data-wdot="${name}" cx="${st.x}" cy="${st.y}"></circle>
-      <text class="wmap-dot-init" data-winit="${name}" x="${st.x}" y="${st.y+3}">${personInitial(name)}</text>
-      <text class="wmap-dot-label${st.moving?' show':''}" data-wlbl="${name}" x="${st.x}" y="${st.y-13}" text-anchor="middle">${name}</text>`;
-  }).join('');
-}
-
-function renderMapFeed(){
-  const wrap=document.getElementById('wmap-feed'); if(!wrap) return;
-  if(!DB.map.feed.length){ wrap.innerHTML='<div class="empty">ПОКА НЕТ ОТМЕТОК</div>'; return; }
-  wrap.innerHTML=DB.map.feed.map(f=>`<div class="wmap-feed-row"><span class="wmap-feed-dot"></span><span class="wmap-feed-time">${f.time}</span><span class="wmap-feed-text">🟠 <b>${f.name}</b> сейчас у: ${f.icon} ${f.zoneLabel}</span></div>`).join('');
-}
-
-// ── выбор сотрудника + тап по карте (как в Yanosik: выбрал → отметил точку) ──
-function armPerson(name){
-  wmapArmed = wmapArmed===name ? null : name;
-  updateArmUI();
-  renderMapPeopleList();
-}
-function disarmPerson(){ wmapArmed=null; updateArmUI(); renderMapPeopleList(); }
-function updateArmUI(){
-  const bar=document.getElementById('wmap-armbar');
-  const nameEl=document.getElementById('wmap-armbar-name');
-  const svg=document.getElementById('wmap-svg');
-  if(!bar||!nameEl||!svg) return;
-  if(wmapArmed){
-    bar.style.display='flex'; nameEl.textContent=wmapArmed; svg.classList.add('armed');
-  }else{
-    bar.style.display='none'; svg.classList.remove('armed');
-  }
-}
-
-function mapTap(evt){
-  if(!wmapArmed){ showMapToast('👇 Сначала выбери сотрудника в списке ниже'); return; }
-  const svg=document.getElementById('wmap-svg');
-  const pt=svg.createSVGPoint();
-  pt.x=evt.clientX; pt.y=evt.clientY;
-  const loc=pt.matrixTransform(svg.getScreenCTM().inverse());
-  const x=Math.max(16,Math.min(304,Math.round(loc.x)));
-  const y=Math.max(16,Math.min(418,Math.round(loc.y)));
-  placePerson(wmapArmed,x,y);
-  disarmPerson();
-}
-
-function placePerson(name,x,y){
-  const st=getPersonState(name);
-  const zone=nearestZone(x,y);
-
-  // траектория — пунктирная линия от текущей точки к месту тапа
-  const traj=document.createElementNS('http://www.w3.org/2000/svg','line');
-  traj.setAttribute('x1',st.x); traj.setAttribute('y1',st.y);
-  traj.setAttribute('x2',x); traj.setAttribute('y2',y);
-  traj.setAttribute('class','wmap-traj');
-  const trajLayer=document.getElementById('wmap-traj-layer');
-  if(trajLayer){ trajLayer.appendChild(traj); setTimeout(()=>traj.remove(),1800); }
-
-  // плавный переезд оранжевой точки в место тапа
-  const ring=document.querySelector(`[data-wring="${name}"]`);
-  const pulse=document.querySelector(`[data-wpulse="${name}"]`);
-  const dot=document.querySelector(`[data-wdot="${name}"]`);
-  const init=document.querySelector(`[data-winit="${name}"]`);
-  const lbl=document.querySelector(`[data-wlbl="${name}"]`);
-  if(ring){ ring.setAttribute('cx',x); ring.setAttribute('cy',y); }
-  if(pulse){ pulse.setAttribute('cx',x); pulse.setAttribute('cy',y); pulse.classList.remove('on'); void pulse.offsetWidth; pulse.classList.add('on'); }
-  if(dot){ dot.setAttribute('cx',x); dot.setAttribute('cy',y); }
-  if(init){ init.setAttribute('x',x); init.setAttribute('y',y+3); }
-  if(lbl){ lbl.setAttribute('x',x); lbl.setAttribute('y',y-13); lbl.classList.add('show'); }
-
-  st.x=x; st.y=y; st.zoneKey=zone.key; st.zoneLabel=zone.label; st.moving=true;
-  sv();
-
-  showMapToast(`🟠 <b>${name}</b> отмечен(а) у: ${zone.icon} ${zone.label}`);
-  pushMoveFeed(name,zone);
-  renderMapPeopleList();
-
-  setTimeout(()=>{
-    st.moving=false; sv();
-    if(pulse) pulse.classList.remove('on');
-    if(lbl) lbl.classList.remove('show');
-    renderMapPeopleList();
-  },2200);
-}
-
-function pushMoveFeed(name,zone){
-  const time=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-  DB.map.feed.unshift({name,zoneLabel:zone.label,icon:zone.icon,time});
-  DB.map.feed=DB.map.feed.slice(0,30);
-  sv();
-  renderMapFeed();
-}
-
-function showMapToast(html){
-  const wrap=document.getElementById('wmap-toast-wrap'); if(!wrap) return;
-  const el=document.createElement('div');
-  el.className='wmap-toast';
-  el.innerHTML=html;
-  wrap.appendChild(el);
-  setTimeout(()=>el.remove(),3000);
-}
 </script>
 </body>
 </html>
