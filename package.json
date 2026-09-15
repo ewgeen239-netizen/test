@@ -1,7 +1,0 @@
-{
-  "name": "autodoc-os-tracker",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Telegram Mini App (index.html) + бот на Python (bot.py). Сборкой на Railway управляет nixpacks.toml, зависимостей npm у проекта нет.",
-  "license": "UNLICENSED"
-}
