@@ -101,6 +101,34 @@ Deno.serve(async (req) => {
     return json({ ok: true, consent: true });
   }
 
+  // ── рейтинг пасьянса (накопительный, одна строка на юзера) ──
+  if (body.sol) {
+    const v = body.sol;
+    const srow = {
+      uid: String(user.id),                                            // доверенный id
+      name: String(v.name || user.first_name || "Аноним").slice(0, 40),
+      emoji: String(v.emoji || "🃏").slice(0, 8),
+      photo_url: user.photo_url || String(v.photo_url || ""),
+      wins: int(v.wins, 0, 100000),
+      played: int(v.played, 0, 1000000),
+      best_sec: v.best_sec == null ? null : int(v.best_sec, 1, 86400),
+      best_score: int(v.best_score, 0, 100000),
+      updated_at: new Date().toISOString(),
+    };
+    const sr = await fetch(`${PROJECT_URL}/rest/v1/sol_leaderboard`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates",
+      },
+      body: JSON.stringify(srow),
+    });
+    if (!sr.ok) return json({ error: "db", detail: await sr.text() }, 500);
+    return json({ ok: true, sol: true });
+  }
+
   const r = body.row || {};
   const row = {
     uid: String(user.id),                                              // доверенный id

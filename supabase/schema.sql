@@ -87,6 +87,33 @@ alter table public.bot_users enable row level security;
 
 
 -- ─────────────────────────────────────────────────────────────
+-- 3b. РЕЙТИНГ ПАСЬЯНСА. Одна строка на юзера, накопительный итог.
+--     Пишется тем же Edge Function submit-rank (service_role),
+--     читается всеми — как и основной рейтинг.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.sol_leaderboard (
+  uid        text        primary key,        -- Telegram user id
+  name       text,
+  emoji      text,
+  photo_url  text,
+  wins       integer     default 0,          -- побед (ключевая метрика)
+  played     integer     default 0,          -- партий начато
+  best_sec   integer,                        -- лучшее время партии, секунды
+  best_score integer     default 0,
+  updated_at timestamptz default now()
+);
+
+create index if not exists sol_leaderboard_top_idx
+  on public.sol_leaderboard (wins desc, best_sec asc nulls last);
+
+alter table public.sol_leaderboard enable row level security;
+
+drop policy if exists "sol read" on public.sol_leaderboard;
+create policy "sol read" on public.sol_leaderboard for select using (true);
+-- политик insert/update нет → анон писать не может, пишет только функция.
+
+
+-- ─────────────────────────────────────────────────────────────
 -- 4. СИД: подтягиваем в реестр рассылки всех, кто уже попал в рейтинг.
 --    Безопасно при повторном запуске — существующие строки не трогаем.
 -- ─────────────────────────────────────────────────────────────
@@ -108,5 +135,5 @@ select
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
-  and c.relname in ('leaderboard', 'consents', 'bot_users')
+  and c.relname in ('leaderboard', 'sol_leaderboard', 'consents', 'bot_users')
 order by c.relname;

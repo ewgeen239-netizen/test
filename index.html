@@ -1137,22 +1137,40 @@ select.fl-in{appearance:none}
 <div class="page" id="page-rating">
   <div class="top">
     <div class="top-l"><div class="eyebrow">AutoDoc · Szczecin</div><div class="heading">Рейтинг</div></div>
-    <div class="top-r"><div class="badge green" onclick="rRating()">↻ Обновить</div></div>
+    <div class="top-r"><div class="badge green" onclick="rRankTab()">↻ Обновить</div></div>
   </div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)">
-    <button class="cal-btn" onclick="rankShift(-1)">‹</button>
-    <div id="rank-month" style="font-size:15px;font-weight:800">—</div>
-    <button class="cal-btn" onclick="rankShift(1)">›</button>
+
+  <div class="pad" style="padding-top:12px">
+    <div class="hs-tabs">
+      <div class="hs-tab act" id="rk-tab-bonus" onclick="switchRank('bonus')">💰 ПРЕМИЯ</div>
+      <div class="hs-tab"     id="rk-tab-sol"   onclick="switchRank('sol')">🃏 ПАСЬЯНС</div>
+    </div>
   </div>
-  <div style="padding:10px 16px 6px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">🏆 Топ по бонусу за месяц · zł</div>
-  <div class="pad" style="padding-bottom:84px"><div id="rank-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
+
+  <!-- ПРЕМИЯ -->
+  <div id="rk-bonus">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 12px;border-bottom:1px solid var(--line)">
+      <button class="cal-btn" onclick="rankShift(-1)">‹</button>
+      <div id="rank-month" style="font-size:15px;font-weight:800">—</div>
+      <button class="cal-btn" onclick="rankShift(1)">›</button>
+    </div>
+    <div style="padding:10px 16px 6px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">🏆 Топ по бонусу за месяц · zł</div>
+    <div class="pad" style="padding-bottom:84px"><div id="rank-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
+  </div>
+
+  <!-- ПАСЬЯНС -->
+  <div id="rk-sol" style="display:none">
+    <div class="pad" style="padding-top:2px"><div id="sol-me"></div></div>
+    <div style="padding:10px 16px 6px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">🏆 Топ по победам в пасьянсе</div>
+    <div class="pad" style="padding-bottom:84px"><div id="sol-rank-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
+  </div>
 </div>
 
 <!-- NAV -->
 <div class="nav" style="grid-template-columns:repeat(6,1fr)">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
-  <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRating()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
+  <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRankTab()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
   <div class="ni"     id="n-sol"    onclick="showPage('page-sol');setNav('n-sol');solOpen()"><span class="ni-ic">🃏</span><span class="ni-lb">Solitaire</span></div>
@@ -1522,7 +1540,7 @@ DB.team=DB.team||'dark';    // выбранная бригада: dark | orange
 DB.archive=DB.archive||{};      // месячные итоги за прошлые месяцы (пики стёрты)
 DB.gen=DB.gen||null;            // поколение базы, в которое уже залили локальные данные
 DB.sol=DB.sol||null;            // текущая партия пасьянса и режим сдачи
-DB.solStats=DB.solStats||{played:0,won:0,best:null};
+DB.solStats=DB.solStats||{played:0,won:0,best:null,bestScore:0};
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
 let curSt='os', ws='mon';
@@ -2778,7 +2796,9 @@ function solWin(){
   const st=DB.solStats||{played:0,won:0,best:null};
   st.won=(st.won||0)+1;
   if(!st.best||G.sec<st.best) st.best=G.sec;
+  if(!st.bestScore||G.score>st.bestScore) st.bestScore=G.score;
   DB.solStats=st; DB.sol={...(DB.sol||{}),game:null}; sv();
+  pushSolRank();                                   // сразу в общий топ
   document.getElementById('sol-win-time').textContent=solTime(G.sec);
   document.getElementById('sol-win-moves').textContent=G.moves;
   document.getElementById('sol-win-score').textContent=G.score;
@@ -2803,6 +2823,81 @@ function solOpen(){
       solNew();
     }
   } else { solRender(); solTick(false); }
+}
+
+// ══ РЕЙТИНГ ПАСЬЯНСА ═════════════════════════════════════════
+let rankTab='bonus';
+function switchRank(t){
+  rankTab=t;
+  document.getElementById('rk-tab-bonus').classList.toggle('act',t==='bonus');
+  document.getElementById('rk-tab-sol').classList.toggle('act',t==='sol');
+  document.getElementById('rk-bonus').style.display = t==='bonus'?'block':'none';
+  document.getElementById('rk-sol').style.display   = t==='sol'?'block':'none';
+  rRankTab();
+}
+function rRankTab(){ rankTab==='sol' ? rSolRank() : rRating(); }
+
+// свои показатели берём из локальной статистики — видны даже без связи
+function renderSolMe(){
+  const el=document.getElementById('sol-me'); if(!el) return;
+  const st=DB.solStats||{played:0,won:0,best:null};
+  const rate = st.played ? Math.round(st.won/st.played*100) : 0;
+  el.innerHTML=`<div class="sol-hud" style="margin-bottom:10px">
+    <div class="sol-hud-c"><div class="sol-hud-v" style="color:var(--accent)">${st.won||0}</div><div class="sol-hud-l">моих побед</div></div>
+    <div class="sol-hud-c"><div class="sol-hud-v">${st.played||0}</div><div class="sol-hud-l">партий</div></div>
+    <div class="sol-hud-c"><div class="sol-hud-v">${st.best?solTime(st.best):'—'}</div><div class="sol-hud-l">лучшее время</div></div>
+  </div>
+  <div class="sol-stats" style="margin:0 0 4px"><span>Доля побед: <b>${rate}%</b></span>
+    <span>Лучший счёт: <b>${st.bestScore||0}</b></span></div>`;
+}
+
+function rSolRank(){
+  renderSolMe();
+  pushSolRank();                                  // заодно обновляем свою строку на сервере
+  const wrap=document.getElementById('sol-rank-list');
+  wrap.innerHTML='<div class="empty">ЗАГРУЗКА…</div>';
+  fetch(SB_URL+'/rest/v1/sol_leaderboard?order=wins.desc,best_sec.asc&limit=100',{headers:SB_HEAD})
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(rows=>renderSolRank(rows||[]))
+    .catch(()=>{ wrap.innerHTML='<div class="empty">НЕТ СВЯЗИ С БАЗОЙ</div>'+
+      '<div class="ar-hint" style="margin-top:8px">Свои победы выше считаются на устройстве и попадут в общий топ, когда связь появится.</div>'; });
+}
+
+function renderSolRank(rows){
+  const wrap=document.getElementById('sol-rank-list');
+  if(!rows.length){ wrap.innerHTML='<div class="empty">ПОКА НИКОГО · БУДЬ ПЕРВЫМ</div>'; return; }
+  const medal=['🥇','🥈','🥉'];
+  wrap.innerHTML=rows.map((r,i)=>{
+    const me=String(r.uid)===String(DB.uid);
+    const rk=i<3?medal[i]:('#'+(i+1));
+    const av=r.photo_url
+      ? `<img src="${esc(r.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`
+      : esc(r.emoji||'🃏');
+    const rate=r.played?Math.round((r.wins||0)/r.played*100):0;
+    return `<div class="strow" style="${me?'border-color:var(--accent);background:rgba(232,255,0,.03)':''}">
+      <div style="width:26px;text-align:center;font-weight:800;font-size:14px;color:var(--sub);flex-shrink:0">${rk}</div>
+      <div class="strow-ic" style="background:var(--c3);border:1px solid var(--line2);font-size:16px;overflow:hidden">${av}</div>
+      <div class="strow-body">
+        <div class="strow-name">${esc(r.name||'Аноним')}${me?' <span style="color:var(--accent);font-size:9px">· ТЫ</span>':''}</div>
+        <div class="strow-meta">${r.played||0} партий · ${rate}% побед${r.best_sec?' · лучшее '+solTime(r.best_sec):''}</div>
+      </div>
+      <div class="strow-r"><div class="strow-bonus" style="color:var(--accent)">${r.wins||0}</div><div class="strow-unit">побед</div></div>
+    </div>`;
+  }).join('');
+}
+
+// отправляем свои показатели той же Edge Function: uid она берёт из подписи Telegram
+function pushSolRank(){
+  if(!DB.uid || !TG_INIT) return;
+  const st=DB.solStats||{};
+  if(!st.played) return;                          // нечего показывать
+  fetch(FN_URL,{
+    method:'POST',
+    headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Content-Type':'application/json' },
+    body:JSON.stringify({ initData:TG_INIT, sol:{
+      name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'🃏', photo_url:DB.photoUrl||'',
+      wins:st.won||0, played:st.played||0, best_sec:st.best||null, best_score:st.bestScore||0 }})
+  }).catch(()=>{});
 }
 
 </script>
