@@ -463,6 +463,118 @@ select.fl-in{appearance:none}
 .info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
 
 
+/* ── КАРТЫ: общий вид для «Косынки» и «Дурака» ── */
+.pc{position:relative;border-radius:6px;user-select:none;-webkit-user-select:none;
+  box-shadow:0 1px 2px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35)}
+.pc.up{background:linear-gradient(158deg,#fdfdfb 0%,#f4f4ee 55%,#e8e8df 100%);
+  border:1px solid #cfcfc6}
+.pc.up::before{content:'';position:absolute;inset:1px;border-radius:5px;pointer-events:none;
+  background:linear-gradient(158deg,rgba(255,255,255,.9),rgba(255,255,255,0) 42%)}
+.pc.down{background:
+    repeating-linear-gradient(45deg,rgba(232,255,0,.14) 0 3px,transparent 3px 7px),
+    repeating-linear-gradient(-45deg,rgba(232,255,0,.07) 0 3px,transparent 3px 7px),
+    linear-gradient(160deg,#243010,#151b09);
+  border:1px solid rgba(232,255,0,.32)}
+.pc.down::after{content:'';position:absolute;inset:4px;border-radius:3px;
+  border:1px solid rgba(232,255,0,.18);pointer-events:none}
+.pc-ix{position:absolute;top:2px;left:3px;line-height:.95;font-family:var(--sans);font-weight:800;
+  letter-spacing:-.6px;text-align:center;z-index:2}
+.pc-ix i{display:block;font-style:normal;font-weight:400;margin-top:-1px}
+.pc-mid{position:absolute;right:3px;bottom:1px;line-height:1;opacity:.92;z-index:2}
+.pc.red .pc-ix,.pc.red .pc-mid{color:#d4232c}
+.pc.blk .pc-ix,.pc.blk .pc-mid{color:#1a1a1f}
+/* живость: появление, розыгрыш, подсветка */
+@keyframes pcDeal{from{opacity:0;transform:translateY(-16px) scale(.9) rotate(-6deg)}
+                  to{opacity:1;transform:none}}
+@keyframes pcPlay{from{opacity:0;transform:translateY(22px) scale(.86)}
+                  to{opacity:1;transform:none}}
+@keyframes pcBeat{0%{transform:translate(6px,-14px) rotate(9deg);opacity:0}
+                  60%{transform:translate(0,2px) rotate(-3deg);opacity:1}
+                  100%{transform:none;opacity:1}}
+@keyframes pcPulse{0%,100%{box-shadow:0 0 0 0 rgba(232,255,0,.5)}
+                   70%{box-shadow:0 0 0 9px rgba(232,255,0,0)}}
+.pc-deal{animation:pcDeal .34s cubic-bezier(.2,.9,.3,1.2) backwards}
+.pc-play{animation:pcPlay .26s cubic-bezier(.2,.9,.3,1.2)}
+.pc-beat{animation:pcBeat .34s cubic-bezier(.2,.9,.3,1.1)}
+@media (prefers-reduced-motion:reduce){
+  .pc-deal,.pc-play,.pc-beat{animation:none}
+}
+
+
+/* ── ДУРАК ОНЛАЙН ── */
+.dk-wrap{padding:12px 12px 96px;--dcw:52px}
+.dk-lobby{display:flex;flex-direction:column;gap:10px}
+.dk-card{background:var(--c1);border:1px solid var(--line);border-radius:14px;padding:14px}
+.dk-h{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase;margin-bottom:10px}
+.dk-code{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:6px;color:var(--accent);
+  text-align:center;padding:12px 0 4px;text-shadow:0 0 22px rgba(232,255,0,.3)}
+.dk-code-l{text-align:center;font-family:var(--mono);font-size:8px;color:var(--sub);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:12px}
+.dk-btn{width:100%;padding:13px;border:none;border-radius:11px;font-size:14px;font-weight:800;cursor:pointer;
+  background:var(--accent);color:#000;transition:opacity .15s}
+.dk-btn:active{opacity:.82}
+.dk-btn.sec{background:var(--c2);border:1px solid var(--line);color:var(--text);font-weight:700}
+.dk-btn:disabled{opacity:.35;cursor:not-allowed}
+.dk-row{display:flex;gap:8px}
+.dk-in{flex:1;background:var(--c2);border:1px solid var(--line2);border-radius:11px;padding:12px;color:var(--text);
+  font-family:var(--mono);font-size:19px;letter-spacing:4px;text-align:center;text-transform:uppercase;outline:none}
+.dk-in:focus{border-color:var(--accent)}
+.dk-note{font-size:11px;color:var(--sub);line-height:1.5}
+.dk-err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:10px;
+  padding:9px 12px;font-size:11.5px;margin-bottom:10px;animation:pcPlay .22s ease}
+/* стол */
+.dk-seat{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.dk-ava{width:32px;height:32px;border-radius:10px;background:var(--c3);border:1px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;overflow:hidden;transition:all .2s}
+.dk-seat.turn .dk-ava{border-color:var(--accent);animation:pcPulse 1.6s ease-out infinite}
+.dk-nm{font-size:13px;font-weight:700;line-height:1.2}
+.dk-sub{font-family:var(--mono);font-size:9px;color:var(--sub)}
+.dk-fan{display:flex;margin-left:auto}
+.dk-fan .pc{width:20px;height:28px;margin-left:-11px;border-radius:4px;flex-shrink:0}
+.dk-fan .pc:first-child{margin-left:0}
+/* центр: колода, козырь, бито */
+.dk-mid{display:flex;align-items:center;gap:12px;padding:10px 0;margin-bottom:6px;border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line)}
+/* козырь лежит слева, колода накрывает его справа — ничего не обрезается */
+.dk-deck{position:relative;width:calc(var(--dcw)*1.5);height:calc(var(--dcw)*1.4);flex-shrink:0}
+.dk-deck .pc{position:absolute;top:0;width:var(--dcw);height:100%}
+.dk-deck .pc.tr{left:0;z-index:0;transform:rotate(-7deg)}
+.dk-deck .pc.bk{left:calc(var(--dcw)*.48);z-index:1}
+.dk-deck .pc-ix{font-size:calc(var(--dcw)*.30)}
+.dk-deck .pc-mid{font-size:calc(var(--dcw)*.38)}
+.dk-cnt{position:absolute;bottom:-5px;right:-4px;z-index:3;background:var(--c1);border:1px solid var(--line2);
+  border-radius:20px;padding:1px 7px;font-family:var(--mono);font-size:9px;color:var(--text)}
+.dk-info{flex:1;min-width:0}
+.dk-info-t{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase}
+.dk-info-v{font-size:13px;font-weight:700;margin-top:2px}
+/* игровой стол с парами */
+.dk-table{min-height:calc(var(--dcw)*1.65);display:flex;flex-wrap:wrap;gap:10px;padding:12px 4px;margin-bottom:8px;
+  align-content:flex-start;border-radius:14px;
+  background:radial-gradient(ellipse at 50% 35%,rgba(232,255,0,.05),transparent 62%)}
+.dk-slot{position:relative;width:var(--dcw);height:calc(var(--dcw)*1.4)}
+.dk-slot .pc{position:absolute;width:100%;height:100%}
+.dk-slot .pc-ix,.dk-hand .pc-ix{font-size:calc(var(--dcw)*.30)}
+.dk-slot .pc-mid,.dk-hand .pc-mid{font-size:calc(var(--dcw)*.38)}
+.dk-slot .pc.def{transform:translate(9px,11px) rotate(5deg)}
+.dk-empty{width:100%;text-align:center;color:var(--dim);font-family:var(--mono);font-size:9.5px;letter-spacing:2px;
+  padding:26px 0;text-transform:uppercase}
+/* моя рука */
+.dk-hand{display:flex;justify-content:center;flex-wrap:wrap;padding:8px 0 10px;min-height:calc(var(--dcw)*1.5)}
+.dk-hand .pc{width:var(--dcw);height:calc(var(--dcw)*1.4);margin-left:-16px;cursor:pointer;
+  transition:transform .16s cubic-bezier(.2,.9,.3,1.3),box-shadow .16s}
+.dk-hand .pc:first-child{margin-left:0}
+.dk-hand .pc.ok{box-shadow:0 0 0 1.5px rgba(232,255,0,.55),0 4px 10px rgba(0,0,0,.4)}
+.dk-hand .pc.ok:active{transform:translateY(-12px) scale(1.06)}
+.dk-hand .pc.no{filter:brightness(.82) saturate(.75);opacity:.9}
+.dk-acts{display:flex;gap:8px}
+.dk-turn{text-align:center;font-family:var(--mono);font-size:9.5px;letter-spacing:1.5px;color:var(--sub);
+  text-transform:uppercase;padding:6px 0 10px}
+.dk-turn b{color:var(--accent)}
+/* конец партии */
+.dk-over{position:fixed;inset:0;z-index:300;background:rgba(10,10,10,.93);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;padding:24px}
+.dk-over.on{display:flex}
+
 /* ── SOLITAIRE (Косынка) ── */
 .sol-wrap{padding:10px 10px 90px;--gap:4px;--cw:calc((100% - var(--gap)*6)/7);--fd:10px;--fu:18px}
 .sol-hud{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
@@ -482,21 +594,12 @@ select.fl-in{appearance:none}
 .sol-slot{position:relative;aspect-ratio:5/7;border-radius:5px;border:1px dashed var(--line2);background:rgba(255,255,255,.02)}
 .sol-slot.f::after{content:attr(data-s);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:calc(var(--cw)*.42);color:var(--dim)}
-.sol-card{position:absolute;left:0;right:0;aspect-ratio:5/7;border-radius:5px;cursor:pointer;
-  box-shadow:0 1px 3px rgba(0,0,0,.55);user-select:none;-webkit-user-select:none;transition:transform .12s,box-shadow .12s}
+.sol-card{position:absolute;left:0;right:0;aspect-ratio:5/7;cursor:pointer;
+  transition:transform .12s,box-shadow .12s,top .18s cubic-bezier(.2,.9,.3,1.1)}
 .sol-card.st{position:relative}
-/* рубашка — в цветах бота */
-.sol-card.down{background:
-    repeating-linear-gradient(45deg,rgba(232,255,0,.13) 0 3px,transparent 3px 6px),
-    linear-gradient(160deg,#1e2a10,#141a0a);
-  border:1px solid rgba(232,255,0,.3)}
-.sol-card.up{background:#f2f2ee;border:1px solid #c9c9c2}
 /* угловой индекс виден в просвете 18px, когда карты веером перекрывают друг друга */
-.sol-ix{position:absolute;top:1px;left:3px;font-family:var(--sans);font-weight:800;line-height:1.1;
-  font-size:calc(var(--cw)*.30);letter-spacing:-.5px;white-space:nowrap}
-.sol-big{position:absolute;bottom:2px;right:3px;line-height:1;font-size:calc(var(--cw)*.40);opacity:.9}
-.sol-card.red .sol-ix,.sol-card.red .sol-big{color:#d61f26}
-.sol-card.blk .sol-ix,.sol-card.blk .sol-big{color:#16161a}
+.sol-card .pc-ix{font-size:calc(var(--cw)*.30)}
+.sol-card .pc-mid{font-size:calc(var(--cw)*.40)}
 .sol-card.sel{transform:translateY(-5px);box-shadow:0 0 0 2px var(--accent),0 5px 12px rgba(0,0,0,.6);z-index:50}
 .sol-card.hint{box-shadow:0 0 0 2px var(--green),0 3px 8px rgba(0,0,0,.5)}
 .sol-slot.drop{border-color:var(--accent);background:rgba(232,255,0,.07)}
@@ -1106,6 +1209,18 @@ select.fl-in{appearance:none}
   <div class="pad" style="padding-top:14px;padding-bottom:20px" id="rates-cnt"></div>
 </div>
 
+<!-- ═══════════ ДУРАК ОНЛАЙН ═══════════ -->
+<div class="page" id="page-dk">
+  <div class="top">
+    <div class="top-l"><div class="eyebrow">AutoDoc · Игра на двоих</div><div class="heading">Дурак онлайн</div></div>
+    <div class="top-r"><div class="badge" id="dk-badge" onclick="dkLeave()">—</div></div>
+  </div>
+  <div class="dk-wrap">
+    <div id="dk-err"></div>
+    <div id="dk-body"></div>
+  </div>
+</div>
+
 <!-- ═══════════ SOLITAIRE ═══════════ -->
 <div class="page" id="page-sol">
   <div class="top">
@@ -1167,13 +1282,14 @@ select.fl-in{appearance:none}
 </div>
 
 <!-- NAV -->
-<div class="nav" style="grid-template-columns:repeat(6,1fr)">
+<div class="nav" style="grid-template-columns:repeat(7,1fr)">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
   <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRankTab()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
   <div class="ni"     id="n-sol"    onclick="showPage('page-sol');setNav('n-sol');solOpen()"><span class="ni-ic">🃏</span><span class="ni-lb">Solitaire</span></div>
+  <div class="ni"     id="n-dk"     onclick="showPage('page-dk');setNav('n-dk');dkOpen()"><span class="ni-ic">🂡</span><span class="ni-lb">Дурак</span></div>
 </div>
 
 <!-- MODAL: PROFILE EDIT -->
@@ -1306,6 +1422,7 @@ const esc = s => String(s??'').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&
 const MONTHS = ['','Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const monthLabel = m => { const [y,mo]=m.split('-'); return MONTHS[+mo]+' '+y; };
 const FN_URL = SB_URL+'/functions/v1/submit-rank';   // Edge Function (проверяет initData)
+const BOT_USERNAME = '';   // ← впиши имя бота без @, тогда приглашение станет ссылкой, открывающей комнату
 let rankMonth = null;
 let TG_INIT = '';                                    // сырой подписанный initData от Telegram
 const CONSENT_VERSION = '1.0';                       // повысь версию → согласие спросят заново
@@ -1540,6 +1657,7 @@ DB.team=DB.team||'dark';    // выбранная бригада: dark | orange
 DB.archive=DB.archive||{};      // месячные итоги за прошлые месяцы (пики стёрты)
 DB.gen=DB.gen||null;            // поколение базы, в которое уже залили локальные данные
 DB.sol=DB.sol||null;            // текущая партия пасьянса и режим сдачи
+DB.dk=DB.dk||null;              // код комнаты «дурака», чтобы вернуться в партию
 DB.solStats=DB.solStats||{played:0,won:0,best:null,bestScore:0};
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
@@ -1599,6 +1717,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Первый запуск после пересоздания базы — заливаем всё, что есть локально
   // (restoreToDB сам отправит и текущий месяц). Дальше — обычная отправка.
   if(DB.gen === DB_GEN) pushRank(); else restoreToDB();
+  openFromLink();                             // бот может прислать ссылку сразу в игру
   if(needConsent()) showConsentGate();        // первый вход → экран согласия
 });
 function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
@@ -2702,9 +2821,9 @@ function solTapEmpty(k,p){                              // касание пус
 
 // ── отрисовка ──
 function solCardHTML(c, top, sel, extra){
-  if(!c.u) return `<div class="sol-card down" style="top:${top}px"${extra||''}></div>`;
-  return `<div class="sol-card up ${solRed(c)?'red':'blk'}${sel?' sel':''}" style="top:${top}px"${extra||''}>`+
-         `<span class="sol-ix">${SOL_R[c.r]}${SOL_S[c.s]}</span><span class="sol-big">${SOL_S[c.s]}</span></div>`;
+  if(!c.u) return `<div class="sol-card pc down" style="top:${top}px"${extra||''}></div>`;
+  return `<div class="sol-card pc up ${solRed(c)?'red':'blk'}${sel?' sel':''}" style="top:${top}px"${extra||''}>`+
+         `<span class="pc-ix">${SOL_R[c.r]}<i>${SOL_S[c.s]}</i></span><span class="pc-mid">${SOL_S[c.s]}</span></div>`;
 }
 function solRender(){
   if(!G) return;
@@ -2719,16 +2838,16 @@ function solRender(){
   // верхний ряд: сток · сброс · пусто · четыре базы
   let h='';
   h+=`<div class="sol-slot" onclick="solDrawStock()">`+
-     (G.stock.length ? `<div class="sol-card down" style="top:0"></div>`
-                     : `<div class="sol-card up" style="top:0;opacity:.14"></div>`)+`</div>`;
+     (G.stock.length ? `<div class="sol-card pc down" style="top:0"></div>`
+                     : `<div class="sol-card pc up" style="top:0;opacity:.14"></div>`)+`</div>`;
   h+=`<div class="sol-slot">`+
      (G.waste.length
        ? G.waste.slice(-Math.min(3,G.draw)).map((c,n,arr)=>{
            const last=n===arr.length-1;
-           return `<div class="sol-card up ${solRed(c)?'red':'blk'}${last&&isSel('w',0,0)?' sel':''}"`+
+           return `<div class="sol-card pc up ${solRed(c)?'red':'blk'}${last&&isSel('w',0,0)?' sel':''}"`+
                   ` style="top:0;transform:translateX(${n*10}px)${last&&isSel('w',0,0)?' translateY(-5px)':''};z-index:${n+1}"`+
                   (last?` onclick="solTap('w',0,0,event)"`:'')+`>`+
-                  `<span class="sol-ix">${SOL_R[c.r]}${SOL_S[c.s]}</span><span class="sol-big">${SOL_S[c.s]}</span></div>`;
+                  `<span class="pc-ix">${SOL_R[c.r]}<i>${SOL_S[c.s]}</i></span><span class="pc-mid">${SOL_S[c.s]}</span></div>`;
          }).join('')
        : '')+`</div>`;
   h+=`<div></div>`;
@@ -2898,6 +3017,232 @@ function pushSolRank(){
       name:(DB.name||'Аноним').slice(0,40), emoji:DB.emoji||'🃏', photo_url:DB.photoUrl||'',
       wins:st.won||0, played:st.played||0, best_sec:st.best||null, best_score:st.bestScore||0 }})
   }).catch(()=>{});
+}
+
+// ══ ДУРАК ОНЛАЙН ═════════════════════════════════════════════
+// Партия целиком живёт на сервере: клиент показывает то, что ему отдала
+// Edge Function, и шлёт ходы. Чужие карты сюда не приходят в принципе.
+const DK_URL = SB_URL+'/functions/v1/durak';
+const DK_R=['6','7','8','9','10','В','Д','К','Т'], DK_S=['♠','♥','♦','♣'];
+const dkRed=c=>c.s===1||c.s===2;
+let DK=null, dkPoll=null, dkBusy=false, dkErrT=null, dkSeen='';
+
+function dkErr(msg){
+  const el=document.getElementById('dk-err');
+  el.innerHTML=msg?`<div class="dk-err">${esc(msg)}</div>`:'';
+  clearTimeout(dkErrT); if(msg) dkErrT=setTimeout(()=>{el.innerHTML='';},4000);
+}
+
+async function dkCall(action, extra){
+  if(!TG_INIT) { dkErr('Игра работает только внутри Telegram: нужна подпись профиля.'); return null; }
+  try{
+    const r = await fetch(DK_URL,{ method:'POST',
+      headers:{ 'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json' },
+      body:JSON.stringify({ initData:TG_INIT, action,
+        name:(DB.name||'Игрок').slice(0,40), emoji:DB.emoji||'🙂', ...(extra||{}) }) });
+    const j = await r.json().catch(()=>null);
+    if(!j) { dkErr('Сервер не ответил'); return null; }
+    if(j.error) dkErr(j.error);
+    return j.code ? j : (j.error ? null : j);
+  }catch{ dkErr('Нет связи с сервером'); return null; }
+}
+
+// ссылка из бота: #dk=КОД — сразу в комнату, #dk / #sol — на нужную страницу
+function openFromLink(){
+  const h=(location.hash||'').replace(/^#/,'');
+  if(!h) return;
+  const m=h.match(/^dk=([A-Za-z0-9]{4,8})$/);
+  if(m){ showPage('page-dk'); setNav('n-dk'); DB.dk={code:m[1].toUpperCase()}; sv(); dkOpen(); return; }
+  if(h==='dk'){ showPage('page-dk'); setNav('n-dk'); dkOpen(); return; }
+  if(h==='sol'){ showPage('page-sol'); setNav('n-sol'); solOpen(); }
+}
+
+function dkOpen(){
+  dkErr('');
+  const saved = DB.dk?.code;
+  const hash = (location.hash||'').match(/^#dk=([A-Za-z0-9]{4,8})$/);
+  const deep = hash ? hash[1] : window.Telegram?.WebApp?.initDataUnsafe?.start_param;   // вход по приглашению
+  if(deep && /^[A-Z0-9]{4,8}$/i.test(deep)) dkJoin(deep);
+  else if(saved) dkJoin(saved);
+  else { DK=null; dkRender(); }
+  dkStartPoll();
+}
+function dkStartPoll(){
+  clearInterval(dkPoll);
+  dkPoll=setInterval(async ()=>{
+    if(!DK?.code || dkBusy || document.hidden) return;
+    if(!document.getElementById('page-dk').classList.contains('on')) return;
+    const r=await dkCall('state',{code:DK.code});
+    if(r){ DK=r; dkRender(); }
+  }, 2000);
+}
+
+async function dkCreate(){
+  dkBusy=true; const r=await dkCall('create'); dkBusy=false;
+  if(r){ DK=r; DB.dk={code:r.code}; sv(); dkRender(); }
+}
+async function dkJoin(code){
+  code=String(code||'').trim().toUpperCase();
+  if(code.length<4){ dkErr('Код слишком короткий'); return; }
+  dkBusy=true; const r=await dkCall('join',{code}); dkBusy=false;
+  if(r){ DK=r; DB.dk={code:r.code}; sv(); dkRender(); }
+}
+function dkJoinInput(){ dkJoin(document.getElementById('dk-code-in').value); }
+function dkLeave(){ DK=null; DB.dk=null; sv(); dkErr(''); dkRender(); }
+
+async function dkMove(m){
+  if(!DK?.code||dkBusy) return;
+  dkBusy=true; const r=await dkCall('move',{code:DK.code,move:m}); dkBusy=false;
+  if(r){ DK=r; dkRender(); }
+}
+async function dkRematch(){
+  dkBusy=true; const r=await dkCall('rematch',{code:DK.code}); dkBusy=false;
+  if(r){ DK=r; dkRender(); }
+}
+
+// приглашение: ссылка открывает мини-апп сразу в этой комнате
+function dkInvite(){
+  const code=DK?.code; if(!code) return;
+  const link = BOT_USERNAME ? `https://t.me/${BOT_USERNAME}?start=dk_${code}` : '';
+  const text = `Партия в дурака — код ${code}` + (link?'':'\nОткрой бот → Дурак → Войти по коду');
+  if(window.Telegram?.WebApp?.openTelegramLink && link){
+    Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+  } else {
+    navigator.clipboard?.writeText(link||code).then(
+      ()=>dkErr('Код скопирован — отправь его сопернику'),
+      ()=>dkErr('Код комнаты: '+code));
+  }
+}
+
+const dkCard=(c,cls)=>`<div class="pc up ${dkRed(c)?'red':'blk'}${cls?' '+cls:''}">`+
+  `<span class="pc-ix">${DK_R[c.r]}<i>${DK_S[c.s]}</i></span><span class="pc-mid">${DK_S[c.s]}</span></div>`;
+
+function dkRender(){
+  const body=document.getElementById('dk-body'), badge=document.getElementById('dk-badge');
+  if(!body) return;
+
+  if(!DK){                                              // ── лобби ──
+    badge.textContent='—';
+    body.innerHTML=`
+      <div class="dk-lobby">
+        <div class="dk-card">
+          <div class="dk-h">🂡 Игра на двоих</div>
+          <div class="dk-note" style="margin-bottom:12px">Создай комнату и отправь код сопернику —
+            играете прямо в боте. Карты соперника хранятся на сервере, подсмотреть их нельзя.</div>
+          <button class="dk-btn" onclick="dkCreate()">СОЗДАТЬ КОМНАТУ</button>
+        </div>
+        <div class="dk-card">
+          <div class="dk-h">Войти по коду</div>
+          <div class="dk-row">
+            <input class="dk-in" id="dk-code-in" maxlength="5" placeholder="КОД" inputmode="latin">
+            <button class="dk-btn sec" style="width:auto;padding:12px 16px" onclick="dkJoinInput()">ВОЙТИ</button>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  badge.textContent='✕ ВЫЙТИ';
+
+  if(DK.status==='wait'){                               // ── ждём соперника ──
+    body.innerHTML=`
+      <div class="dk-card">
+        <div class="dk-h">Комната создана · ждём соперника</div>
+        <div class="dk-code">${esc(DK.code)}</div>
+        <div class="dk-code-l">код комнаты</div>
+        <button class="dk-btn" onclick="dkInvite()">📨 ПРИГЛАСИТЬ В TELEGRAM</button>
+        <div style="height:8px"></div>
+        <button class="dk-btn sec" onclick="dkLeave()">ОТМЕНИТЬ</button>
+        <div class="dk-note" style="margin-top:12px;text-align:center">Как только соперник войдёт,
+          карты раздадутся сами.</div>
+      </div>`;
+    return;
+  }
+
+  const g=DK.g; if(!g){ body.innerHTML='<div class="dk-empty">Загрузка…</div>'; return; }
+  const opp=DK.players[1-g.me]||{}, my=DK.players[g.me]||{};
+  const iAtt=g.att===g.me, iDef=!iAtt;
+  const undef=g.table.filter(s=>!s.d).length;
+  const myTurn = g.phase==='attack' ? iAtt : iDef;
+  // подсветка: чем сейчас можно сходить
+  const playable=c=>{
+    if(g.over||!myTurn) return false;
+    if(g.phase==='attack') return iAtt && (!g.table.length ||
+      g.table.some(s=>s.a.r===c.r||(s.d&&s.d.r===c.r))) && g.table.length<6 && undef<g.opp+1;
+    return iDef && g.table.some(s=>!s.d && dkBeats(c,s.a,g.trump));
+  };
+  const newCards = g.table.length && dkSeen!==DK.code+':'+g.ver;
+  dkSeen=DK.code+':'+g.ver;
+
+  body.innerHTML=`
+    <div class="dk-seat${!myTurn?' turn':''}">
+      <div class="dk-ava">${esc(opp.emoji||'🙂')}</div>
+      <div><div class="dk-nm">${esc(opp.name||'Соперник')}</div>
+        <div class="dk-sub">${g.opp} карт${g.att!==g.me?' · ходит':''}</div></div>
+      <div class="dk-fan">${Array.from({length:Math.min(g.opp,10)},()=>`<div class="pc down"></div>`).join('')}</div>
+    </div>
+
+    <div class="dk-mid">
+      <div class="dk-deck">
+        ${g.trumpCard?dkCard(g.trumpCard,'tr'):''}
+        ${g.deck?`<div class="pc down bk"></div><div class="dk-cnt">${g.deck}</div>`:''}
+      </div>
+      <div class="dk-info">
+        <div class="dk-info-t">козырь</div>
+        <div class="dk-info-v" style="color:${g.trump===1||g.trump===2?'#d4232c':'var(--text)'}">${DK_S[g.trump]}
+          <span style="font-size:10px;color:var(--sub);font-family:var(--mono)"> · в колоде ${g.deck}</span></div>
+      </div>
+      <div class="dk-info" style="text-align:right;flex:0 0 auto">
+        <div class="dk-info-t">бито</div><div class="dk-info-v">${g.discard}</div>
+      </div>
+    </div>
+
+    <div class="dk-table">
+      ${g.table.length ? g.table.map((sl,i)=>`<div class="dk-slot">
+          ${dkCard(sl.a,'pc-play')}${sl.d?dkCard(sl.d,'def pc-beat'):''}</div>`).join('')
+        : `<div class="dk-empty">${iAtt?'твой ход — заходи':'ждём хода соперника'}</div>`}
+    </div>
+
+    <div class="dk-turn">${g.over ? '' :
+      myTurn ? (g.phase==='attack'?'<b>твой ход</b> · подкидывай или бито':'<b>отбивайся</b> · или бери')
+             : 'ход соперника…'}</div>
+
+    <div class="dk-hand">${g.hand.map((c,i)=>{
+      const ok=playable(c);
+      return dkCard(c,(ok?'ok ':'no ')+(newCards?'':'pc-deal'))
+        .replace('<div class="pc',`<div onclick="dkPlay(${i})" class="pc`);
+    }).join('')}</div>
+
+    <div class="dk-acts">
+      ${iAtt?`<button class="dk-btn" ${(!g.table.length||undef||g.over)?'disabled':''} onclick="dkMove({t:'done'})">БИТО</button>`:''}
+      ${iDef?`<button class="dk-btn sec" ${(!g.table.length||g.over)?'disabled':''} onclick="dkMove({t:'take'})">БЕРУ</button>`:''}
+    </div>
+
+    ${g.over?`<div class="dk-card" style="margin-top:12px;text-align:center">
+        <div style="font-size:34px">${g.over.loser===null?'🤝':g.over.loser===g.me?'🃏':'🏆'}</div>
+        <div style="font-size:18px;font-weight:900;margin:6px 0 2px">${
+          g.over.loser===null?'Ничья':g.over.loser===g.me?'Ты дурак!':'Победа!'}</div>
+        <div class="dk-note" style="margin-bottom:12px">${
+          g.over.loser===null?'Карты кончились у обоих':
+          g.over.loser===g.me?'Соперник вышел первым':'Соперник остался с картами'}</div>
+        <button class="dk-btn" onclick="dkRematch()">ЕЩЁ ПАРТИЮ</button>
+      </div>`:''}`;
+}
+
+const dkBeats=(d,a,t)=> d.s===a.s ? d.r>a.r : (d.s===t && a.s!==t);
+
+function dkPlay(i){
+  const g=DK?.g; if(!g||g.over) return;
+  const c=g.hand[i]; if(!c) return;
+  if(g.phase==='attack'){
+    if(g.att!==g.me) { dkErr('Сейчас ходит соперник'); return; }
+    dkMove({t:'attack',c});
+  } else {
+    if(g.att===g.me){ dkErr('Отбивается соперник'); return; }
+    const si=g.table.findIndex(s=>!s.d && dkBeats(c,s.a,g.trump));
+    if(si<0){ dkErr('Этой картой не отбиться'); return; }
+    dkMove({t:'defend',i:si,c});
+  }
 }
 
 </script>

@@ -114,6 +114,32 @@ create policy "sol read" on public.sol_leaderboard for select using (true);
 
 
 -- ─────────────────────────────────────────────────────────────
+-- 3c. КОМНАТЫ «ДУРАКА». Состояние партии целиком на сервере, чтобы
+--     клиент не видел чужих карт и не мог сходить не по правилам.
+--     Таблица приватная: ни читать, ни писать анон-ключом нельзя,
+--     работает с ней только Edge Function durak (service_role).
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.durak_rooms (
+  code        text        primary key,        -- короткий код приглашения
+  host_uid    text        not null,
+  host_name   text,
+  host_emoji  text,
+  guest_uid   text,
+  guest_name  text,
+  guest_emoji text,
+  st          jsonb,                          -- состояние партии
+  status      text        default 'wait',     -- wait | play | done
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+create index if not exists durak_rooms_updated_idx on public.durak_rooms (updated_at desc);
+
+alter table public.durak_rooms enable row level security;
+-- ни одной политики → анон без доступа; service_role (функция) обходит RLS.
+
+
+-- ─────────────────────────────────────────────────────────────
 -- 4. СИД: подтягиваем в реестр рассылки всех, кто уже попал в рейтинг.
 --    Безопасно при повторном запуске — существующие строки не трогаем.
 -- ─────────────────────────────────────────────────────────────
@@ -124,7 +150,7 @@ on conflict (uid) do nothing;
 
 -- ─────────────────────────────────────────────────────────────
 -- 5. ПРОВЕРКА. После Run в результатах должно быть три строки
---    с ok = true — значит таблицы на месте и RLS включён.
+--    с ok = true по каждой таблице — значит всё на месте и RLS включён.
 -- ─────────────────────────────────────────────────────────────
 select
   c.relname                                   as table_name,
@@ -135,5 +161,5 @@ select
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
-  and c.relname in ('leaderboard', 'sol_leaderboard', 'consents', 'bot_users')
+  and c.relname in ('leaderboard', 'sol_leaderboard', 'durak_rooms', 'consents', 'bot_users')
 order by c.relname;

@@ -11,7 +11,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
-import json, os, math, html, requests, time
+import json, os, re, math, html, requests, time
 
 # ── Читаем из переменных окружения (Railway → Variables) ──────
 # TOKEN задаётся ТОЛЬКО через переменную окружения — не хардкодить (публичный репозиторий!)
@@ -217,6 +217,10 @@ def main_kb():
         InlineKeyboardButton("📱 Открыть трекер", web_app=WebAppInfo(url=WEBAPP_URL)),
     )
     kb.add(
+        InlineKeyboardButton("🂡 Дурак онлайн", web_app=WebAppInfo(url=f"{WEBAPP_URL}#dk")),
+        InlineKeyboardButton("🃏 Косынка",      web_app=WebAppInfo(url=f"{WEBAPP_URL}#sol")),
+    )
+    kb.add(
         InlineKeyboardButton("🏆 Рейтинг",          callback_data="rating"),
         InlineKeyboardButton("➕ Добавить запись",  callback_data="add"),
         InlineKeyboardButton("📅 Сегодня",          callback_data="today"),
@@ -255,6 +259,24 @@ def confirm_kb():
 @bot.message_handler(commands=["start", "menu"])
 def cmd_start(msg):
     register_user(msg.from_user)          # реестр для рассылки
+
+    # ── приглашение в партию: ссылка вида t.me/бот?start=dk_КОД ──
+    parts = (msg.text or "").split(maxsplit=1)
+    if len(parts) > 1 and parts[1].lower().startswith("dk_"):
+        code = re.sub(r"[^A-Za-z0-9]", "", parts[1][3:])[:8].upper()
+        if code:
+            kb = InlineKeyboardMarkup()
+            kb.add(InlineKeyboardButton(
+                f"🂡 Войти в комнату {code}",
+                web_app=WebAppInfo(url=f"{WEBAPP_URL}#dk={code}")))
+            bot.send_message(
+                msg.chat.id,
+                f"🂡 <b>Тебя зовут в дурака</b>\n\n"
+                f"Комната: <code>{code}</code>\n"
+                f"Жми кнопку — карты раздадутся сами.",
+                parse_mode="HTML", reply_markup=kb)
+            return
+
     db   = load_db()
     user = get_user(db, msg.from_user.id)
     name = user["name"] or msg.from_user.first_name or "сотрудник"
@@ -268,6 +290,22 @@ def cmd_start(msg):
         parse_mode="HTML",
         reply_markup=main_kb()
     )
+
+# ── /durak ───────────────────────────────────────────────────
+@bot.message_handler(commands=["durak", "game", "igra"])
+def cmd_durak(msg):
+    register_user(msg.from_user)
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("🂡 Открыть игру", web_app=WebAppInfo(url=f"{WEBAPP_URL}#dk")))
+    bot.send_message(
+        msg.chat.id,
+        "🂡 <b>Дурак онлайн</b>\n\n"
+        "Играете вдвоём прямо в боте.\n\n"
+        "1. Открой игру и создай комнату\n"
+        "2. Нажми «Пригласить» — ссылка уйдёт сопернику\n"
+        "3. Он жмёт её и попадает прямо за стол\n\n"
+        "Карты соперника хранятся на сервере — подсмотреть их нельзя.",
+        parse_mode="HTML", reply_markup=kb)
 
 # ── /rating ──────────────────────────────────────────────────
 @bot.message_handler(commands=["rating", "top"])
