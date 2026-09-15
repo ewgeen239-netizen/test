@@ -3045,7 +3045,22 @@ let DK=null, dkPoll=null, dkBusy=false, dkErrT=null, dkSeen='';
 function dkErr(msg){
   const el=document.getElementById('dk-err');
   el.innerHTML=msg?`<div class="dk-err">${esc(msg)}</div>`:'';
-  clearTimeout(dkErrT); if(msg) dkErrT=setTimeout(()=>{el.innerHTML='';},4000);
+  // длинную подсказку про настройку сервера держим на экране дольше
+  clearTimeout(dkErrT); if(msg) dkErrT=setTimeout(()=>{el.innerHTML='';}, msg.length>60?12000:4000);
+}
+
+// fetch падает ещё до ответа в двух совсем разных случаях: интернета нет —
+// или сервер ответил, но без CORS-заголовков, и браузер выбросил ответ
+// (функции нет, она не загрузилась, включена проверка JWT). Различаем их
+// повторным запросом в режиме no-cors: он доходит до сервера при любом
+// коде ответа и падает только тогда, когда сети действительно нет.
+async function dkDiag(){
+  try{
+    await fetch(DK_URL,{ method:'POST', mode:'no-cors', body:'{}' });
+    return 'Сервер есть, но функция durak не отвечает. Проверь в Supabase → Edge Functions: функция называется durak, у неё выключен Verify JWT, в логах нет BOOT_ERROR.';
+  }catch{
+    return 'Нет связи с сервером — проверь интернет.';
+  }
 }
 
 async function dkCall(action, extra){
@@ -3056,10 +3071,15 @@ async function dkCall(action, extra){
       body:JSON.stringify({ initData:TG_INIT, action,
         name:(DB.name||'Игрок').slice(0,40), emoji:DB.emoji||'🙂', ...(extra||{}) }) });
     const j = await r.json().catch(()=>null);
-    if(!j) { dkErr('Сервер не ответил'); return null; }
+    if(!j) {
+      dkErr(r.status===404 ? 'Функция durak не найдена на сервере (404) — она не задеплоена или названа иначе.'
+          : r.status===401 ? 'Сервер отклонил запрос (401) — у функции durak включён Verify JWT, его надо выключить.'
+          : `Сервер ответил ${r.status}, но без данных.`);
+      return null;
+    }
     if(j.error) dkErr(j.error);
     return j.code ? j : (j.error ? null : j);
-  }catch{ dkErr('Нет связи с сервером'); return null; }
+  }catch{ dkErr(await dkDiag()); return null; }
 }
 
 // ссылка из бота: #dk=КОД — сразу в комнату, #dk / #sol — на нужную страницу
