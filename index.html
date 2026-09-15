@@ -597,8 +597,10 @@ select.fl-in{appearance:none}
 .sol-card{position:absolute;left:0;right:0;aspect-ratio:5/7;cursor:pointer;
   transition:transform .12s,box-shadow .12s,top .18s cubic-bezier(.2,.9,.3,1.1)}
 .sol-card.st{position:relative}
-/* угловой индекс виден в просвете 18px, когда карты веером перекрывают друг друга */
-.sol-card .pc-ix{font-size:calc(var(--cw)*.30)}
+/* В «Косынке» видна полоска ~18px, поэтому индекс идёт в одну строку:
+   масть под достоинством туда не влезала и обрезалась соседней картой. */
+.sol-card .pc-ix{font-size:calc(var(--cw)*.30);white-space:nowrap}
+.sol-card .pc-ix i{display:inline;margin-left:1px;font-weight:600}
 .sol-card .pc-mid{font-size:calc(var(--cw)*.40)}
 .sol-card.sel{transform:translateY(-5px);box-shadow:0 0 0 2px var(--accent),0 5px 12px rgba(0,0,0,.6);z-index:50}
 .sol-card.hint{box-shadow:0 0 0 2px var(--green),0 3px 8px rgba(0,0,0,.5)}
@@ -1210,25 +1212,27 @@ select.fl-in{appearance:none}
 </div>
 
 <!-- ═══════════ ДУРАК ОНЛАЙН ═══════════ -->
-<div class="page" id="page-dk">
-  <div class="top">
-    <div class="top-l"><div class="eyebrow">AutoDoc · Игра на двоих</div><div class="heading">Дурак онлайн</div></div>
-    <div class="top-r"><div class="badge" id="dk-badge" onclick="dkLeave()">—</div></div>
-  </div>
-  <div class="dk-wrap">
-    <div id="dk-err"></div>
-    <div id="dk-body"></div>
-  </div>
-</div>
 
 <!-- ═══════════ SOLITAIRE ═══════════ -->
-<div class="page" id="page-sol">
+<!-- ═══════════ КАРТЫ: две игры в одной вкладке ═══════════ -->
+<div class="page" id="page-cards">
   <div class="top">
-    <div class="top-l"><div class="eyebrow">AutoDoc · Пасьянс</div><div class="heading">Solitaire</div></div>
-    <div class="top-r"><div class="badge" id="sol-mode" onclick="solToggleMode()">1 КАРТА</div></div>
+    <div class="top-l"><div class="eyebrow">AutoDoc · Игры</div><div class="heading" id="cd-title">Косынка</div></div>
+    <div class="top-r">
+      <div class="badge" id="sol-mode" onclick="solToggleMode()">1 КАРТА</div>
+      <div class="badge" id="dk-badge" onclick="dkLeave()" style="display:none">—</div>
+    </div>
   </div>
 
-  <div class="sol-wrap">
+  <div class="pad" style="padding-top:12px">
+    <div class="hs-tabs">
+      <div class="hs-tab act" id="cd-tab-sol" onclick="switchCards('sol')">🃏 КОСЫНКА</div>
+      <div class="hs-tab"     id="cd-tab-dk"  onclick="switchCards('dk')">🂡 ДУРАК ОНЛАЙН</div>
+    </div>
+  </div>
+
+  <div id="cd-sol">
+<div class="sol-wrap">
     <div class="sol-hud">
       <div class="sol-hud-c"><div class="sol-hud-v" id="sol-score">0</div><div class="sol-hud-l">очки</div></div>
       <div class="sol-hud-c"><div class="sol-hud-v" id="sol-moves">0</div><div class="sol-hud-l">ходы</div></div>
@@ -1246,7 +1250,15 @@ select.fl-in{appearance:none}
 
     <div class="sol-stats" id="sol-stats"></div>
   </div>
+  </div>
+  <div id="cd-dk" style="display:none">
+    <div class="dk-wrap">
+      <div id="dk-err"></div>
+      <div id="dk-body"></div>
+    </div>
+  </div>
 </div>
+
 
 <!-- ═══════════ RATING ═══════════ -->
 <div class="page" id="page-rating">
@@ -1282,14 +1294,13 @@ select.fl-in{appearance:none}
 </div>
 
 <!-- NAV -->
-<div class="nav" style="grid-template-columns:repeat(7,1fr)">
+<div class="nav" style="grid-template-columns:repeat(6,1fr)">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
   <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRankTab()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
-  <div class="ni"     id="n-sol"    onclick="showPage('page-sol');setNav('n-sol');solOpen()"><span class="ni-ic">🃏</span><span class="ni-lb">Solitaire</span></div>
-  <div class="ni"     id="n-dk"     onclick="showPage('page-dk');setNav('n-dk');dkOpen()"><span class="ni-ic">🂡</span><span class="ni-lb">Дурак</span></div>
+  <div class="ni"     id="n-cards"  onclick="showPage('page-cards');setNav('n-cards');cardsOpen()"><span class="ni-ic">🃏</span><span class="ni-lb">Карты</span></div>
 </div>
 
 <!-- MODAL: PROFILE EDIT -->
@@ -1658,6 +1669,7 @@ DB.archive=DB.archive||{};      // месячные итоги за прошлы
 DB.gen=DB.gen||null;            // поколение базы, в которое уже залили локальные данные
 DB.sol=DB.sol||null;            // текущая партия пасьянса и режим сдачи
 DB.dk=DB.dk||null;              // код комнаты «дурака», чтобы вернуться в партию
+DB.cardsTab=DB.cardsTab||'sol'; // какая игра открыта во вкладке «Карты»
 DB.solStats=DB.solStats||{played:0,won:0,best:null,bestScore:0};
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
@@ -2844,10 +2856,13 @@ function solRender(){
      (G.waste.length
        ? G.waste.slice(-Math.min(3,G.draw)).map((c,n,arr)=>{
            const last=n===arr.length-1;
+           // накрытые карты веера рисуем без надписей: в просвет 13px индекс
+           // целиком не влезает, а обрезанный символ выглядит сломанным
            return `<div class="sol-card pc up ${solRed(c)?'red':'blk'}${last&&isSel('w',0,0)?' sel':''}"`+
-                  ` style="top:0;transform:translateX(${n*10}px)${last&&isSel('w',0,0)?' translateY(-5px)':''};z-index:${n+1}"`+
+                  ` style="top:0;transform:translateX(${n*13}px)${last&&isSel('w',0,0)?' translateY(-5px)':''};z-index:${n+1}"`+
                   (last?` onclick="solTap('w',0,0,event)"`:'')+`>`+
-                  `<span class="pc-ix">${SOL_R[c.r]}<i>${SOL_S[c.s]}</i></span><span class="pc-mid">${SOL_S[c.s]}</span></div>`;
+                  (last?`<span class="pc-ix">${SOL_R[c.r]}<i>${SOL_S[c.s]}</i></span><span class="pc-mid">${SOL_S[c.s]}</span>`:'')+
+                  `</div>`;
          }).join('')
        : '')+`</div>`;
   h+=`<div></div>`;
@@ -3051,11 +3066,28 @@ async function dkCall(action, extra){
 function openFromLink(){
   const h=(location.hash||'').replace(/^#/,'');
   if(!h) return;
+  const go=t=>{ showPage('page-cards'); setNav('n-cards'); switchCards(t); };
   const m=h.match(/^dk=([A-Za-z0-9]{4,8})$/);
-  if(m){ showPage('page-dk'); setNav('n-dk'); DB.dk={code:m[1].toUpperCase()}; sv(); dkOpen(); return; }
-  if(h==='dk'){ showPage('page-dk'); setNav('n-dk'); dkOpen(); return; }
-  if(h==='sol'){ showPage('page-sol'); setNav('n-sol'); solOpen(); }
+  if(m){ DB.dk={code:m[1].toUpperCase()}; sv(); go('dk'); return; }
+  if(h==='dk')  { go('dk');  return; }
+  if(h==='sol') { go('sol'); }
 }
+
+// ── вкладка «Карты»: две игры под одним переключателем ──
+let cardsTab = 'sol';
+function switchCards(t){
+  cardsTab = t;
+  document.getElementById('cd-tab-sol').classList.toggle('act', t==='sol');
+  document.getElementById('cd-tab-dk').classList.toggle('act', t==='dk');
+  document.getElementById('cd-sol').style.display = t==='sol' ? 'block' : 'none';
+  document.getElementById('cd-dk').style.display  = t==='dk'  ? 'block' : 'none';
+  document.getElementById('cd-title').textContent = t==='sol' ? 'Косынка' : 'Дурак онлайн';
+  document.getElementById('sol-mode').style.display = t==='sol' ? '' : 'none';
+  document.getElementById('dk-badge').style.display = t==='dk'  ? '' : 'none';
+  DB.cardsTab = t; sv();
+  t==='sol' ? solOpen() : dkOpen();
+}
+function cardsOpen(){ switchCards(DB.cardsTab==='dk' ? 'dk' : 'sol'); }
 
 function dkOpen(){
   dkErr('');
@@ -3071,7 +3103,7 @@ function dkStartPoll(){
   clearInterval(dkPoll);
   dkPoll=setInterval(async ()=>{
     if(!DK?.code || dkBusy || document.hidden) return;
-    if(!document.getElementById('page-dk').classList.contains('on')) return;
+    if(!document.getElementById('page-cards').classList.contains('on') || cardsTab!=='dk') return;
     const r=await dkCall('state',{code:DK.code});
     if(r){ DK=r; dkRender(); }
   }, 2000);
@@ -3122,7 +3154,7 @@ function dkRender(){
   if(!body) return;
 
   if(!DK){                                              // ── лобби ──
-    badge.textContent='—';
+    badge.style.display='none';                         // выходить пока неоткуда
     body.innerHTML=`
       <div class="dk-lobby">
         <div class="dk-card">
@@ -3142,7 +3174,7 @@ function dkRender(){
     return;
   }
 
-  badge.textContent='✕ ВЫЙТИ';
+  badge.style.display=''; badge.textContent='✕ ВЫЙТИ';
 
   if(DK.status==='wait'){                               // ── ждём соперника ──
     body.innerHTML=`
