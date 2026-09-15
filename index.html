@@ -2724,14 +2724,141 @@ let solHist=[];
 function solSnap(){ return JSON.stringify({s:G.stock,w:G.waste,f:G.f,t:G.t,sc:G.score,mv:G.moves}); }
 function solPush(){ solHist.push(solSnap()); if(solHist.length>200) solHist.shift(); }
 
-function solNew(){
+// ── решатель: выигрывается ли расклад вообще ──
+// Перебор с запоминанием позиций. Нужен, чтобы не подсовывать безнадёжные
+// раздачи. Если за отпущенные узлы ответа нет — считаем расклад негодным и
+// берём следующий: нам нужен доказуемо проходимый, а не любой.
+function solSolvable(tab, stock, draw, budget){
+  const rd=s=>s===1||s===2;                         // ♥ ♦
+  const F=[0,0,0,0];
+  const P=tab.map(col=>({h:col.filter(c=>!c.u).slice(), u:col.filter(c=>c.u).slice()}));
+  const S=stock.slice();
+  let pos=0, nodes=0;
+  const seen=new Set();
+  const id=c=>c.s*13+c.r;
+  const key=()=>F.join()+'|'+P.map(p=>p.h.length+':'+p.u.map(id).join('.')).sort().join('/')+
+               '|'+pos+'|'+S.map(id).join('.');
+  // карту можно спокойно убрать в базу, если она уже никому не пригодится
+  const safe=c=>{
+    if(c.r<=2) return true;
+    const o=rd(c.s)?[F[0],F[3]]:[F[1],F[2]];
+    return Math.min(o[0],o[1])>=c.r-1;
+  };
+  const flip=p=>{ if(!p.u.length && p.h.length){ p.u.push(p.h.pop()); return true; } return false; };
+
+  function dfs(){
+    if(F[0]===13&&F[1]===13&&F[2]===13&&F[3]===13) return true;
+    if(nodes++>budget) return false;
+    const k=key(); if(seen.has(k)) return false; seen.add(k);
+
+    // безопасные уходы в базу делаем без перебора — они никогда не вредят
+    for(let i=0;i<7;i++){
+      const p=P[i], c=p.u[p.u.length-1];
+      if(c && F[c.s]===c.r-1 && safe(c)){
+        p.u.pop(); F[c.s]++; const f=flip(p);
+        if(dfs()) return true;
+        if(f) p.h.push(p.u.pop());
+        F[c.s]--; p.u.push(c);
+        return false;
+      }
+    }
+    if(pos>0){
+      const c=S[pos-1];
+      if(c && F[c.s]===c.r-1 && safe(c)){
+        S.splice(pos-1,1); pos--; F[c.s]++;
+        if(dfs()) return true;
+        F[c.s]--; pos++; S.splice(pos-1,0,c);
+        return false;
+      }
+    }
+
+    // остальное — перебором, сначала то, что открывает закрытую карту
+    const mv=[];
+    for(let i=0;i<7;i++){
+      const p=P[i], c=p.u[p.u.length-1];
+      if(c && F[c.s]===c.r-1) mv.push({w:0,t:'tf',i});
+      for(let j=0;j<p.u.length;j++){
+        const head=p.u[j], opens=j===0 && p.h.length>0;
+        for(let d=0;d<7;d++){
+          if(d===i) continue;
+          const q=P[d], top=q.u[q.u.length-1];
+          const ok = top ? (rd(top.s)!==rd(head.s) && head.r===top.r-1)
+                         : (!q.h.length && head.r===13 && (j>0 || p.h.length>0));
+          if(ok) mv.push({w:opens?0:2,t:'tt',i,j,d});
+        }
+      }
+    }
+    if(pos>0){
+      const c=S[pos-1];
+      if(c){
+        if(F[c.s]===c.r-1) mv.push({w:1,t:'wf'});
+        for(let d=0;d<7;d++){
+          const q=P[d], top=q.u[q.u.length-1];
+          const ok = top ? (rd(top.s)!==rd(c.s) && c.r===top.r-1) : (!q.h.length && c.r===13);
+          if(ok) mv.push({w:1,t:'wt',d});
+        }
+      }
+    }
+    if(S.length) mv.push({w:9,t:'draw'});
+    mv.sort((a,b)=>a.w-b.w);
+
+    for(const m of mv){
+      if(m.t==='tf'){
+        const p=P[m.i], c=p.u.pop(); F[c.s]++; const f=flip(p);
+        if(dfs()) return true;
+        if(f) p.h.push(p.u.pop());
+        F[c.s]--; p.u.push(c);
+      } else if(m.t==='tt'){
+        const p=P[m.i], q=P[m.d], run=p.u.splice(m.j);
+        q.u.push(...run); const f=flip(p);
+        if(dfs()) return true;
+        if(f) p.h.push(p.u.pop());
+        q.u.splice(q.u.length-run.length); p.u.push(...run);
+      } else if(m.t==='wf'){
+        const c=S[pos-1]; S.splice(pos-1,1); pos--; F[c.s]++;
+        if(dfs()) return true;
+        F[c.s]--; pos++; S.splice(pos-1,0,c);
+      } else if(m.t==='wt'){
+        const c=S[pos-1]; S.splice(pos-1,1); pos--; P[m.d].u.push(c);
+        if(dfs()) return true;
+        P[m.d].u.pop(); pos++; S.splice(pos-1,0,c);
+      } else {
+        const old=pos;
+        pos = pos>=S.length ? 0 : Math.min(pos+draw, S.length);
+        if(dfs()) return true;
+        pos=old;
+      }
+    }
+    return false;
+  }
+  return dfs();
+}
+
+// одна случайная раздача: 7 столбцов, открыта только нижняя карта
+function solDeal(){
   const deck=[];
   for(let s=0;s<4;s++) for(let r=1;r<=13;r++) deck.push({s,r,u:false});
   for(let i=deck.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [deck[i],deck[j]]=[deck[j],deck[i]]; }
   const t=[[],[],[],[],[],[],[]];
   for(let c=0;c<7;c++) for(let k=0;k<=c;k++){ const card=deck.pop(); card.u=(k===c); t[c].push(card); }
-  G={ stock:deck, waste:[], f:[[],[],[],[]], t, score:0, moves:0, sec:0,
-      draw:(DB.sol?.draw)||1, won:false, started:false };
+  return { t, stock:deck };
+}
+
+function solNew(){
+  const draw=(DB.sol?.draw)||1;
+  // Случайный расклад «Косынки» нередко не выигрывается в принципе — сколько
+  // ни играй. Поэтому раздаём только те, для которых решатель нашёл выигрыш:
+  // перебираем расклады, пока не попадётся проходимый (обычно 2–3 попытки).
+  let d=solDeal();
+  const until=Date.now()+700;                      // дольше держать экран нельзя
+  for(let a=0; a<14 && Date.now()<until; a++){
+    const c=solDeal();
+    if(solSolvable(c.t, c.stock, draw, 4000)){ d=c; break; }
+    d=c;
+  }
+  const t=d.t;
+  G={ stock:d.stock, waste:[], f:[[],[],[],[]], t, score:0, moves:0, sec:0,
+      draw, won:false, started:false };
   const st=DB.solStats||{played:0,won:0,best:null};
   st.played=(st.played||0)+1; DB.solStats=st;
   solHist=[]; solSel=null;
@@ -2741,7 +2868,10 @@ function solNew(){
 // ── правила ──
 function solCanF(card, fi){
   const p=G.f[fi];
-  if(!p.length) return card.r===1;
+  // Каждая база закреплена за мастью — она так и подписана в пустой клетке.
+  // Раньше проверки масти на пустой базе не было, и туз ложился в чужую
+  // клетку: дальше всё работало, но выглядело как ошибка.
+  if(!p.length) return card.r===1 && card.s===fi;
   const top=p[p.length-1];
   return top.s===card.s && card.r===top.r+1;
 }
@@ -2875,10 +3005,13 @@ function solRender(){
   if(!G) return;
   // ширину карты считаем в пикселях: в процентах её нельзя подставить в font-size
   const tab=document.getElementById('sol-tab');
+  let cw=0;
   if(tab && tab.clientWidth){
-    const cw=(tab.clientWidth-4*6)/7;
+    cw=(tab.clientWidth-4*6)/7;
     tab.closest('.sol-wrap').style.setProperty('--cw', cw.toFixed(2)+'px');
   }
+  // просвет в веере сброса: столько, чтобы «10♦» под соседней картой читалось
+  const wf=Math.max(16, Math.round(cw*0.6));
   const isSel=(k,p,i)=>solSel && solSel.k===k && solSel.p===p && (k==='t' ? i>=solSel.i : true);
 
   // верхний ряд: сток · сброс · пусто · четыре базы
@@ -2890,12 +3023,13 @@ function solRender(){
      (G.waste.length
        ? G.waste.slice(-Math.min(3,G.draw)).map((c,n,arr)=>{
            const last=n===arr.length-1;
-           // накрытые карты веера рисуем без надписей: в просвет 13px индекс
-           // целиком не влезает, а обрезанный символ выглядит сломанным
+           // Веер раскрыт так, чтобы у накрытых карт читались достоинство и
+           // масть — как в настоящей игре, где видно все снятые карты.
            return `<div class="sol-card pc up ${solRed(c)?'red':'blk'}${last&&isSel('w',0,0)?' sel':''}"`+
-                  ` style="top:0;transform:translateX(${n*13}px)${last&&isSel('w',0,0)?' translateY(-5px)':''};z-index:${n+1}"`+
+                  ` style="top:0;transform:translateX(${n*wf}px)${last&&isSel('w',0,0)?' translateY(-5px)':''};z-index:${n+1}"`+
                   (last?` onclick="solTap('w',0,0,event)"`:'')+`>`+
-                  (last?`<span class="pc-ix">${SOL_R[c.r]}<i>${SOL_S[c.s]}</i></span><span class="pc-mid">${SOL_S[c.s]}</span>`:'')+
+                  `<span class="pc-ix">${SOL_R[c.r]}<i>${SOL_S[c.s]}</i></span>`+
+                  (last?`<span class="pc-mid">${SOL_S[c.s]}</span>`:'')+
                   `</div>`;
          }).join('')
        : '')+`</div>`;
