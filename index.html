@@ -462,6 +462,61 @@ select.fl-in{appearance:none}
 .info-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .info-text{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:.3px;line-height:1.5}
 
+
+/* ── SOLITAIRE (Косынка) ── */
+.sol-wrap{padding:10px 10px 90px;--gap:4px;--cw:calc((100% - var(--gap)*6)/7);--fd:10px;--fu:18px}
+.sol-hud{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.sol-hud-c{background:var(--c1);border:1px solid var(--line);border-radius:10px;padding:7px 4px;text-align:center}
+.sol-hud-v{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:-.3px}
+.sol-hud-l{font-family:var(--mono);font-size:7px;letter-spacing:1px;color:var(--sub);text-transform:uppercase;margin-top:2px}
+.sol-bar{display:flex;gap:6px;margin-bottom:10px}
+.sol-btn{flex:1;padding:9px 4px;background:var(--c2);border:1px solid var(--line);border-radius:9px;color:var(--sub);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;cursor:pointer;transition:all .15s;text-align:center}
+.sol-btn:active{border-color:var(--accent);color:var(--accent)}
+.sol-btn:disabled{opacity:.3;cursor:not-allowed}
+.sol-btn.acc{background:rgba(232,255,0,.08);border-color:var(--accent);color:var(--accent)}
+/* верхний ряд: сток, сброс, пустая клетка, 4 базы — по сетке колонок стола */
+.sol-top{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--gap);margin-bottom:12px}
+.sol-tab{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--gap);align-items:start}
+.sol-col{position:relative;min-height:calc(var(--cw)*1.4)}
+.sol-slot{position:relative;aspect-ratio:5/7;border-radius:5px;border:1px dashed var(--line2);background:rgba(255,255,255,.02)}
+.sol-slot.f::after{content:attr(data-s);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:calc(var(--cw)*.42);color:var(--dim)}
+.sol-card{position:absolute;left:0;right:0;aspect-ratio:5/7;border-radius:5px;cursor:pointer;
+  box-shadow:0 1px 3px rgba(0,0,0,.55);user-select:none;-webkit-user-select:none;transition:transform .12s,box-shadow .12s}
+.sol-card.st{position:relative}
+/* рубашка — в цветах бота */
+.sol-card.down{background:
+    repeating-linear-gradient(45deg,rgba(232,255,0,.13) 0 3px,transparent 3px 6px),
+    linear-gradient(160deg,#1e2a10,#141a0a);
+  border:1px solid rgba(232,255,0,.3)}
+.sol-card.up{background:#f2f2ee;border:1px solid #c9c9c2}
+/* угловой индекс виден в просвете 18px, когда карты веером перекрывают друг друга */
+.sol-ix{position:absolute;top:1px;left:3px;font-family:var(--sans);font-weight:800;line-height:1.1;
+  font-size:calc(var(--cw)*.30);letter-spacing:-.5px;white-space:nowrap}
+.sol-big{position:absolute;bottom:2px;right:3px;line-height:1;font-size:calc(var(--cw)*.40);opacity:.9}
+.sol-card.red .sol-ix,.sol-card.red .sol-big{color:#d61f26}
+.sol-card.blk .sol-ix,.sol-card.blk .sol-big{color:#16161a}
+.sol-card.sel{transform:translateY(-5px);box-shadow:0 0 0 2px var(--accent),0 5px 12px rgba(0,0,0,.6);z-index:50}
+.sol-card.hint{box-shadow:0 0 0 2px var(--green),0 3px 8px rgba(0,0,0,.5)}
+.sol-slot.drop{border-color:var(--accent);background:rgba(232,255,0,.07)}
+.sol-empty{opacity:.55}
+/* победа */
+.sol-win{position:fixed;inset:0;z-index:300;background:rgba(10,10,10,.93);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;padding:24px}
+.sol-win.on{display:flex}
+.sol-win-card{width:100%;max-width:330px;background:var(--c1);border:1px solid var(--line2);border-radius:18px;
+  padding:22px 18px;text-align:center;animation:solWin .35s ease}
+@keyframes solWin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.sol-win-ic{font-size:44px;margin-bottom:8px}
+.sol-win-t{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:4px}
+.sol-win-s{font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.sol-win-g{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:16px}
+.sol-win-v{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent)}
+.sol-win-l{font-family:var(--mono);font-size:7px;color:var(--sub);text-transform:uppercase;margin-top:2px;letter-spacing:.5px}
+.sol-stats{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--sub);
+  letter-spacing:.5px;padding:9px 12px;background:var(--c1);border:1px solid var(--line);border-radius:10px;margin-top:10px}
+.sol-stats b{color:var(--text)}
 .empty{text-align:center;color:var(--dim);padding:40px 0;font-family:var(--mono);font-size:11px;letter-spacing:2px}
 ::-webkit-scrollbar{width:0}
 
@@ -1051,6 +1106,33 @@ select.fl-in{appearance:none}
   <div class="pad" style="padding-top:14px;padding-bottom:20px" id="rates-cnt"></div>
 </div>
 
+<!-- ═══════════ SOLITAIRE ═══════════ -->
+<div class="page" id="page-sol">
+  <div class="top">
+    <div class="top-l"><div class="eyebrow">AutoDoc · Пасьянс</div><div class="heading">Solitaire</div></div>
+    <div class="top-r"><div class="badge" id="sol-mode" onclick="solToggleMode()">1 КАРТА</div></div>
+  </div>
+
+  <div class="sol-wrap">
+    <div class="sol-hud">
+      <div class="sol-hud-c"><div class="sol-hud-v" id="sol-score">0</div><div class="sol-hud-l">очки</div></div>
+      <div class="sol-hud-c"><div class="sol-hud-v" id="sol-moves">0</div><div class="sol-hud-l">ходы</div></div>
+      <div class="sol-hud-c"><div class="sol-hud-v" id="sol-time">0:00</div><div class="sol-hud-l">время</div></div>
+    </div>
+
+    <div class="sol-bar">
+      <button class="sol-btn acc" onclick="solNew()">НОВАЯ</button>
+      <button class="sol-btn" id="sol-undo" onclick="solUndo()">ОТМЕНА</button>
+      <button class="sol-btn" id="sol-auto" onclick="solAuto()">СОБРАТЬ</button>
+    </div>
+
+    <div class="sol-top" id="sol-top"></div>
+    <div class="sol-tab" id="sol-tab"></div>
+
+    <div class="sol-stats" id="sol-stats"></div>
+  </div>
+</div>
+
 <!-- ═══════════ RATING ═══════════ -->
 <div class="page" id="page-rating">
   <div class="top">
@@ -1067,12 +1149,13 @@ select.fl-in{appearance:none}
 </div>
 
 <!-- NAV -->
-<div class="nav">
+<div class="nav" style="grid-template-columns:repeat(6,1fr)">
   <div class="ni on"  id="n-prof"   onclick="showPage('page-profile');setNav('n-prof');rProfile()"><span class="ni-ic">👤</span><span class="ni-lb">Профиль</span></div>
   <div class="ni"     id="n-dash"   onclick="showPage('page-dash');setNav('n-dash')"><span class="ni-ic">⚡</span><span class="ni-lb">Дашборд</span></div>
   <div class="ni"     id="n-rank"   onclick="showPage('page-rating');setNav('n-rank');rRating()"><span class="ni-ic">🏆</span><span class="ni-lb">Рейтинг</span></div>
   <div class="ni"     id="n-salary" onclick="showPage('page-salary');setNav('n-salary');rSalary()"><span class="ni-ic">💰</span><span class="ni-lb">Зарплата</span></div>
   <div class="ni"     id="n-sched"  onclick="showPage('page-sched');setNav('n-sched');rCal()"><span class="ni-ic">📅</span><span class="ni-lb">График</span></div>
+  <div class="ni"     id="n-sol"    onclick="showPage('page-sol');setNav('n-sol');solOpen()"><span class="ni-ic">🃏</span><span class="ni-lb">Solitaire</span></div>
 </div>
 
 <!-- MODAL: PROFILE EDIT -->
@@ -1146,6 +1229,21 @@ select.fl-in{appearance:none}
     <div class="sh-title">Имя</div>
     <div class="fl"><span class="fl-lb">Твоё имя</span><input class="fl-in" type="text" id="in-name" placeholder="Введи имя"/></div>
     <button class="sv-btn" onclick="saveName()">СОХРАНИТЬ</button>
+  </div>
+</div>
+
+<!-- ПОБЕДА В ПАСЬЯНСЕ -->
+<div class="sol-win" id="sol-win">
+  <div class="sol-win-card">
+    <div class="sol-win-ic">🏆</div>
+    <div class="sol-win-t">Пасьянс сошёлся!</div>
+    <div class="sol-win-s">Все четыре базы собраны</div>
+    <div class="sol-win-g">
+      <div><div class="sol-win-v" id="sol-win-time">—</div><div class="sol-win-l">время</div></div>
+      <div><div class="sol-win-v" id="sol-win-moves">—</div><div class="sol-win-l">ходы</div></div>
+      <div><div class="sol-win-v" id="sol-win-score">—</div><div class="sol-win-l">очки</div></div>
+    </div>
+    <button class="cgate-btn" onclick="solCloseWin()">НОВАЯ ПАРТИЯ</button>
   </div>
 </div>
 
@@ -1423,6 +1521,8 @@ DB.notes=DB.notes||[]; DB.consent=DB.consent||null; DB.group=DB.group||'A';
 DB.team=DB.team||'dark';    // выбранная бригада: dark | orange
 DB.archive=DB.archive||{};      // месячные итоги за прошлые месяцы (пики стёрты)
 DB.gen=DB.gen||null;            // поколение базы, в которое уже залили локальные данные
+DB.sol=DB.sol||null;            // текущая партия пасьянса и режим сдачи
+DB.solStats=DB.solStats||{played:0,won:0,best:null};
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
 let curSt='os', ws='mon';
@@ -2429,6 +2529,281 @@ function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 function cOvl(e,id){ if(e.target.id===id) closeModal(id); }
 function showPage(id){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('on')); document.getElementById(id).classList.add('on'); window.scrollTo(0,0); }
 function setNav(id){ document.querySelectorAll('.ni').forEach(b=>b.classList.remove('on')); document.getElementById(id).classList.add('on'); }
+
+// ══ SOLITAIRE · Косынка (Klondike) ═══════════════════════════
+// Карта: {s:масть 0-3, r:достоинство 1-13, u:лежит лицом вверх}
+// Масти: 0 ♠, 1 ♥, 2 ♦, 3 ♣ — красные это 1 и 2.
+const SOL_S=['♠','♥','♦','♣'], SOL_R=['','A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const solRed=c=>c.s===1||c.s===2;
+let G=null, solSel=null, solTimer=null, solLastTap=0, solLastKey='', solBusy=false;
+let solHist=[];
+
+function solSnap(){ return JSON.stringify({s:G.stock,w:G.waste,f:G.f,t:G.t,sc:G.score,mv:G.moves}); }
+function solPush(){ solHist.push(solSnap()); if(solHist.length>200) solHist.shift(); }
+
+function solNew(){
+  const deck=[];
+  for(let s=0;s<4;s++) for(let r=1;r<=13;r++) deck.push({s,r,u:false});
+  for(let i=deck.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [deck[i],deck[j]]=[deck[j],deck[i]]; }
+  const t=[[],[],[],[],[],[],[]];
+  for(let c=0;c<7;c++) for(let k=0;k<=c;k++){ const card=deck.pop(); card.u=(k===c); t[c].push(card); }
+  G={ stock:deck, waste:[], f:[[],[],[],[]], t, score:0, moves:0, sec:0,
+      draw:(DB.sol?.draw)||1, won:false, started:false };
+  const st=DB.solStats||{played:0,won:0,best:null};
+  st.played=(st.played||0)+1; DB.solStats=st;
+  solHist=[]; solSel=null;
+  solSave(); solRender(); solTick(true);
+}
+
+// ── правила ──
+function solCanF(card, fi){
+  const p=G.f[fi];
+  if(!p.length) return card.r===1;
+  const top=p[p.length-1];
+  return top.s===card.s && card.r===top.r+1;
+}
+function solCanT(card, ti){
+  const p=G.t[ti];
+  if(!p.length) return card.r===13;              // на пустое место только король
+  const top=p[p.length-1];
+  return top.u && solRed(top)!==solRed(card) && card.r===top.r-1;   // на стол кладём по убыванию
+}
+
+// ── ходы ──
+function solAddScore(n){ G.score=Math.max(0,G.score+n); }
+function solAfterMove(){
+  G.moves++; G.started=true;
+  // открываем верхнюю карту столбца, если она лежит рубашкой
+  G.t.forEach(p=>{ const c=p[p.length-1]; if(c && !c.u){ c.u=true; solAddScore(5); } });
+  if(G.f.every(p=>p.length===13)) solWin();
+  solSave(); solRender();
+}
+
+function solDrawStock(){
+  if(G.won) return;
+  solPush();
+  if(!G.stock.length){
+    if(!G.waste.length) { solHist.pop(); return; }
+    G.stock=G.waste.reverse().map(c=>({...c,u:false}));
+    G.waste=[];
+    if(G.draw===1) solAddScore(-100);            // штраф за круг только при сдаче по одной
+  } else {
+    for(let i=0;i<G.draw && G.stock.length;i++){
+      const c=G.stock.pop(); c.u=true; G.waste.push(c);
+    }
+  }
+  solAfterMove();
+}
+
+// перенос: src описывает откуда, dst куда
+function solMove(src, dst){
+  const cards = src.k==='t' ? G.t[src.p].slice(src.i)
+              : src.k==='w' ? [G.waste[G.waste.length-1]]
+              : [G.f[src.p][G.f[src.p].length-1]];
+  if(!cards.length || !cards[0]) return false;
+  const head=cards[0];
+
+  if(dst.k==='f'){
+    if(cards.length>1 || !solCanF(head,dst.p)) return false;
+    solPush();
+    solAddScore(src.k==='w' ? 10 : src.k==='t' ? 10 : 0);
+  } else {
+    if(!solCanT(head,dst.p)) return false;
+    solPush();
+    solAddScore(src.k==='w' ? 5 : src.k==='f' ? -15 : 0);
+  }
+  // снимаем с источника
+  if(src.k==='t') G.t[src.p].length=src.i;
+  else if(src.k==='w') G.waste.pop();
+  else G.f[src.p].pop();
+  // кладём в приёмник
+  (dst.k==='f' ? G.f[dst.p] : G.t[dst.p]).push(...cards);
+  solAfterMove();
+  return true;
+}
+
+// автоматически отправить карту в базу, если это возможно
+function solToFoundation(src){
+  for(let fi=0;fi<4;fi++) if(solMove(src,{k:'f',p:fi})) return true;
+  return false;
+}
+
+function solUndo(){
+  if(!solHist.length || G.won) return;
+  const st=JSON.parse(solHist.pop());
+  G.stock=st.s; G.waste=st.w; G.f=st.f; G.t=st.t; G.score=st.sc; G.moves=st.mv;
+  solSel=null; solSave(); solRender();
+}
+
+// собрать всё, что можно, в базы — по шагу за кадр, чтобы было видно
+function solAuto(){
+  if(solBusy||G.won) return;
+  solBusy=true;
+  const step=()=>{
+    let done=false;
+    for(let ti=0;ti<7 && !done;ti++){
+      const p=G.t[ti];
+      if(p.length && p[p.length-1].u && solToFoundation({k:'t',p:ti,i:p.length-1})) done=true;
+    }
+    if(!done && G.waste.length && solToFoundation({k:'w'})) done=true;
+    if(done && !G.won) setTimeout(step,110); else solBusy=false;
+  };
+  step();
+}
+
+// ── касания ──
+function solTap(k,p,i,ev){
+  if(ev) ev.stopPropagation();
+  if(G.won) return;
+  // двойное касание — отправить в базу
+  const key=k+p+'_'+i, now=Date.now();
+  if(key===solLastKey && now-solLastTap<320){
+    solLastKey='';
+    if(k==='t' && i===G.t[p].length-1 && solToFoundation({k:'t',p,i})) { solSel=null; return; }
+    if(k==='w' && solToFoundation({k:'w'})) { solSel=null; return; }
+  }
+  solLastKey=key; solLastTap=now;
+
+  if(solSel){
+    const src=solSel;
+    if(src.k===k && src.p===p){ solSel=null; solRender(); return; }   // повторное касание — снять выбор
+    if(solMove(src,{k,p})){ solSel=null; return; }
+    solSel=null; solRender();
+    return;
+  }
+  if(k==='f'){ if(G.f[p].length) solSel={k,p,i:G.f[p].length-1}; }
+  else if(k==='w'){ if(G.waste.length) solSel={k:'w',p:0,i:G.waste.length-1}; }
+  else { const c=G.t[p][i]; if(c && c.u) solSel={k:'t',p,i}; }
+  solRender();
+}
+function solTapEmpty(k,p){                              // касание пустого места
+  if(G.won||!solSel) return;
+  if(!solMove(solSel,{k,p})) { solSel=null; solRender(); }
+  else solSel=null;
+}
+
+// ── отрисовка ──
+function solCardHTML(c, top, sel, extra){
+  if(!c.u) return `<div class="sol-card down" style="top:${top}px"${extra||''}></div>`;
+  return `<div class="sol-card up ${solRed(c)?'red':'blk'}${sel?' sel':''}" style="top:${top}px"${extra||''}>`+
+         `<span class="sol-ix">${SOL_R[c.r]}${SOL_S[c.s]}</span><span class="sol-big">${SOL_S[c.s]}</span></div>`;
+}
+function solRender(){
+  if(!G) return;
+  // ширину карты считаем в пикселях: в процентах её нельзя подставить в font-size
+  const tab=document.getElementById('sol-tab');
+  if(tab && tab.clientWidth){
+    const cw=(tab.clientWidth-4*6)/7;
+    tab.closest('.sol-wrap').style.setProperty('--cw', cw.toFixed(2)+'px');
+  }
+  const isSel=(k,p,i)=>solSel && solSel.k===k && solSel.p===p && (k==='t' ? i>=solSel.i : true);
+
+  // верхний ряд: сток · сброс · пусто · четыре базы
+  let h='';
+  h+=`<div class="sol-slot" onclick="solDrawStock()">`+
+     (G.stock.length ? `<div class="sol-card down" style="top:0"></div>`
+                     : `<div class="sol-card up" style="top:0;opacity:.14"></div>`)+`</div>`;
+  h+=`<div class="sol-slot">`+
+     (G.waste.length
+       ? G.waste.slice(-Math.min(3,G.draw)).map((c,n,arr)=>{
+           const last=n===arr.length-1;
+           return `<div class="sol-card up ${solRed(c)?'red':'blk'}${last&&isSel('w',0,0)?' sel':''}"`+
+                  ` style="top:0;transform:translateX(${n*10}px)${last&&isSel('w',0,0)?' translateY(-5px)':''};z-index:${n+1}"`+
+                  (last?` onclick="solTap('w',0,0,event)"`:'')+`>`+
+                  `<span class="sol-ix">${SOL_R[c.r]}${SOL_S[c.s]}</span><span class="sol-big">${SOL_S[c.s]}</span></div>`;
+         }).join('')
+       : '')+`</div>`;
+  h+=`<div></div>`;
+  for(let fi=0;fi<4;fi++){
+    const p=G.f[fi], c=p[p.length-1];
+    h+=`<div class="sol-slot${c?'':' f'}" data-s="${SOL_S[fi]}" onclick="${c?`solTap('f',${fi},0,event)`:`solTapEmpty('f',${fi})`}">`+
+       (c?solCardHTML(c,0,isSel('f',fi,0)):'')+`</div>`;
+  }
+  document.getElementById('sol-top').innerHTML=h;
+
+  // стол
+  let tb='';
+  for(let ti=0;ti<7;ti++){
+    const p=G.t[ti];
+    if(!p.length){
+      tb+=`<div class="sol-col"><div class="sol-slot" onclick="solTapEmpty('t',${ti})"></div></div>`;
+      continue;
+    }
+    let off=0, inner='';
+    p.forEach((c,i)=>{
+      inner+=solCardHTML(c,off,isSel('t',ti,i),` onclick="solTap('t',${ti},${i},event)"`);
+      off += c.u?18:10;
+    });
+    const last=p[p.length-1];
+    off -= last.u?18:10;
+    tb+=`<div class="sol-col" style="height:calc(var(--cw)*1.4 + ${off}px)">${inner}</div>`;
+  }
+  document.getElementById('sol-tab').innerHTML=tb;
+
+  document.getElementById('sol-score').textContent=G.score;
+  document.getElementById('sol-moves').textContent=G.moves;
+  document.getElementById('sol-mode').textContent=G.draw===1?'1 КАРТА':'3 КАРТЫ';
+  document.getElementById('sol-undo').disabled=!solHist.length;
+  const st=DB.solStats||{};
+  document.getElementById('sol-stats').innerHTML=
+    `<span>Партий: <b>${st.played||0}</b></span><span>Побед: <b>${st.won||0}</b></span>`+
+    `<span>Лучшее время: <b>${st.best?solTime(st.best):'—'}</b></span>`;
+}
+
+const solTime=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+function solTick(reset){
+  clearInterval(solTimer);
+  if(reset) G.sec=0;
+  document.getElementById('sol-time').textContent=solTime(G.sec);
+  solTimer=setInterval(()=>{
+    if(!G||G.won) return;
+    if(G.started) G.sec++;
+    document.getElementById('sol-time').textContent=solTime(G.sec);
+  },1000);
+}
+
+function solToggleMode(){
+  if(!G) return;
+  const next=G.draw===1?3:1;
+  const apply=()=>{ DB.sol={...(DB.sol||{}),draw:next}; sv(); solNew(); };
+  if(!G.started || G.won) return apply();
+  const q='Сменить режим? Текущая партия начнётся заново.';
+  if(window.Telegram?.WebApp?.showConfirm) Telegram.WebApp.showConfirm(q, ok=>{ if(ok) apply(); });
+  else if(confirm(q)) apply();
+}
+
+function solWin(){
+  G.won=true;
+  clearInterval(solTimer);
+  const st=DB.solStats||{played:0,won:0,best:null};
+  st.won=(st.won||0)+1;
+  if(!st.best||G.sec<st.best) st.best=G.sec;
+  DB.solStats=st; DB.sol={...(DB.sol||{}),game:null}; sv();
+  document.getElementById('sol-win-time').textContent=solTime(G.sec);
+  document.getElementById('sol-win-moves').textContent=G.moves;
+  document.getElementById('sol-win-score').textContent=G.score;
+  document.getElementById('sol-win').classList.add('on');
+}
+function solCloseWin(){ document.getElementById('sol-win').classList.remove('on'); solNew(); }
+
+// ── сохранение партии, чтобы не терялась при закрытии ──
+function solSave(){
+  if(!G) return;
+  DB.sol={draw:G.draw, game: G.won?null:{stock:G.stock,waste:G.waste,f:G.f,t:G.t,
+          score:G.score,moves:G.moves,sec:G.sec,started:G.started}};
+  sv();
+}
+function solOpen(){
+  if(!G){
+    const sv_=DB.sol?.game;
+    if(sv_){
+      G={...sv_, draw:DB.sol.draw||1, won:false};
+      solHist=[]; solSel=null; solRender(); solTick(false);
+    } else {
+      solNew();
+    }
+  } else { solRender(); solTick(false); }
+}
 
 </script>
 </body>
