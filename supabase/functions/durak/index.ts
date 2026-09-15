@@ -9,6 +9,8 @@ import { apply, deal, view, type Move, type St } from "./engine.ts";
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const PROJECT_URL = Deno.env.get("PROJECT_URL")!;
 const SERVICE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
+// куда ведёт кнопка в уведомлении; можно переопределить секретом WEBAPP_URL
+const WEBAPP_URL = Deno.env.get("WEBAPP_URL") ?? "https://ewgeen239-netizen.github.io/test/";
 const MAX_AGE_SEC = 24 * 60 * 60;
 
 const CORS = {
@@ -53,6 +55,26 @@ async function saveRoom(code: string, patch: Record<string, unknown>) {
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
   });
 }
+const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// Сообщение в личку через Bot API: хозяин узнаёт о сопернике, даже если
+// свернул приложение. Кнопка открывает мини-апп сразу в нужной комнате.
+async function tgNotify(chatId: string, text: string, code: string) {
+  if (!BOT_TOKEN || !chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: [[{ text: "🂡 За стол", web_app: { url: `${WEBAPP_URL}#dk=${code}` } }]] },
+      }),
+    });
+  } catch { /* уведомление не критично — партия уже началась */ }
+}
+
 const code4 = () => {
   const AB = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";           // без похожих символов
   return Array.from({ length: 5 }, () => AB[Math.floor(Math.random() * AB.length)]).join("");
@@ -102,9 +124,18 @@ Deno.serve(async (req: Request) => {
 
   if (action === "join") {
     if (String(room.host_uid) === uid) return json(room2client(room, uid));       // хозяин просто вернулся
-    if (room.guest_uid && String(room.guest_uid) !== uid) return json({ error: "комната занята" }, 409);
-    const st = deal();
+    if (room.guest_uid) {
+      // Гость уже за столом. Приложение зовёт join каждый раз, когда открывает
+      // вкладку, так что без этой проверки возврат в игру раздавал карты
+      // заново и стирал начатую партию.
+      if (String(room.guest_uid) === uid) return json(room2client(room, uid));
+      return json({ error: "комната занята" }, 409);
+    }
+    const st = deal();                                                           // сюда доходим только на первом входе
     await saveRoom(code, { guest_uid: uid, guest_name: name, guest_emoji: emoji, st, status: "play" });
+    // Хозяин мог свернуть приложение, пока ждал: шлём ему сообщение в бот.
+    // Уведомление — не повод ронять вход в комнату, поэтому ошибки глотаем.
+    await tgNotify(String(room.host_uid), `${emoji} <b>${esc(name)}</b> зашёл в комнату <code>${code}</code> — партия началась!`, code);
     return json(room2client({ ...room, guest_uid: uid, guest_name: name, guest_emoji: emoji, st, status: "play" }, uid));
   }
 

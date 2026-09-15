@@ -326,35 +326,100 @@ def cmd_stats(msg):
                      parse_mode="HTML")
 
 # ── /broadcast <текст> (админ) ───────────────────────────────
-@bot.message_handler(commands=["broadcast"])
+BROADCAST_HELP = (
+    "📢 <b>Объявление всем</b>\n\n"
+    "Напиши одним сообщением:\n"
+    "<code>/broadcast текст объявления</code>\n\n"
+    "Текст может быть в несколько строк — просто перенеси строку внутри того же "
+    "сообщения (Shift+Enter на компьютере).\n\n"
+    "Разметка: <code>&lt;b&gt;жирный&lt;/b&gt;</code>, <code>&lt;i&gt;курсив&lt;/i&gt;</code>, "
+    "<code>&lt;u&gt;подчёркнутый&lt;/u&gt;</code>, <code>&lt;code&gt;моноширинный&lt;/code&gt;</code>, "
+    "<code>&lt;a href=\"ссылка\"&gt;текст&lt;/a&gt;</code>.\n"
+    "Сами символы &lt; и &amp; в тексте писать нельзя — Telegram примет их за теги.\n\n"
+    "Сначала объявление придёт тебе — это предпросмотр. Если разметка кривая, "
+    "рассылка не начнётся, и я скажу, что не так.\n\n"
+    "<code>/stats</code> — сколько сейчас получателей."
+)
+
+# кого исключаем из реестра: заблокировал бота или чата больше нет
+def _is_gone(e):
+    d = (getattr(e, "description", "") or "").lower()
+    return e.error_code == 403 or "chat not found" in d or "user is deactivated" in d
+
+
+# сколько Telegram просит подождать при флуд-контроле (429)
+def _retry_after(e, default=3):
+    try:
+        return int(e.result_json["parameters"]["retry_after"])
+    except Exception:
+        return default
+
+
+@bot.message_handler(commands=["broadcast", "announce"])
 def cmd_broadcast(msg):
     if msg.from_user.id not in ADMIN_IDS:
         return
-    text = msg.text.partition(" ")[2].strip()
+    # отделяем текст от команды по любому пробельному символу, а не только по
+    # пробелу: иначе объявление, начатое с новой строки, терялось целиком
+    parts = re.split(r"\s", msg.text, maxsplit=1)
+    text = (parts[1] if len(parts) > 1 else "").strip()
     if not text:
-        bot.send_message(msg.chat.id, "Использование: <code>/broadcast текст</code>", parse_mode="HTML")
+        bot.send_message(msg.chat.id, BROADCAST_HELP, parse_mode="HTML")
         return
+
+    # Предпросмотр он же проверка разметки: кривой HTML Telegram отбивает с
+    # кодом 400, и раньше это означало «ошибка у каждого получателя», а заодно
+    # помечало весь реестр неактивным. Теперь спотыкаемся один раз, на себе.
+    try:
+        bot.send_message(msg.chat.id, text, parse_mode="HTML")
+    except ApiTelegramException as e:
+        bot.send_message(
+            msg.chat.id,
+            "❌ Telegram не принял разметку, рассылку не начинал:\n"
+            f"<code>{html.escape(str(e.description))}</code>\n\n"
+            "Проверь теги или убери из текста символы &lt; и &amp;.",
+            parse_mode="HTML")
+        return
+
     users = get_broadcast_targets()
     if not users:
         bot.send_message(msg.chat.id, "Нет получателей (пустой список).")
         return
-    bot.send_message(msg.chat.id, f"📤 Рассылаю {len(users)} пользователям…")
-    sent = failed = 0
-    for uid in users:
+
+    me = str(msg.from_user.id)
+    targets = [u for u in users if str(u) != me]          # себе уже отправили выше
+    bot.send_message(msg.chat.id, f"👆 Так увидят объявление. Рассылаю ещё {len(targets)} чел…")
+
+    sent = failed = gone = 0
+    for uid in targets:
         try:
             bot.send_message(int(uid), text, parse_mode="HTML")
             sent += 1
             time.sleep(0.05)                        # ~20 сообщений/сек — лимит Telegram
         except ApiTelegramException as e:
-            # 403 — заблокировал бота; 400 — чат не найден
-            if e.error_code in (400, 403):
+            if e.error_code == 429:                 # флуд-контроль: подождать и повторить
+                time.sleep(_retry_after(e) + 1)
+                try:
+                    bot.send_message(int(uid), text, parse_mode="HTML")
+                    sent += 1
+                    continue
+                except Exception:
+                    failed += 1
+                    continue
+            if _is_gone(e):                         # заблокировал бота / чата нет
                 set_inactive(uid)
-            failed += 1
+                gone += 1
+            else:
+                failed += 1
         except Exception:
             failed += 1
-    bot.send_message(msg.chat.id,
-                     f"📢 Готово. Отправлено: <b>{sent}</b> · ошибок: <b>{failed}</b>",
-                     parse_mode="HTML")
+
+    out = f"📢 Готово. Отправлено: <b>{sent + 1}</b>"     # +1 — предпросмотр себе
+    if gone:
+        out += f" · отписались: <b>{gone}</b>"
+    if failed:
+        out += f" · ошибок: <b>{failed}</b>"
+    bot.send_message(msg.chat.id, out, parse_mode="HTML")
 
 # ── callback-обработчик ──────────────────────────────────────
 @bot.callback_query_handler(func=lambda c: True)

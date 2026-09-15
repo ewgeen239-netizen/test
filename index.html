@@ -522,6 +522,8 @@ select.fl-in{appearance:none}
 .dk-note{font-size:11px;color:var(--sub);line-height:1.5}
 .dk-err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:10px;
   padding:9px 12px;font-size:11.5px;margin-bottom:10px;animation:pcPlay .22s ease}
+.dk-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:10px;
+  padding:9px 12px;font-size:11.5px;margin-bottom:10px;animation:pcPulse .5s ease}
 /* стол */
 .dk-seat{display:flex;align-items:center;gap:9px;margin-bottom:8px}
 .dk-ava{width:32px;height:32px;border-radius:10px;background:var(--c3);border:1px solid var(--line2);
@@ -3124,13 +3126,32 @@ function dkOpen(){
   else { DK=null; dkRender(); }
   dkStartPoll();
 }
+// зелёная плашка — в отличие от dkErr это хорошая новость
+function dkNote(msg){
+  const el=document.getElementById('dk-err');
+  el.innerHTML=`<div class="dk-ok">${esc(msg)}</div>`;
+  clearTimeout(dkErrT); dkErrT=setTimeout(()=>{el.innerHTML='';},6000);
+}
+
+// соперник сел за стол, пока мы ждали: плашка + вибрация
+function dkOppJoined(r){
+  const opp = (r.players||[])[r.me===0?1:0] || {};
+  dkNote(`${opp.emoji||'🙂'} ${opp.name||'Соперник'} зашёл — партия началась!`);
+  try{ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }catch{}
+  try{ navigator.vibrate?.(120); }catch{}
+}
+
 function dkStartPoll(){
   clearInterval(dkPoll);
   dkPoll=setInterval(async ()=>{
     if(!DK?.code || dkBusy || document.hidden) return;
     if(!document.getElementById('page-cards').classList.contains('on') || cardsTab!=='dk') return;
+    const was=DK.status;
     const r=await dkCall('state',{code:DK.code});
-    if(r){ DK=r; dkRender(); }
+    if(r){
+      DK=r; dkRender();
+      if(was==='wait' && r.status==='play') dkOppJoined(r);   // дождались соперника
+    }
   }, 2000);
 }
 
