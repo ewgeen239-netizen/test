@@ -58,13 +58,39 @@ const BOT_USERNAME = 'имя_бота';   // без @
 
 Без этого приглашение копирует код в буфер — играть можно, просто на шаг длиннее.
 
-Деплой функции:
+### Как задеплоить функции
 
-```bash
-supabase functions deploy durak --no-verify-jwt
+Нужно один раз после правок в `supabase/functions/`.
+
+**Через браузер, без терминала.** Supabase → Edge Functions → создать функцию
+с именем `durak` → вставить содержимое `supabase/functions/durak/index.bundled.ts`
+(это те же engine.ts и index.ts, сложенные в один файл специально для вставки) →
+Deploy. Так же для `submit-rank`, только там вставляется обычный `index.ts`.
+Затем Edge Functions → Secrets добавить три значения:
+
+```
+BOT_TOKEN        = токен от @BotFather
+PROJECT_URL      = https://mkuwkntdcpfsxhqblkic.supabase.co
+SERVICE_ROLE_KEY = service_role из Settings → API
 ```
 
-Секреты те же, что у `submit-rank` (`BOT_TOKEN`, `PROJECT_URL`, `SERVICE_ROLE_KEY`).
+**Через терминал.** Нужен установленный Supabase CLI:
+
+```bash
+supabase login                                    # откроет браузер
+supabase link --project-ref mkuwkntdcpfsxhqblkic
+supabase functions deploy durak --no-verify-jwt
+supabase functions deploy submit-rank --no-verify-jwt
+supabase secrets set BOT_TOKEN=... PROJECT_URL=... SERVICE_ROLE_KEY=...
+```
+
+CLI сам заберёт всю папку функции, поэтому `index.bundled.ts` ему не нужен.
+
+Проверить, что функция жива: Edge Functions → durak → Logs. При заходе в игру
+там появятся запросы.
+
+`--no-verify-jwt` обязателен: функции проверяют не JWT Supabase, а подпись
+Telegram, поэтому встроенную проверку надо отключить.
 
 ### Настройка Supabase (один раз)
 

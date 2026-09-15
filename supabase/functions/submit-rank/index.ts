@@ -66,7 +66,7 @@ const num = (v: unknown, lo: number, hi: number) => {
 };
 const int = (v: unknown, lo: number, hi: number) => Math.round(num(v, lo, hi));
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return new Response("method", { status: 405, headers: CORS });
 
