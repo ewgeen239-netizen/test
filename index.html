@@ -3037,7 +3037,12 @@ function pushSolRank(){
 // ══ ДУРАК ОНЛАЙН ═════════════════════════════════════════════
 // Партия целиком живёт на сервере: клиент показывает то, что ему отдала
 // Edge Function, и шлёт ходы. Чужие карты сюда не приходят в принципе.
-const DK_URL = SB_URL+'/functions/v1/durak';
+// Слаг функции в Supabase. При создании через Dashboard проект подставляет
+// своё случайное имя («smooth-task»), и переименовать функцию потом нельзя —
+// слаг задаётся один раз. Поэтому адрес вынесен сюда: развернёшь функцию
+// заново под именем durak — поменяй строку на 'durak', больше нигде не надо.
+const DK_FN  = 'smooth-task';
+const DK_URL = SB_URL+'/functions/v1/'+DK_FN;
 const DK_R=['6','7','8','9','10','В','Д','К','Т'], DK_S=['♠','♥','♦','♣'];
 const dkRed=c=>c.s===1||c.s===2;
 let DK=null, dkPoll=null, dkBusy=false, dkErrT=null, dkSeen='';
@@ -3057,7 +3062,7 @@ function dkErr(msg){
 async function dkDiag(){
   try{
     await fetch(DK_URL,{ method:'POST', mode:'no-cors', body:'{}' });
-    return 'Сервер есть, но функция durak не отвечает. Проверь в Supabase → Edge Functions: функция называется durak, у неё выключен Verify JWT, в логах нет BOOT_ERROR.';
+    return `Сервер есть, но функция ${DK_FN} не отвечает. Проверь в Supabase → Edge Functions: у неё выключен Verify JWT, в логах нет BOOT_ERROR.`;
   }catch{
     return 'Нет связи с сервером — проверь интернет.';
   }
@@ -3072,8 +3077,8 @@ async function dkCall(action, extra){
         name:(DB.name||'Игрок').slice(0,40), emoji:DB.emoji||'🙂', ...(extra||{}) }) });
     const j = await r.json().catch(()=>null);
     if(!j) {
-      dkErr(r.status===404 ? 'Функция durak не найдена на сервере (404) — она не задеплоена или названа иначе.'
-          : r.status===401 ? 'Сервер отклонил запрос (401) — у функции durak включён Verify JWT, его надо выключить.'
+      dkErr(r.status===404 ? `Функция ${DK_FN} не найдена на сервере (404) — она не задеплоена или названа иначе.`
+          : r.status===401 ? `Сервер отклонил запрос (401) — у функции ${DK_FN} включён Verify JWT, его надо выключить.`
           : `Сервер ответил ${r.status}, но без данных.`);
       return null;
     }
