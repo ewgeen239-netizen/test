@@ -464,7 +464,12 @@ select.fl-in{appearance:none}
 
 
 /* ── КАРТЫ: общий вид для «Косынки» и «Дурака» ── */
+/* isolation — ключевая строка. Достоинство и масть лежат с z-index:2, а карта
+   своего слоя не создавала, поэтому надписи нижних карт всплывали над теми,
+   что лежат сверху: в веере и в стопке масти наезжали друг на друга.
+   overflow — чтобы символ не вылезал за скруглённый край карты. */
 .pc{position:relative;border-radius:6px;user-select:none;-webkit-user-select:none;
+  isolation:isolate;overflow:hidden;
   box-shadow:0 1px 2px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35)}
 .pc.up{background:linear-gradient(158deg,#fdfdfb 0%,#f4f4ee 55%,#e8e8df 100%);
   border:1px solid #cfcfc6}
@@ -525,12 +530,39 @@ select.fl-in{appearance:none}
 .dk-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:10px;
   padding:9px 12px;font-size:11.5px;margin-bottom:10px;animation:pcPulse .5s ease}
 /* стол */
+/* список живых столов */
+.dk-room{display:flex;align-items:center;gap:10px;padding:10px;background:var(--c2);border:1px solid var(--line);
+  border-radius:11px;margin-bottom:7px}
+.dk-room-e{font-size:17px;letter-spacing:-2px;flex-shrink:0}
+.dk-room-i{flex:1;min-width:0}
+.dk-room-n{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dk-room-s{font-family:var(--mono);font-size:9px;color:var(--sub);letter-spacing:.5px;margin-top:1px}
+.dk-room-b{padding:8px 13px;border:none;border-radius:9px;background:var(--accent);color:#111;font-weight:800;
+  font-size:11px;letter-spacing:.5px;cursor:pointer;flex-shrink:0}
+.dk-room-b.sec{background:var(--c3);border:1px solid var(--line2);color:var(--sub);font-weight:700}
+/* выбор числа мест */
+.dk-seats{display:flex;gap:6px;margin-bottom:10px}
+.dk-seats button{flex:1;padding:10px 0;background:var(--c2);border:1px solid var(--line);border-radius:10px;
+  color:var(--sub);font-family:var(--mono);font-size:11px;letter-spacing:.5px;cursor:pointer;transition:all .15s}
+.dk-seats button.on{background:rgba(232,255,0,.09);border-color:var(--accent);color:var(--accent);font-weight:700}
+/* места за столом, пока ждём */
+.dk-chairs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0 2px}
+.dk-chair{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:9px;background:var(--c2);
+  border:1px solid var(--line);font-size:11.5px;font-weight:700}
+.dk-chair.free{border-style:dashed;color:var(--dim);font-weight:400;font-family:var(--mono);font-size:10px}
 .dk-seat{display:flex;align-items:center;gap:9px;margin-bottom:8px}
 .dk-ava{width:32px;height:32px;border-radius:10px;background:var(--c3);border:1px solid var(--line2);
   display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;overflow:hidden;transition:all .2s}
 .dk-seat.turn .dk-ava{border-color:var(--accent);animation:pcPulse 1.6s ease-out infinite}
-.dk-nm{font-size:13px;font-weight:700;line-height:1.2}
+.dk-nm{font-size:13px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dk-sub{font-family:var(--mono);font-size:9px;color:var(--sub)}
+.dk-seat.out{opacity:.42}
+.dk-who{flex:1;min-width:0}
+.dk-role{display:inline-block;font-family:var(--mono);font-size:7.5px;letter-spacing:1px;text-transform:uppercase;
+  padding:2px 5px;border-radius:5px;margin-left:5px;vertical-align:1px}
+.dk-role.a{background:rgba(232,255,0,.12);color:var(--accent)}
+.dk-role.d{background:rgba(239,68,68,.12);color:#fca5a5}
+.dk-role.p{background:var(--c3);color:var(--dim)}
 .dk-fan{display:flex;margin-left:auto}
 .dk-fan .pc{width:20px;height:28px;margin-left:-11px;border-radius:4px;flex-shrink:0}
 .dk-fan .pc:first-child{margin-left:0}
@@ -3118,12 +3150,13 @@ function cardsOpen(){ switchCards(DB.cardsTab==='dk' ? 'dk' : 'sol'); }
 
 function dkOpen(){
   dkErr('');
+  dkSeats = [2,3,4].includes(DB.dkSeats) ? DB.dkSeats : 2;
   const saved = DB.dk?.code;
   const hash = (location.hash||'').match(/^#dk=([A-Za-z0-9]{4,8})$/);
   const deep = hash ? hash[1] : window.Telegram?.WebApp?.initDataUnsafe?.start_param;   // вход по приглашению
   if(deep && /^[A-Z0-9]{4,8}$/i.test(deep)) dkJoin(deep);
   else if(saved) dkJoin(saved);
-  else { DK=null; dkRender(); }
+  else { DK=null; dkRender(true); dkLoadRooms(); }
   dkStartPoll();
 }
 // зелёная плашка — в отличие от dkErr это хорошая новость
@@ -3133,30 +3166,43 @@ function dkNote(msg){
   clearTimeout(dkErrT); dkErrT=setTimeout(()=>{el.innerHTML='';},6000);
 }
 
-// соперник сел за стол, пока мы ждали: плашка + вибрация
-function dkOppJoined(r){
-  const opp = (r.players||[])[r.me===0?1:0] || {};
-  dkNote(`${opp.emoji||'🙂'} ${opp.name||'Соперник'} зашёл — партия началась!`);
-  try{ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }catch{}
-  try{ navigator.vibrate?.(120); }catch{}
+// кто-то сел за стол, пока мы ждали: плашка + вибрация
+function dkSeatTaken(was,now){
+  const buzz=()=>{ try{ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }catch{}
+                   try{ navigator.vibrate?.(120); }catch{} };
+  if(was.status==='wait' && now.status==='play'){ dkNote('Стол собрался — карты розданы!'); buzz(); return; }
+  const added=(now.players||[]).slice((was.players||[]).length);
+  if(added.length){
+    const p=added[added.length-1];
+    dkNote(`${p.emoji||'🙂'} ${p.name||'Игрок'} сел за стол · ждём ещё ${now.seats-now.players.length}`);
+    buzz();
+  }
 }
 
+// список живых столов — нужен, только пока мы в лобби
+async function dkLoadRooms(){
+  const r=await dkCall('rooms');
+  if(r && Array.isArray(r.rooms)){ dkRooms=r.rooms; if(!DK) dkRender(); }
+}
+
+let dkTick=0;
 function dkStartPoll(){
   clearInterval(dkPoll);
   dkPoll=setInterval(async ()=>{
-    if(!DK?.code || dkBusy || document.hidden) return;
+    if(dkBusy || document.hidden) return;
     if(!document.getElementById('page-cards').classList.contains('on') || cardsTab!=='dk') return;
-    const was=DK.status;
-    const r=await dkCall('state',{code:DK.code});
-    if(r){
-      DK=r; dkRender();
-      if(was==='wait' && r.status==='play') dkOppJoined(r);   // дождались соперника
+    if(!DK?.code){                       // в лобби обновляем список раз в 6 секунд
+      if(++dkTick % 3 === 0) dkLoadRooms();
+      return;
     }
+    const was=DK;
+    const r=await dkCall('state',{code:DK.code});
+    if(r){ DK=r; dkRender(); dkSeatTaken(was,r); }
   }, 2000);
 }
 
 async function dkCreate(){
-  dkBusy=true; const r=await dkCall('create'); dkBusy=false;
+  dkBusy=true; const r=await dkCall('create',{seats:dkSeats}); dkBusy=false;
   if(r){ DK=r; DB.dk={code:r.code}; sv(); dkRender(); }
 }
 async function dkJoin(code){
@@ -3164,9 +3210,20 @@ async function dkJoin(code){
   if(code.length<4){ dkErr('Код слишком короткий'); return; }
   dkBusy=true; const r=await dkCall('join',{code}); dkBusy=false;
   if(r){ DK=r; DB.dk={code:r.code}; sv(); dkRender(); }
+  else {                                 // не пустили: стол занят или уже убран
+    if(DB.dk?.code===code){ DB.dk=null; sv(); }
+    dkRender(true); dkLoadRooms();
+  }
 }
 function dkJoinInput(){ dkJoin(document.getElementById('dk-code-in').value); }
-function dkLeave(){ DK=null; DB.dk=null; sv(); dkErr(''); dkRender(); }
+async function dkLeave(){
+  const code=DK?.code, wait=DK?.status==='wait';
+  DK=null; DB.dk=null; sv(); dkErr(''); dkRender(true);
+  // из несобравшегося стола выписываемся на сервере, иначе он так и будет
+  // висеть в списке живых с занятым местом
+  if(code && wait) await dkCall('leave',{code});
+  dkLoadRooms();
+}
 
 async function dkMove(m){
   if(!DK?.code||dkBusy) return;
@@ -3182,7 +3239,7 @@ async function dkRematch(){
 function dkInvite(){
   const code=DK?.code; if(!code) return;
   const link = BOT_USERNAME ? `https://t.me/${BOT_USERNAME}?start=dk_${code}` : '';
-  const text = `Партия в дурака — код ${code}` + (link?'':'\nОткрой бот → Дурак → Войти по коду');
+  const text = `Играем в дурака — стол ${code}` + (link?'':'\nОткрой бот → Карты → Дурак → Войти по коду');
   if(window.Telegram?.WebApp?.openTelegramLink && link){
     Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
   } else {
@@ -3194,20 +3251,53 @@ function dkInvite(){
 
 const dkCard=(c,cls)=>`<div class="pc up ${dkRed(c)?'red':'blk'}${cls?' '+cls:''}">`+
   `<span class="pc-ix">${DK_R[c.r]}<i>${DK_S[c.s]}</i></span><span class="pc-mid">${DK_S[c.s]}</span></div>`;
+const dkBeats=(d,a,t)=> d.s===a.s ? d.r>a.r : (d.s===t && a.s!==t);
+const dkKey=c=>c.s*9+c.r;
 
-function dkRender(){
+// Перерисовываем, только когда что-то правда изменилось. Раньше опрос раз в
+// две секунды пересобирал разметку целиком, анимации запускались заново — и
+// карты дёргались на ровном месте, хотя ход никто не делал.
+let dkSig='', dkWasHand=new Set(), dkWasTable=[];
+
+function dkRender(force){
   const body=document.getElementById('dk-body'), badge=document.getElementById('dk-badge');
   if(!body) return;
+  if(force){ dkSig=''; }
 
-  if(!DK){                                              // ── лобби ──
-    badge.style.display='none';                         // выходить пока неоткуда
+  if(!DK){ dkLobby(body,badge); return; }
+
+  const sig=JSON.stringify([DK.code,DK.status,DK.seats,DK.players.map(p=>p.name),DK.g?.ver]);
+  if(sig===dkSig) return;
+  dkSig=sig;
+  body.dataset.view='room';
+  badge.style.display=''; badge.textContent='✕ ВЫЙТИ';
+
+  if(DK.status==='wait'){ dkWait(body); return; }
+  const g=DK.g;
+  if(!g){ body.innerHTML='<div class="dk-empty">Загрузка…</div>'; return; }
+  dkTable(body,g);
+}
+
+// ── лобби: свой стол + живые столы, к которым можно просто подсесть ──
+let dkRooms=[], dkSeats=2, dkRoomsSig='';
+
+function dkLobby(body,badge){
+  badge.style.display='none';
+  if(body.dataset.view!=='lobby'){          // каркас строим один раз, чтобы
+    dkSig=''; body.dataset.view='lobby';    // не стирать набранный код
+    body.dataset.stage='';                  // вернёмся за стол — соберём заново
     body.innerHTML=`
       <div class="dk-lobby">
         <div class="dk-card">
-          <div class="dk-h">🂡 Игра на двоих</div>
-          <div class="dk-note" style="margin-bottom:12px">Создай комнату и отправь код сопернику —
-            играете прямо в боте. Карты соперника хранятся на сервере, подсмотреть их нельзя.</div>
-          <button class="dk-btn" onclick="dkCreate()">СОЗДАТЬ КОМНАТУ</button>
+          <div class="dk-h">🂡 Свой стол</div>
+          <div class="dk-seats" id="dk-seats"></div>
+          <button class="dk-btn" onclick="dkCreate()">СОЗДАТЬ СТОЛ</button>
+          <div class="dk-note" style="margin-top:10px">Стол появится в списке ниже — подсесть сможет
+            любой. Карты соседей лежат на сервере, подсмотреть их нельзя.</div>
+        </div>
+        <div class="dk-card">
+          <div class="dk-h">Живые столы</div>
+          <div id="dk-rooms"><div class="dk-note">Смотрим, кто играет…</div></div>
         </div>
         <div class="dk-card">
           <div class="dk-h">Войти по коду</div>
@@ -3217,49 +3307,107 @@ function dkRender(){
           </div>
         </div>
       </div>`;
-    return;
+    dkRoomsSig='';
+    dkSeatsBar();
   }
+  const sig=JSON.stringify(dkRooms.map(r=>[r.code,r.taken,r.seats]));
+  if(sig===dkRoomsSig) return;              // список не менялся — не трогаем
+  dkRoomsSig=sig;
+  const el=document.getElementById('dk-rooms'); if(!el) return;
+  el.innerHTML = dkRooms.length ? dkRooms.map(r=>`
+    <div class="dk-room">
+      <div class="dk-room-e">${r.players.map(p=>esc(p.emoji||'🙂')).join('')}</div>
+      <div class="dk-room-i">
+        <div class="dk-room-n">${esc(r.players.map(p=>p.name||'Игрок').join(', '))}</div>
+        <div class="dk-room-s">${r.taken}/${r.seats} · ждут ${r.seats-r.taken}</div>
+      </div>
+      <button class="dk-room-b${r.mine?' sec':''}" onclick="dkJoin('${esc(r.code)}')">${r.mine?'ВЕРНУТЬСЯ':'ЗАЙТИ'}</button>
+    </div>`).join('')
+    : `<div class="dk-note">Сейчас никто не ждёт соперников. Создай стол — он появится здесь у всех.</div>`;
+}
+function dkSeatsBar(){
+  const el=document.getElementById('dk-seats'); if(!el) return;
+  el.innerHTML=[2,3,4].map(n=>`<button class="${n===dkSeats?'on':''}" onclick="dkSetSeats(${n})">${n} ИГРОКА</button>`).join('');
+}
+function dkSetSeats(n){ dkSeats=n; DB.dkSeats=n; sv(); dkSeatsBar(); }
 
-  badge.style.display=''; badge.textContent='✕ ВЫЙТИ';
-
-  if(DK.status==='wait'){                               // ── ждём соперника ──
-    body.innerHTML=`
-      <div class="dk-card">
-        <div class="dk-h">Комната создана · ждём соперника</div>
-        <div class="dk-code">${esc(DK.code)}</div>
-        <div class="dk-code-l">код комнаты</div>
-        <button class="dk-btn" onclick="dkInvite()">📨 ПРИГЛАСИТЬ В TELEGRAM</button>
-        <div style="height:8px"></div>
-        <button class="dk-btn sec" onclick="dkLeave()">ОТМЕНИТЬ</button>
-        <div class="dk-note" style="margin-top:12px;text-align:center">Как только соперник войдёт,
-          карты раздадутся сами.</div>
-      </div>`;
-    return;
-  }
-
-  const g=DK.g; if(!g){ body.innerHTML='<div class="dk-empty">Загрузка…</div>'; return; }
-  const opp=DK.players[1-g.me]||{}, my=DK.players[g.me]||{};
-  const iAtt=g.att===g.me, iDef=!iAtt;
-  const undef=g.table.filter(s=>!s.d).length;
-  const myTurn = g.phase==='attack' ? iAtt : iDef;
-  // подсветка: чем сейчас можно сходить
-  const playable=c=>{
-    if(g.over||!myTurn) return false;
-    if(g.phase==='attack') return iAtt && (!g.table.length ||
-      g.table.some(s=>s.a.r===c.r||(s.d&&s.d.r===c.r))) && g.table.length<6 && undef<g.opp+1;
-    return iDef && g.table.some(s=>!s.d && dkBeats(c,s.a,g.trump));
-  };
-  const newCards = g.table.length && dkSeen!==DK.code+':'+g.ver;
-  dkSeen=DK.code+':'+g.ver;
-
+// ── ждём, пока стол соберётся ──
+function dkWait(body){
+  body.dataset.stage='';                    // стол будем собирать после раздачи
+  const free=DK.seats-DK.players.length;
   body.innerHTML=`
-    <div class="dk-seat${!myTurn?' turn':''}">
-      <div class="dk-ava">${esc(opp.emoji||'🙂')}</div>
-      <div><div class="dk-nm">${esc(opp.name||'Соперник')}</div>
-        <div class="dk-sub">${g.opp} карт${g.att!==g.me?' · ходит':''}</div></div>
-      <div class="dk-fan">${Array.from({length:Math.min(g.opp,10)},()=>`<div class="pc down"></div>`).join('')}</div>
-    </div>
+    <div class="dk-card">
+      <div class="dk-h">Стол на ${DK.seats} · ждём ещё ${free}</div>
+      <div class="dk-code">${esc(DK.code)}</div>
+      <div class="dk-code-l">код стола</div>
+      <div class="dk-chairs">
+        ${DK.players.map(p=>`<div class="dk-chair">${esc(p.emoji||'🙂')} ${esc(p.name||'Игрок')}</div>`).join('')}
+        ${Array.from({length:free},()=>`<div class="dk-chair free">свободно</div>`).join('')}
+      </div>
+      <div style="height:10px"></div>
+      <button class="dk-btn" onclick="dkInvite()">📨 ПОЗВАТЬ В TELEGRAM</button>
+      <div style="height:8px"></div>
+      <button class="dk-btn sec" onclick="dkLeave()">ОТМЕНИТЬ</button>
+      <div class="dk-note" style="margin-top:12px;text-align:center">Ждать необязательно: стол видно
+        в списке живых, зайти может кто угодно. Карты раздадутся сами.</div>
+    </div>`;
+}
 
+// ── стол ──
+// Экран собран из независимых кусков, у каждого своя подпись. Перерисовываем
+// только то, что реально поменялось: чужой ход больше не пересобирает твою
+// руку, поэтому карты стоят на месте и ничего не мигает.
+const dkParts={};
+function dkPart(id,sig,html){
+  if(dkParts[id]===sig) return;
+  dkParts[id]=sig;
+  const el=document.getElementById(id); if(el) el.innerHTML=html;
+}
+
+function dkTable(body,g){
+  if(body.dataset.stage!=='1'){
+    body.dataset.stage='1';
+    for(const k in dkParts) delete dkParts[k];
+    body.innerHTML=`<div id="dk-p-seats"></div><div id="dk-p-mid"></div>`+
+      `<div id="dk-p-table" class="dk-table"></div><div id="dk-p-turn" class="dk-turn"></div>`+
+      `<div id="dk-p-hand" class="dk-hand"></div><div id="dk-p-acts" class="dk-acts"></div>`+
+      `<div id="dk-p-over"></div>`;
+  }
+  const me=g.me, n=g.counts.length;
+  const iDef=g.def===me, iAtt=g.att===me;
+  const undef=g.table.filter(s=>!s.d).length;
+  const defLeft=g.counts[g.def];
+  const ranks=new Set(); g.table.forEach(s=>{ranks.add(s.a.r); if(s.d)ranks.add(s.d.r);});
+
+  // чем можно сходить прямо сейчас
+  const playable=c=>{
+    if(g.over) return false;
+    if(iDef) return g.table.some(s=>!s.d && dkBeats(c,s.a,g.trump));
+    if(g.table.length>=6 || undef>=defLeft) return false;
+    if(!g.table.length) return iAtt;                 // первым заходит атакующий
+    return ranks.has(c.r);                           // дальше — только по рангам на столе
+  };
+  const role=i=> i===g.att?'<span class="dk-role a">ходит</span>'
+              : i===g.def?'<span class="dk-role d">отбивается</span>'
+              : g.passed?.[i]?'<span class="dk-role p">бито</span>':'';
+
+  // соседи по кругу: сначала тот, кто сидит за мной
+  const seats=[]; for(let k=1;k<n;k++) seats.push((me+k)%n);
+
+  dkPart('dk-p-seats', JSON.stringify([seats.map(i=>[g.counts[i],g.outs?.[i],g.passed?.[i]]),g.att,g.def,DK.players.map(p=>p.name)]),
+    seats.map(i=>{
+      const p=DK.players[i]||{}, cnt=g.counts[i], gone=g.outs?.[i];
+      return `<div class="dk-seat${i===g.att||i===g.def?' turn':''}${gone?' out':''}">
+        <div class="dk-ava">${esc(p.emoji||'🙂')}</div>
+        <div class="dk-who">
+          <div class="dk-nm">${esc(p.name||'Игрок')}${role(i)}</div>
+          <div class="dk-sub">${gone?'вышел из игры':cnt+' карт'}</div>
+        </div>
+        <div class="dk-fan">${Array.from({length:Math.min(cnt,8)},()=>`<div class="pc down"></div>`).join('')}</div>
+      </div>`;
+    }).join(''));
+
+  dkPart('dk-p-mid', g.deck+':'+g.discard+':'+g.trump, `
     <div class="dk-mid">
       <div class="dk-deck">
         ${g.trumpCard?dkCard(g.trumpCard,'tr'):''}
@@ -3273,54 +3421,85 @@ function dkRender(){
       <div class="dk-info" style="text-align:right;flex:0 0 auto">
         <div class="dk-info-t">бито</div><div class="dk-info-v">${g.discard}</div>
       </div>
-    </div>
+    </div>`);
 
-    <div class="dk-table">
-      ${g.table.length ? g.table.map((sl,i)=>`<div class="dk-slot">
-          ${dkCard(sl.a,'pc-play')}${sl.d?dkCard(sl.d,'def pc-beat'):''}</div>`).join('')
-        : `<div class="dk-empty">${iAtt?'твой ход — заходи':'ждём хода соперника'}</div>`}
-    </div>
+  // на столе анимируем только то, чего в прошлый раз не было
+  const tSig=JSON.stringify(g.table);
+  if(dkParts['dk-p-table']!==tSig){
+    const fresh=g.table.map((sl,i)=>({a:i>=dkWasTable.length, d:!!sl.d && !dkWasTable[i]?.d}));
+    dkWasTable=g.table.map(sl=>({d:!!sl.d}));
+    dkPart('dk-p-table', tSig, g.table.length
+      ? g.table.map((sl,i)=>`<div class="dk-slot">${dkCard(sl.a,fresh[i].a?'pc-play':'')}`+
+          `${sl.d?dkCard(sl.d,'def'+(fresh[i].d?' pc-beat':'')):''}</div>`).join('')
+      : `<div class="dk-empty">${iAtt?'твой ход — заходи':'ждём хода'}</div>`);
+  }
 
-    <div class="dk-turn">${g.over ? '' :
-      myTurn ? (g.phase==='attack'?'<b>твой ход</b> · подкидывай или бито':'<b>отбивайся</b> · или бери')
-             : 'ход соперника…'}</div>
+  dkPart('dk-p-turn', JSON.stringify([g.over,iDef,iAtt,g.table.length,g.passed?.[me],g.att]),
+    g.over ? ''
+    : iDef ? '<b>отбивайся</b> · или бери'
+    : iAtt && !g.table.length ? '<b>твой ход</b> · заходи любой картой'
+    : g.table.length ? (g.passed?.[me] ? 'ждём остальных…' : '<b>можешь подкинуть</b> · или бито')
+    : `ход игрока <b>${esc((DK.players[g.att]||{}).name||'соседа')}</b>…`);
 
-    <div class="dk-hand">${g.hand.map((c,i)=>{
-      const ok=playable(c);
-      return dkCard(c,(ok?'ok ':'no ')+(newCards?'':'pc-deal'))
-        .replace('<div class="pc',`<div onclick="dkPlay(${i})" class="pc`);
-    }).join('')}</div>
+  // Рука. Узлы пересобираем, только когда изменился сам набор карт, и
+  // анимируем при этом лишь те, которых раньше на руке не было. Подсветка
+  // «чем можно сходить» меняется и от чужого хода, поэтому её обновляем
+  // прямо на существующих карточках — иначе рука моргала на каждый чужой ход.
+  const hSig=JSON.stringify(g.hand);
+  const hand=document.getElementById('dk-p-hand');
+  if(dkParts['dk-p-hand']!==hSig){
+    const fresh=new Set();
+    g.hand.forEach(c=>{ if(!dkWasHand.has(dkKey(c))) fresh.add(dkKey(c)); });
+    dkWasHand=new Set(g.hand.map(dkKey));
+    dkPart('dk-p-hand', hSig, g.hand.map((c,i)=>
+      dkCard(c, fresh.has(dkKey(c))?'pc-deal':'')
+        .replace('<div class="pc',`<div onclick="dkPlay(${i})" class="pc`)).join(''));
+  }
+  if(hand) [...hand.children].forEach((node,i)=>{
+    const ok=g.hand[i] && playable(g.hand[i]);
+    node.classList.toggle('ok',!!ok); node.classList.toggle('no',!ok);
+  });
 
-    <div class="dk-acts">
-      ${iAtt?`<button class="dk-btn" ${(!g.table.length||undef||g.over)?'disabled':''} onclick="dkMove({t:'done'})">БИТО</button>`:''}
-      ${iDef?`<button class="dk-btn sec" ${(!g.table.length||g.over)?'disabled':''} onclick="dkMove({t:'take'})">БЕРУ</button>`:''}
-    </div>
+  dkPart('dk-p-acts', JSON.stringify([iDef,g.table.length>0,!!g.over,g.passed?.[me],undef>0]),
+    `${!iDef?`<button class="dk-btn" ${(!g.table.length||g.over||g.passed?.[me])?'disabled':''}
+        onclick="dkMove({t:'done'})">${undef?'ПАС':'БИТО'}</button>`:''}
+     ${iDef?`<button class="dk-btn sec" ${(!g.table.length||g.over)?'disabled':''}
+        onclick="dkMove({t:'take'})">БЕРУ</button>`:''}`);
 
-    ${g.over?`<div class="dk-card" style="margin-top:12px;text-align:center">
-        <div style="font-size:34px">${g.over.loser===null?'🤝':g.over.loser===g.me?'🃏':'🏆'}</div>
-        <div style="font-size:18px;font-weight:900;margin:6px 0 2px">${
-          g.over.loser===null?'Ничья':g.over.loser===g.me?'Ты дурак!':'Победа!'}</div>
-        <div class="dk-note" style="margin-bottom:12px">${
-          g.over.loser===null?'Карты кончились у обоих':
-          g.over.loser===g.me?'Соперник вышел первым':'Соперник остался с картами'}</div>
-        <button class="dk-btn" onclick="dkRematch()">ЕЩЁ ПАРТИЮ</button>
-      </div>`:''}`;
+  dkPart('dk-p-over', JSON.stringify(g.over), g.over?dkOverCard(g):'');
 }
 
-const dkBeats=(d,a,t)=> d.s===a.s ? d.r>a.r : (d.s===t && a.s!==t);
+function dkOverCard(g){
+  const loser=g.over.loser;
+  const nm=i=>esc((DK.players[i]||{}).name||'Игрок');
+  return `<div class="dk-card" style="margin-top:12px;text-align:center">
+      <div style="font-size:34px">${loser===null?'🤝':loser===g.me?'🃏':'🏆'}</div>
+      <div style="font-size:18px;font-weight:900;margin:6px 0 2px">${
+        loser===null?'Ничья':loser===g.me?'Ты дурак!':'Победа!'}</div>
+      <div class="dk-note" style="margin-bottom:12px">${
+        loser===null?'Карты кончились у всех разом':
+        loser===g.me?'Ты остался с картами на руках':`Дурак — ${nm(loser)}`}</div>
+      <button class="dk-btn" onclick="dkRematch()">ЕЩЁ ПАРТИЮ</button>
+    </div>`;
+}
 
 function dkPlay(i){
   const g=DK?.g; if(!g||g.over) return;
   const c=g.hand[i]; if(!c) return;
-  if(g.phase==='attack'){
-    if(g.att!==g.me) { dkErr('Сейчас ходит соперник'); return; }
-    dkMove({t:'attack',c});
-  } else {
-    if(g.att===g.me){ dkErr('Отбивается соперник'); return; }
+  if(g.def===g.me){                                   // защитник только отбивается
     const si=g.table.findIndex(s=>!s.d && dkBeats(c,s.a,g.trump));
     if(si<0){ dkErr('Этой картой не отбиться'); return; }
     dkMove({t:'defend',i:si,c});
+    return;
   }
+  if(!g.table.length && g.att!==g.me){ dkErr('Первым заходит атакующий'); return; }
+  if(g.table.length){
+    const ranks=new Set(); g.table.forEach(s=>{ranks.add(s.a.r); if(s.d)ranks.add(s.d.r);});
+    if(!ranks.has(c.r)){ dkErr('Подкинуть можно только то, что уже на столе'); return; }
+    if(g.table.length>=6){ dkErr('На столе больше некуда'); return; }
+    if(g.table.filter(s=>!s.d).length>=g.counts[g.def]){ dkErr('Больше, чем соперник может отбить'); return; }
+  }
+  dkMove({t:'attack',c});
 }
 
 </script>

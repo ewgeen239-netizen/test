@@ -133,6 +133,23 @@ create table if not exists public.durak_rooms (
   updated_at  timestamptz default now()
 );
 
+-- Столы стали на 2–4 игроков: место для всех сидящих и размер стола.
+-- Отдельными alter-ами, чтобы скрипт доехал и на уже созданной таблице
+-- (колонки guest_* остаются от старой схемы — они больше не используются).
+alter table public.durak_rooms add column if not exists seats   integer default 2;
+alter table public.durak_rooms add column if not exists players  jsonb  default '[]'::jsonb;
+
+-- старые комнаты «на двоих» переводим на новый формат, чтобы не потерять
+update public.durak_rooms
+   set players = jsonb_build_array(
+         jsonb_build_object('uid', host_uid, 'name', host_name, 'emoji', host_emoji)
+       ) || case when guest_uid is null then '[]'::jsonb else jsonb_build_array(
+         jsonb_build_object('uid', guest_uid, 'name', guest_name, 'emoji', guest_emoji)
+       ) end
+ where players is null or jsonb_array_length(players) = 0;
+
+create index if not exists durak_rooms_open_idx on public.durak_rooms (status, updated_at desc);
+
 create index if not exists durak_rooms_updated_idx on public.durak_rooms (updated_at desc);
 
 alter table public.durak_rooms enable row level security;

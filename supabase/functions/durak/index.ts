@@ -1,10 +1,10 @@
-// Edge Function: durak — комнаты «дурака» на двоих.
+// Edge Function: durak — комнаты «дурака» на 2–4 игроков.
 // Всё состояние партии живёт здесь: клиент не может увидеть чужие карты и
 // не может сходить не по правилам — каждый ход проверяется движком.
 //
 // Deploy:  supabase functions deploy durak --no-verify-jwt
 // Secrets: те же, что у submit-rank (BOT_TOKEN, PROJECT_URL, SERVICE_ROLE_KEY)
-import { apply, deal, view, type Move, type St } from "./engine.ts";
+import { apply, deal, MAX_SEATS, MIN_SEATS, view, type Move, type St } from "./engine.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const PROJECT_URL = Deno.env.get("PROJECT_URL")!;
@@ -80,14 +80,20 @@ const code4 = () => {
   return Array.from({ length: 5 }, () => AB[Math.floor(Math.random() * AB.length)]).join("");
 };
 
-// что отдаём клиенту: партия глазами игрока + кто сидит за столом
+type Seat = { uid: string; name: string; emoji: string };
+const seatsOf = (room: any): Seat[] => (Array.isArray(room.players) ? room.players : []);
+const seatIx = (room: any, uid: string) => seatsOf(room).findIndex(p => String(p.uid) === uid);
+const roomSize = (room: any) => Math.max(MIN_SEATS, Math.min(MAX_SEATS, Number(room.seats) || 2));
+
+// что отдаём клиенту: партия его глазами + кто сидит за столом.
+// uid соседей наружу не уходит — клиенту хватает имени и эмодзи.
 function room2client(room: any, uid: string) {
-  const me = String(room.host_uid) === uid ? 0 : String(room.guest_uid) === uid ? 1 : -1;
-  const players = [
-    { uid: room.host_uid, name: room.host_name, emoji: room.host_emoji },
-    { uid: room.guest_uid, name: room.guest_name, emoji: room.guest_emoji },
-  ];
-  const out: Record<string, unknown> = { code: room.code, status: room.status, me, players };
+  const list = seatsOf(room);
+  const me = seatIx(room, uid);
+  const out: Record<string, unknown> = {
+    code: room.code, status: room.status, seats: roomSize(room), me,
+    players: list.map(p => ({ name: p.name, emoji: p.emoji })),
+  };
   if (room.st && me >= 0) out.g = view(room.st as St, me);
   return out;
 }
@@ -107,14 +113,42 @@ Deno.serve(async (req: Request) => {
   const action = String(body.action || "");
 
   if (action === "create") {
+    const seats = Math.max(MIN_SEATS, Math.min(MAX_SEATS, Number(body.seats) || 2));
     const code = code4();
+    const me: Seat = { uid, name, emoji };
     const r = await q("durak_rooms", {
       method: "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ code, host_uid: uid, host_name: name, host_emoji: emoji, status: "wait" }),
+      // host_* заполняем для совместимости со старой схемой: колонка
+      // host_uid объявлена not null, да и уведомления удобнее слать по ней
+      body: JSON.stringify({
+        code, host_uid: uid, host_name: name, host_emoji: emoji,
+        seats, players: [me], status: "wait",
+      }),
     });
     if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
     return json(room2client((await r.json())[0], uid));
+  }
+
+  // Живые столы: всё, что ждёт игроков. Заходить можно без приглашения.
+  if (action === "rooms") {
+    const fresh = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    // попутно подчищаем брошенные комнаты, чтобы список не зарастал
+    q(`durak_rooms?updated_at=lt.${new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()}`,
+      { method: "DELETE", headers: { Prefer: "return=minimal" } }).catch(() => {});
+    const r = await q(`durak_rooms?status=eq.wait&updated_at=gte.${fresh}` +
+      `&select=code,seats,players,updated_at&order=updated_at.desc&limit=30`);
+    if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
+    const rows = await r.json();
+    return json({
+      rooms: rows.map((x: any) => ({
+        code: x.code,
+        seats: roomSize(x),
+        taken: seatsOf(x).length,
+        mine: seatIx(x, uid) >= 0,
+        players: seatsOf(x).map(p => ({ name: p.name, emoji: p.emoji })),
+      })).filter((x: any) => x.taken > 0 && x.taken < x.seats),
+    });
   }
 
   const code = String(body.code || "").toUpperCase().slice(0, 8);
@@ -123,26 +157,48 @@ Deno.serve(async (req: Request) => {
   if (!room) return json({ error: "комната не найдена" }, 404);
 
   if (action === "join") {
-    if (String(room.host_uid) === uid) return json(room2client(room, uid));       // хозяин просто вернулся
-    if (room.guest_uid) {
-      // Гость уже за столом. Приложение зовёт join каждый раз, когда открывает
-      // вкладку, так что без этой проверки возврат в игру раздавал карты
-      // заново и стирал начатую партию.
-      if (String(room.guest_uid) === uid) return json(room2client(room, uid));
-      return json({ error: "комната занята" }, 409);
+    // Приложение зовёт join каждый раз, когда открывает вкладку, поэтому
+    // сначала проверяем, не сидим ли мы уже за этим столом: иначе возврат
+    // в игру раздавал бы карты заново и стирал начатую партию.
+    if (seatIx(room, uid) >= 0) return json(room2client(room, uid));
+    if (room.status !== "wait") return json({ error: "партия уже идёт" }, 409);
+    const list = seatsOf(room);
+    const size = roomSize(room);
+    if (list.length >= size) return json({ error: "мест нет" }, 409);
+
+    const players = [...list, { uid, name, emoji }];
+    const full = players.length >= size;
+    const st = full ? deal(size) : null;
+    const status = full ? "play" : "wait";
+    await saveRoom(code, { players, ...(st ? { st } : {}), status });
+
+    // Соседи могли свернуть приложение, пока ждали: шлём им сообщение в бот.
+    // Уведомление — не повод ронять вход, поэтому ошибки глотаются внутри.
+    const what = full
+      ? `${emoji} <b>${esc(name)}</b> зашёл — стол собрался, партия началась!`
+      : `${emoji} <b>${esc(name)}</b> сел за стол <code>${code}</code> — ждём ещё ${size - players.length}.`;
+    for (const p of list) await tgNotify(String(p.uid), what, code);
+
+    return json(room2client({ ...room, players, st: st ?? room.st, status }, uid));
+  }
+
+  if (action === "leave") {
+    if (seatIx(room, uid) < 0) return json({ ok: true });
+    if (room.status !== "wait") return json({ error: "партия уже идёт" }, 409);
+    const players = seatsOf(room).filter(p => String(p.uid) !== uid);
+    if (!players.length) {
+      await q(`durak_rooms?code=eq.${encodeURIComponent(code)}`,
+        { method: "DELETE", headers: { Prefer: "return=minimal" } });
+    } else {
+      await saveRoom(code, { players });
     }
-    const st = deal();                                                           // сюда доходим только на первом входе
-    await saveRoom(code, { guest_uid: uid, guest_name: name, guest_emoji: emoji, st, status: "play" });
-    // Хозяин мог свернуть приложение, пока ждал: шлём ему сообщение в бот.
-    // Уведомление — не повод ронять вход в комнату, поэтому ошибки глотаем.
-    await tgNotify(String(room.host_uid), `${emoji} <b>${esc(name)}</b> зашёл в комнату <code>${code}</code> — партия началась!`, code);
-    return json(room2client({ ...room, guest_uid: uid, guest_name: name, guest_emoji: emoji, st, status: "play" }, uid));
+    return json({ ok: true, left: true });
   }
 
   if (action === "state") return json(room2client(room, uid));
 
   if (action === "move") {
-    const me = String(room.host_uid) === uid ? 0 : String(room.guest_uid) === uid ? 1 : -1;
+    const me = seatIx(room, uid);
     if (me < 0) return json({ error: "ты не за этим столом" }, 403);
     if (!room.st) return json({ error: "партия ещё не началась" }, 409);
     const res = apply(room.st as St, me, body.move as Move);
@@ -154,8 +210,9 @@ Deno.serve(async (req: Request) => {
 
   if (action === "rematch") {
     if (room.status !== "done") return json({ error: "партия ещё идёт" }, 409);
-    if (!room.guest_uid) return json({ error: "нет второго игрока" }, 409);
-    const st = deal();
+    const size = roomSize(room);
+    if (seatsOf(room).length < size) return json({ error: "за столом не все" }, 409);
+    const st = deal(size);
     await saveRoom(code, { st, status: "play" });
     return json(room2client({ ...room, st, status: "play" }, uid));
   }
