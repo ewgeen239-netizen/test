@@ -27,7 +27,15 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 # ── Админы (рассылка/статы). ID через запятую в ADMIN_TELEGRAM_IDS ──
-ADMIN_IDS = {int(x) for x in os.environ.get("ADMIN_TELEGRAM_IDS", "6166155438").split(",") if x.strip().isdigit()}
+DEFAULT_ADMIN_IDS = "6166155438"
+_admin_raw = os.environ.get("ADMIN_TELEGRAM_IDS", "")
+ADMIN_IDS = {int(x) for x in _admin_raw.split(",") if x.strip().isdigit()}
+if not ADMIN_IDS:
+    # переменная может быть задана пустой или с опечаткой — тогда админов не
+    # осталось бы вовсе, и админские команды молчали бы без объяснений
+    ADMIN_IDS = {int(x) for x in DEFAULT_ADMIN_IDS.split(",")}
+    if _admin_raw.strip():
+        print(f"⚠️  ADMIN_TELEGRAM_IDS={_admin_raw!r} — ни одного числового id, беру список по умолчанию")
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -314,10 +322,35 @@ def cmd_rating(msg):
     kb.add(InlineKeyboardButton("↩️ Меню", callback_data="menu"))
     bot.send_message(msg.chat.id, rating_text(), parse_mode="HTML", reply_markup=kb)
 
+# ── /id — узнать свой Telegram id ────────────────────────────
+@bot.message_handler(commands=["id", "myid"])
+def cmd_id(msg):
+    uid = msg.from_user.id
+    tail = "✅ Ты в списке админов." if uid in ADMIN_IDS else (
+        "❌ Ты не админ. Чтобы стать им, впиши этот id в переменную "
+        "<code>ADMIN_TELEGRAM_IDS</code> на Railway и перезапусти бота.")
+    bot.send_message(msg.chat.id, f"🆔 Твой id: <code>{uid}</code>\n\n{tail}", parse_mode="HTML")
+
+
+# Раньше админские команды просто молчали для чужих, и это было не отличить
+# от «бот не работает»: непонятно, то ли команда не дошла, то ли прав нет.
+def not_admin(msg):
+    if msg.from_user.id in ADMIN_IDS:
+        return False
+    bot.send_message(
+        msg.chat.id,
+        f"🔒 Команда только для админов.\nТвой id: <code>{msg.from_user.id}</code>\n"
+        f"Сейчас в списке: <code>{', '.join(str(i) for i in sorted(ADMIN_IDS)) or 'пусто'}</code>\n\n"
+        "Если id должен быть в списке — пропиши его в <code>ADMIN_TELEGRAM_IDS</code> "
+        "на Railway (через запятую) и перезапусти бота.",
+        parse_mode="HTML")
+    return True
+
+
 # ── /stats (админ) ───────────────────────────────────────────
 @bot.message_handler(commands=["stats"])
 def cmd_stats(msg):
-    if msg.from_user.id not in ADMIN_IDS:
+    if not_admin(msg):
         return
     n = len(get_broadcast_targets())
     src = "bot_users" if SUPABASE_SERVICE_KEY else "рейтинг (fallback)"
@@ -357,7 +390,7 @@ def _retry_after(e, default=3):
 
 @bot.message_handler(commands=["broadcast", "announce"])
 def cmd_broadcast(msg):
-    if msg.from_user.id not in ADMIN_IDS:
+    if not_admin(msg):
         return
     # отделяем текст от команды по любому пробельному символу, а не только по
     # пробелу: иначе объявление, начатое с новой строки, терялось целиком
