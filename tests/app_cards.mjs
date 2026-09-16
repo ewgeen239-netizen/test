@@ -22,11 +22,22 @@ globalThis.Deno = {
   serve: h => { handler = h; },
 };
 const realFetch = globalThis.fetch;
+const WALLETS = new Map();                       // та же логика, что в wallet_apply
 globalThis.fetch = async (url, init = {}) => {
   const u = new URL(url);
   const R = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
   if (u.hostname === "api.telegram.org") return R({ ok: true });
   if (u.hostname !== "p") return realFetch(url, init);
+  if ((init.method || "GET") === "POST" && u.pathname.endsWith("/rpc/wallet_apply")) {
+    const out = JSON.parse(init.body).rows.map(r => {
+      const uid = String(r.uid);
+      const w = WALLETS.get(uid) || { chips: 30000 };
+      w.chips = Math.max(0, w.chips + (Number(r.delta) || 0));
+      WALLETS.set(uid, w);
+      return { w_uid: uid, w_chips: w.chips };
+    });
+    return R(out);
+  }
   const m = init.method || "GET";
   const code = (u.search.match(/code=eq\.([^&]+)/) || [])[1];
   if (m === "GET") {
@@ -329,8 +340,31 @@ await C.page.waitForTimeout(900);
 chk("стол на одного начался сразу", await C.page.locator("#bj-p-dealer").count() === 1,
   await C.page.evaluate(() => BJ.room?.status || "нет стола"));
 chk("предлагается поставить", await C.page.locator("#bj-slider").count() === 1);
-await C.page.evaluate(() => BJ.move({ t: "bet", amount: 50 }));
-await C.page.waitForTimeout(900);
+chk("баланс показан отдельной строкой", await C.page.locator("#bj-p-bank .bj-bank-v").count() === 1,
+  await C.page.locator("#bj-p-bank .bj-bank-v").textContent().catch(() => "нет"));
+chk("на старте выдана дневная норма 30 000",
+  (await C.page.locator("#bj-p-bank .bj-bank-v").textContent()).replace(/\s/g, "") === "30000",
+  await C.page.locator("#bj-p-bank .bj-bank-v").textContent());
+chk("баланс совпадает с тем, что отдал сервер",
+  (await C.page.locator("#bj-p-bank .bj-bank-v").textContent()).replace(/\s/g, "") ===
+  String(await C.page.evaluate(() => BJ.room.g.stacks[BJ.room.g.me])),
+  `${await C.page.locator("#bj-p-bank .bj-bank-v").textContent()} против ${await C.page.evaluate(() => BJ.room.g.stacks[BJ.room.g.me])}`);
+chk("подписано, когда выдача", /выдача через/.test(await C.page.locator("#bj-p-bank .bj-bank-r").textContent()),
+  await C.page.locator("#bj-p-bank .bj-bank-r").textContent());
+// Раздача может закрыться сразу — если пришёл блэкджек. Для проверки хода
+// нужен обычный раунд, поэтому при необходимости начинаем следующий.
+let bjTries = 0;
+while (bjTries++ < 8) {
+  await C.page.evaluate(() => BJ.move({ t: "bet", amount: 50 }));
+  await C.page.waitForTimeout(800);
+  if (await C.page.evaluate(() => BJ.room.g.phase) === "play") break;
+  await C.page.evaluate(() => BJ.next());
+  await C.page.waitForTimeout(700);
+}
+chk("дождались обычного раунда", await C.page.evaluate(() => BJ.room.g.phase) === "play",
+  `попыток ${bjTries}, фаза ${await C.page.evaluate(() => BJ.room.g.phase)}`);
+chk("поставленное видно отдельно", await C.page.locator("#bj-p-bank .bj-bank-bet b").count() === 1,
+  await C.page.locator("#bj-p-bank").textContent());
 chk("карты розданы", await C.page.locator("#bj-p-seats .pc.up").count() >= 2,
   `карт: ${await C.page.locator("#bj-p-seats .pc.up").count()}`);
 chk("у дилера одна открытая и одна закрытая",

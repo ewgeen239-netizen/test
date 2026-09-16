@@ -997,6 +997,39 @@ const roomSize = (room: any) => {
   return Math.max(l.min, Math.min(l.max, Number(room.seats) || 2));
 };
 
+// ── кошелёк для «21» ──
+// Фишки не живут внутри партии: иначе их можно было бы «нарисовать» себе,
+// подправив запрос с телефона. Баланс лежит в базе, функция синхронизирует
+// стеки за столом с ним, а движение записывает по итогу раунда.
+// Дневная норма выдаётся сама при первом обращении в новый игровой день.
+async function wallets(seats: Seat[], deltas?: number[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  if (!seats.length) return out;
+  try {
+    const r = await q("rpc/wallet_apply", {
+      method: "POST",
+      body: JSON.stringify({
+        rows: seats.map((p, i) => ({
+          uid: String(p.uid), name: p.name ?? "", emoji: p.emoji ?? "",
+          delta: deltas?.[i] ?? 0,
+        })),
+      }),
+    });
+    if (!r.ok) return out;
+    for (const row of await r.json()) out[String(row.w_uid)] = Number(row.w_chips) || 0;
+  } catch { /* без связи с кошельком стол просто не начнётся */ }
+  return out;
+}
+
+// стеки за столом = то, что реально лежит в кошельках
+async function syncChips(room: any, st: BSt, deltas?: number[]) {
+  const seats = seatsOf(room);
+  const bal = await wallets(seats, deltas);
+  if (!Object.keys(bal).length) return st;
+  st.stacks = seats.map((p, i) => bal[String(p.uid)] ?? st.stacks[i] ?? 0);
+  return st;
+}
+
 // ── счёт по итогам партии ──
 // Ведёт его сервер: клиент видит только свои карты и вообще не должен иметь
 // возможности приписать себе победу. Шлём прибавки, а не итоги, — два стола,
@@ -1083,6 +1116,11 @@ Deno.serve(async (req: Request) => {
     const me: Seat = { uid, name, emoji };
     // стол на одного («21» против дилера) начинается сразу, ждать некого
     const solo = seats <= 1;
+    let soloSt: any = null;
+    if (solo) {
+      soloSt = startGame(wantGame, seats);
+      if (wantGame === "bj") soloSt = await syncChips({ players: [me] }, soloSt as BSt);
+    }
     const r = await q("durak_rooms", {
       method: "POST",
       headers: { Prefer: "return=representation" },
@@ -1091,7 +1129,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         code, host_uid: uid, host_name: name, host_emoji: emoji,
         game: wantGame, seats, players: [me],
-        ...(solo ? { st: startGame(wantGame, seats), status: "play" } : { status: "wait" }),
+        ...(solo ? { st: soloSt, status: "play" } : { status: "wait" }),
       }),
     });
     if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
@@ -1138,7 +1176,8 @@ Deno.serve(async (req: Request) => {
 
     const players = [...list, { uid, name, emoji }];
     const full = players.length >= size;
-    const st = full ? startGame(gameOf(room), size) : null;
+    let st = full ? startGame(gameOf(room), size) : null;
+    if (st && gameOf(room) === "bj") st = await syncChips({ players }, st as BSt);
     const status = full ? "play" : "wait";
     await saveRoom(code, { players, ...(st ? { st } : {}), status });
 
@@ -1177,10 +1216,19 @@ Deno.serve(async (req: Request) => {
               : g === "bj"    ? bApply(room.st as BSt, me, body.move as BMove)
               : apply(room.st as St, me, body.move as Move);
     if (typeof res === "string") return json({ error: res, ...room2client(room, uid) }, 200);
-    const status = (res as any).over ? "done" : "play";
-    await saveRoom(code, { st: res, status });
-    await bumpStats(statRows(g, room, room.st, res));
-    return json(room2client({ ...room, st: res, status }, uid));
+    let next: any = res;
+    // «21»: любое изменение стека сразу уходит в кошелёк — и ставка, и
+    // удвоение, и выплата. Списывать только по итогу раунда было нельзя:
+    // сев за два стола, один и тот же запас можно было поставить дважды.
+    if (g === "bj") {
+      const was = (room.st as BSt)?.stacks ?? [];
+      const now = (res as BSt).stacks;
+      next = await syncChips(room, res as BSt, now.map((v, i) => v - (was[i] ?? v)));
+    }
+    const status = (next as any).over ? "done" : "play";
+    await saveRoom(code, { st: next, status });
+    await bumpStats(statRows(g, room, room.st, next));
+    return json(room2client({ ...room, st: next, status }, uid));
   }
 
   // следующая раздача: в холдеме кнопка едет дальше, в «21» новый круг ставок
@@ -1200,7 +1248,10 @@ Deno.serve(async (req: Request) => {
       const cur = room.st as BSt;
       if (cur.over) return json({ error: "игра закончена — начните заново" }, 409);
       if (cur.phase !== "done") return json({ error: "раунд ещё идёт" }, 409);
-      st = bNext(cur);
+      // Сначала подтягиваем балансы — мог наступить новый игровой день или
+      // человек поиграл за другим столом, — и только потом начинаем раунд:
+      // иначе bNext посчитал бы выбывшим того, кому фишки уже выдали.
+      st = bNext(await syncChips(room, cur));
     }
     const status = (st as any).over ? "done" : "play";
     await saveRoom(code, { st, status });

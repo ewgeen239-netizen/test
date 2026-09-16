@@ -670,6 +670,16 @@ select.fl-in{appearance:none}
 .bj-box{background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:10px 11px;margin-bottom:7px}
 .bj-box.turn{border-color:var(--accent)}
 .bj-box.me{background:var(--c2)}
+/* баланс над столом «21» */
+.bj-bank{display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid var(--line2);
+  border-radius:13px;padding:11px 13px;margin-bottom:10px}
+.bj-bank-l{flex:1;min-width:0}
+.bj-bank-t{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase}
+.bj-bank-v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);letter-spacing:-.5px;margin-top:1px}
+.bj-bank-bet{font-family:var(--mono);font-size:9px;color:var(--sub);text-align:right;text-transform:uppercase;letter-spacing:1px}
+.bj-bank-bet b{display:block;font-size:15px;color:var(--text);margin-top:2px;letter-spacing:-.3px}
+.bj-bank-r{font-family:var(--mono);font-size:8.5px;color:var(--dim);text-align:right;max-width:88px;
+  line-height:1.4;cursor:pointer;border-left:1px solid var(--line);padding-left:10px}
 /* ── ПРАВИЛА ── */
 .rules{position:fixed;inset:0;z-index:350;background:rgba(10,10,10,.94);backdrop-filter:blur(6px);
   display:none;align-items:flex-end;justify-content:center}
@@ -4175,6 +4185,22 @@ function pkSlide(v){ pkRaise=+v; const a=document.getElementById('pk-raise-v'), 
   if(a) a.textContent=v; if(b) b.textContent=v; }
 function pkSet(v){ const s=document.getElementById('pk-slider'); if(s) s.value=v; pkSlide(v); }
 
+// разряды по три — 30000 читается как «30 000»
+const bjNum = n => Math.round(Number(n)||0).toLocaleString('ru-RU').replace(/\u00a0/g,' ');
+
+// Сколько осталось до выдачи. День считается по Щецину и начинается в 02:00,
+// так же как на сервере, — иначе подпись врала бы на час при переводе часов.
+function bjResetIn(){
+  const now = new Date();
+  const loc = new Date(now.toLocaleString('en-US',{timeZone:'Europe/Warsaw'}));
+  const next = new Date(loc);
+  next.setHours(2,0,0,0);
+  if(loc >= next) next.setDate(next.getDate()+1);
+  const min = Math.max(0, Math.round((next-loc)/60000));
+  const h = Math.floor(min/60), m = min%60;
+  return `выдача через ${h?h+' ч ':''}${m} мин`;
+}
+
 // ═══ «21» ════════════════════════════════════════════════════════
 const BJ_R = ['2','3','4','5','6','7','8','9','10','В','Д','К','Т'];
 const BJ_S = ['♠','♥','♦','♣'];
@@ -4183,12 +4209,26 @@ let bjBet = 50;
 
 const BJ = makeTable({
   game:'bj', prefix:'bj', obj:'BJ', title:'Двадцать одно', seats:[1,2,3,4,5],
-  hint:'Играем против дилера, фишки игровые. Стол на одного начинается сразу — ждать никого не надо.',
-  shell:`<div id="bj-p-dealer"></div><div id="bj-p-seats"></div><div id="bj-p-acts"></div><div id="bj-p-log"></div>`,
+  hint:'Каждый день в 02:00 всем выдаётся 30 000 фишек. Баланс хранится на сервере — он один на все столы, накрутить его с телефона нельзя.',
+  shell:`<div id="bj-p-bank"></div><div id="bj-p-dealer"></div><div id="bj-p-seats"></div>`+
+        `<div id="bj-p-acts"></div><div id="bj-p-log"></div>`,
   renderPlay(T,g){
     const P = T.room.players;
     const cw = tblCardW(document.getElementById('bj-body'));
     document.getElementById('bj-body').style.setProperty('--tcw', cw+'px');
+
+    // Фишки хранятся на сервере, а не в партии, поэтому показываем их
+    // отдельной строкой: это и есть настоящий баланс, один на все столы.
+    const bet = (g.hands[g.me]||[]).reduce((a,h)=>a+h.bet,0);
+    T.part('bj-p-bank', JSON.stringify([g.stacks[g.me],bet]), `
+      <div class="bj-bank">
+        <div class="bj-bank-l">
+          <div class="bj-bank-t">твои фишки</div>
+          <div class="bj-bank-v">${bjNum(g.stacks[g.me])}</div>
+        </div>
+        ${bet?`<div class="bj-bank-bet">в игре<b>${bjNum(bet)}</b></div>`:''}
+        <div class="bj-bank-r" onclick="showRules('bj')">${bjResetIn()}</div>
+      </div>`);
 
     T.part('bj-p-dealer', JSON.stringify([g.dealer,g.hole,g.dealerPts,g.phase]), `
       <div class="bj-box">
@@ -4206,7 +4246,7 @@ const BJ = makeTable({
         const head = `<div class="tb-nm">${esc(p.name||'Игрок '+(i+1))}${
           mine?'<span class="tb-tag d">ты</span>':''}${
           g.out[i]?'<span class="tb-tag">без фишек</span>':''}</div>`;
-        const money = `<div class="tb-chips">${g.stacks[i]}</div>`;
+        const money = `<div class="tb-chips">${bjNum(g.stacks[i])}</div>`;
         if(!hs.length){
           return `<div class="bj-box${mine?' me':''}">
             <div class="tb-seat" style="background:none;border:none;padding:0;margin:0">
@@ -4216,11 +4256,11 @@ const BJ = makeTable({
             </div></div>`;
         }
         const res = g.res ? `<div class="tb-sub" style="margin-top:6px">${esc(g.res.text[i]||'')}${
-          g.res.win[i]?` · <b style="color:${g.res.win[i]>0?'var(--green)':'var(--red)'}">${g.res.win[i]>0?'+':''}${g.res.win[i]}</b>`:''}</div>` : '';
+          g.res.win[i]?` · <b style="color:${g.res.win[i]>0?'var(--green)':'var(--red)'}">${g.res.win[i]>0?'+':''}${bjNum(g.res.win[i])}</b>`:''}</div>` : '';
         return `<div class="bj-box${mine?' me':''}${i===g.turn?' turn':''}">
           <div class="tb-seat" style="background:none;border:none;padding:0;margin:0">
             <div class="tb-ava">${esc(p.emoji||'🙂')}</div>
-            <div class="tb-who">${head}<div class="tb-sub">ставка ${hs.reduce((a,h)=>a+h.bet,0)}</div></div>
+            <div class="tb-who">${head}<div class="tb-sub">ставка ${bjNum(hs.reduce((a,h)=>a+h.bet,0))}</div></div>
             ${money}
           </div>
           ${hs.map((h,k)=>`<div class="bj-hand">
@@ -4244,18 +4284,18 @@ const BJ = makeTable({
       acts = `<button class="dk-btn" onclick="BJ.next()">СЛЕДУЮЩИЙ РАУНД</button>`;
     } else if(o && o.bet){
       const max = Math.min(o.max, 500);
-      if(bjBet<o.min || bjBet>o.max) bjBet = Math.min(Math.max(o.min,50), o.max);
+      if(bjBet<o.min || bjBet>o.max) bjBet = Math.min(Math.max(o.min,100), o.max);
       acts = `
         <div class="tb-raise">
           <input type="range" id="bj-slider" min="${o.min}" max="${o.max}" step="10" value="${bjBet}" oninput="bjSlide(this.value)">
-          <div class="tb-raise-v" id="bj-bet-v">${bjBet}</div>
+          <div class="tb-raise-v" id="bj-bet-v">${bjNum(bjBet)}</div>
         </div>
         <div class="tb-quick">
-          ${[10,50,100].filter(v=>v<=o.max).map(v=>`<button onclick="bjSet(${v})">${v}</button>`).join('')}
+          ${[100,500,2000].filter(v=>v<=o.max).map(v=>`<button onclick="bjSet(${v})">${bjNum(v)}</button>`).join('')}
           <button onclick="bjSet(${o.max})">всё</button>
         </div>
         <div style="height:6px"></div>
-        <button class="dk-btn" onclick="BJ.move({t:'bet',amount:bjBet})">ПОСТАВИТЬ <span id="bj-bet-b">${bjBet}</span></button>`;
+        <button class="dk-btn" onclick="BJ.move({t:'bet',amount:bjBet})">ПОСТАВИТЬ <span id="bj-bet-b">${bjNum(bjBet)}</span></button>`;
     } else if(o){
       acts = `
         <div class="tb-acts">
@@ -4276,7 +4316,7 @@ const BJ = makeTable({
   },
 });
 function bjSlide(v){ bjBet=+v; const a=document.getElementById('bj-bet-v'), b=document.getElementById('bj-bet-b');
-  if(a) a.textContent=v; if(b) b.textContent=v; }
+  if(a) a.textContent=bjNum(v); if(b) b.textContent=bjNum(v); }
 function bjSet(v){ const s=document.getElementById('bj-slider'); if(s) s.value=v; bjSlide(v); }
 
 // ═══ ПРАВИЛА ДЛЯ НОВИЧКОВ ════════════════════════════════════════
@@ -4370,6 +4410,17 @@ const RULES = {
       <li>Одинаковые очки — ничья, ставка возвращается.</li>
       <li>21 из трёх и более карт — просто 21, не блэкджек.</li>
     </ul>
+
+    <h4>Фишки</h4>
+    <p>Каждый игровой день всем выдаётся <b>30 000 фишек</b>. День начинается
+    в <b>02:00</b>: в 01:59 идёт ещё вчерашний, в 02:00 запас обновляется —
+    независимо от того, выиграл ты вчера или спустил всё.</p>
+    <p>Баланс хранится <b>на сервере</b>, а не в телефоне. Он один на все столы:
+    сесть за два и поставить один и тот же запас дважды не выйдет — ставка
+    списывается сразу, в момент ставки. Накрутить себе фишек из приложения
+    нельзя, их выдаёт и считает только сервер.</p>
+    <p style="color:var(--dim)">Фишки ничего не стоят и ни на что не меняются —
+    это просто счёт для интереса.</p>
 
     <h4>Чего здесь нет</h4>
     <p>Страховки и «сдачи» (surrender) нет намеренно — это лишние кнопки, которые новичку только мешают.

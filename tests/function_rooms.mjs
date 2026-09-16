@@ -6,6 +6,17 @@ let handler = null;
 const rows = [];
 globalThis.tg = [];
 globalThis.stats = [];
+// кошельки: та же логика, что в SQL-функции wallet_apply
+globalThis.wallets = new Map();
+globalThis.gameDay = "2026-09-17";
+const walletApply = rows => rows.map(r => {
+  const uid = String(r.uid);
+  let w = globalThis.wallets.get(uid);
+  if (!w) { w = { chips: 30000, day: globalThis.gameDay }; globalThis.wallets.set(uid, w); }
+  if (w.day !== globalThis.gameDay) { w.chips = 30000; w.day = globalThis.gameDay; }
+  w.chips = Math.max(0, w.chips + (Number(r.delta) || 0));
+  return { w_uid: uid, w_chips: w.chips };
+});
 globalThis.Deno = {
   env: { get: k => ({ BOT_TOKEN: "TESTTOKEN:abc", PROJECT_URL: "https://p", SERVICE_ROLE_KEY: "srv" })[k] },
   serve: h => { handler = h; },
@@ -21,6 +32,9 @@ globalThis.fetch = async (url, init = {}) => {
     if (u.search.includes("status=eq.wait"))
       return R(rows.filter(r => r.status === "wait" && (!game || (r.game || "durak") === game)));
     return R(rows.filter(r => r.code === code));
+  }
+  if (m === "POST" && u.pathname.endsWith("/rpc/wallet_apply")) {
+    return R(walletApply(JSON.parse(init.body).rows));
   }
   if (m === "POST" && u.pathname.endsWith("/rpc/bump_game_stats")) {
     globalThis.stats.push(...JSON.parse(init.body).rows);
@@ -246,6 +260,68 @@ console.log("\n── счёт ведёт сервер ──");
   chk("победа только у того, кто вышел",
     dRows.filter(r => r.wins === 1).length === 1 && dRows.every(r => r.played === 1),
     JSON.stringify(dRows.map(r => `${r.name}:${r.wins}`)));
+}
+
+console.log("\n── фишки «21» живут в кошельке, а не в партии ──");
+{
+  rows.length = 0; globalThis.wallets.clear();
+  const c = await call({ initData: ids[1], action: "create", game: "bj", seats: 1, name: "A", emoji: "🙂" });
+  const code = c.body.code;
+  chk("за стол садишься с дневной нормой", c.body.g.stacks[0] === 30000, `стек ${c.body.g.stacks[0]}`);
+
+  // играем раунд и смотрим, что кошелёк изменился ровно на итог
+  const before = globalThis.wallets.get("101").chips;
+  await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 500 } });
+  chk("ставка списывается сразу, а не по итогу раунда",
+    globalThis.wallets.get("101").chips === before - 500,
+    `в кошельке ${globalThis.wallets.get("101").chips}, было ${before}`);
+  let g = (await call({ initData: ids[1], action: "state", code })).body.g, guard = 0;
+  while (g.phase === "play" && guard++ < 20)
+    g = (await call({ initData: ids[1], action: "move", code, move: { t: "stand" } })).body.g;
+  const gain = g.res.win[0];
+  const after = globalThis.wallets.get("101").chips;
+  chk("кошелёк изменился ровно на итог раунда", after === before + gain,
+    `было ${before}, стало ${after}, итог ${gain}`);
+  chk("за столом показан баланс из кошелька", g.stacks[0] === after, `${g.stacks[0]} против ${after}`);
+
+  const nx = await call({ initData: ids[1], action: "next", code });
+  chk("следующий раунд начинается с того же баланса", nx.body.g.stacks[0] === after,
+    `${nx.body.g.stacks[0]} против ${after}`);
+
+  // доигрываем раунд до конца — дальше проверяем начало следующего
+  const playRound = async (bet = 100) => {
+    await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: bet } });
+    let v = (await call({ initData: ids[1], action: "state", code })).body.g, n = 0;
+    while (v.phase === "play" && n++ < 20)
+      v = (await call({ initData: ids[1], action: "move", code, move: { t: "stand" } })).body.g;
+    return v;
+  };
+  await playRound(100);
+  const real = globalThis.wallets.get("101").chips;
+
+  // если в строке стола окажется накрученный стек, начало раунда его затрёт:
+  // источник правды — кошелёк, а не то, что лежит в партии
+  rows.find(r => r.code === code).st.stacks = [999999];
+  const cheat = await call({ initData: ids[1], action: "next", code });
+  chk("накрученный стек затирается кошельком", cheat.body.g.stacks[0] === real,
+    `показано ${cheat.body.g.stacks[0]}, в кошельке ${real}`);
+
+  // новый игровой день — дневная норма выдаётся заново
+  await playRound(100);
+  globalThis.wallets.get("101").chips = 120;
+  globalThis.gameDay = "2026-09-18";
+  const day2 = await call({ initData: ids[1], action: "next", code });
+  chk("в новый день выдаются 30 000", day2.body.g.stacks[0] === 30000, `стек ${day2.body.g.stacks[0]}`);
+  chk("с новым запасом игрок снова в деле", day2.body.g.out[0] === false && day2.body.g.phase === "bet");
+
+  // баланс общий: сел за второй стол — фишек там ровно столько, сколько
+  // осталось, а не ещё одна дневная норма
+  await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 10000 } });
+  const bal = globalThis.wallets.get("101").chips;
+  chk("поставленное уже вычтено из кошелька", bal === 20000, `в кошельке ${bal}`);
+  const other = await call({ initData: ids[1], action: "create", game: "bj", seats: 1, name: "A", emoji: "🙂" });
+  chk("за вторым столом тот же кошелёк, а не новая норма", other.body.g.stacks[0] === bal,
+    `${other.body.g.stacks[0]} против ${bal}`);
 }
 
 console.log("\n" + (bad ? `${bad} провал(ов)` : "функция готова к деплою"));

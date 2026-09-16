@@ -224,6 +224,87 @@ on conflict (uid, game) do nothing;
 
 
 -- ─────────────────────────────────────────────────────────────
+-- 3e. КОШЕЛЬКИ ДЛЯ «21». Фишки не живут внутри партии: иначе их можно
+--     было бы «нарисовать» себе, подправив запрос с телефона. Баланс
+--     хранится здесь и меняется только функцией по итогу раунда.
+--
+--     Каждый игровой день выдаётся дневная норма. День считается по
+--     Щецину и начинается в 02:00 — то есть в 01:59 идёт ещё вчерашний
+--     день, а в 02:00 фишки выдаются заново.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.wallets (
+  uid        text        primary key,        -- Telegram user id
+  name       text,
+  emoji      text,
+  chips      numeric     default 0,          -- сколько сейчас на руках
+  day        date,                           -- за какой игровой день выдано
+  updated_at timestamptz default now()
+);
+
+alter table public.wallets enable row level security;
+
+drop policy if exists "wallets read" on public.wallets;
+create policy "wallets read" on public.wallets for select using (true);
+-- политик insert/update нет → анон-ключ баланс не поменяет.
+
+
+-- Один вызов делает всё сразу: заводит кошелёк новичку, выдаёт дневную
+-- норму, если день сменился, применяет движение фишек и возвращает итог.
+-- delta = 0 — это просто «покажи баланс с учётом выдачи».
+-- Имена в returns table становятся переменными функции, поэтому они не
+-- должны совпадать с колонками — иначе PostgreSQL не поймёт, что имеется
+-- в виду в on conflict (uid).
+create or replace function public.wallet_apply(rows jsonb)
+returns table(w_uid text, w_chips numeric)
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  gd    date    := ((now() at time zone 'Europe/Warsaw') - interval '2 hours')::date;
+  daily numeric := 30000;
+begin
+  insert into public.wallets (uid, name, emoji, chips, day)
+  select r->>'uid', r->>'name', r->>'emoji', daily, gd
+    from jsonb_array_elements(rows) r
+   where coalesce(r->>'uid', '') <> ''
+  on conflict (uid) do nothing;
+
+  update public.wallets w
+     set chips = greatest(0,
+           (case when w.day is distinct from gd then daily else w.chips end)
+           + coalesce((r->>'delta')::numeric, 0)),
+         day        = gd,
+         name       = coalesce(nullif(r->>'name', ''), w.name),
+         emoji      = coalesce(nullif(r->>'emoji', ''), w.emoji),
+         updated_at = now()
+    from jsonb_array_elements(rows) r
+   where w.uid = r->>'uid';
+
+  return query
+    select w.uid, w.chips
+      from public.wallets w
+     where w.uid in (select x->>'uid' from jsonb_array_elements(rows) x);
+end
+$fn$;
+
+do $grants$
+begin
+  execute 'revoke all on function public.wallet_apply(jsonb) from public';
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    execute 'revoke all on function public.wallet_apply(jsonb) from anon';
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'revoke all on function public.wallet_apply(jsonb) from authenticated';
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    execute 'grant execute on function public.wallet_apply(jsonb) to service_role';
+  end if;
+end
+$grants$;
+
+
+-- ─────────────────────────────────────────────────────────────
 -- 3c. ИГРОВЫЕ СТОЛЫ («дурак» и холдем). Состояние партии целиком на сервере,
 --     клиент не видел чужих карт и не мог сходить не по правилам.
 --     Таблица приватная: ни читать, ни писать анон-ключом нельзя,
@@ -291,5 +372,5 @@ select
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
-  and c.relname in ('leaderboard', 'sol_leaderboard', 'game_stats', 'durak_rooms', 'consents', 'bot_users')
+  and c.relname in ('leaderboard', 'sol_leaderboard', 'game_stats', 'wallets', 'durak_rooms', 'consents', 'bot_users')
 order by c.relname;
