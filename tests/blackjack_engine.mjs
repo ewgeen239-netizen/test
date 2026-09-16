@@ -59,6 +59,10 @@ console.log("── выплаты ──");
 function rig(playerCards, dealerCards, bet = 100, rest = []) {
   let s = bStart(1, rng(1));
   s = bApply(s, 0, { t: "bet", amount: bet });
+  // Стол на одного раздаёт карты сразу после ставки и, если пришёл блэкджек,
+  // тут же платит. Стек надо вернуть к «поставил и играем», иначе выплата
+  // за ту случайную руку приплюсуется к проверяемой.
+  s.stacks[0] = B_START - bet;
   s.hands[0][0].cards = C(playerCards);
   s.dealer = C(dealerCards);
   s.shoe = [...C(rest.join(" ") || "2s")].reverse();

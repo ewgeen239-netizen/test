@@ -268,19 +268,26 @@ def confirm_kb():
 def cmd_start(msg):
     register_user(msg.from_user)          # реестр для рассылки
 
-    # ── приглашение в партию: ссылка вида t.me/бот?start=dk_КОД ──
+    # ── приглашение за стол: ссылка вида t.me/бот?start=dk_КОД (pk_, bj_) ──
+    GAMES = {
+        "dk": ("🂡", "в дурака"),
+        "pk": ("♠", "в покер"),
+        "bj": ("🂱", "в «двадцать одно»"),
+    }
     parts = (msg.text or "").split(maxsplit=1)
-    if len(parts) > 1 and parts[1].lower().startswith("dk_"):
+    if len(parts) > 1 and parts[1][:3].lower() in (g + "_" for g in GAMES):
+        tag = parts[1][:2].lower()
+        icon, what = GAMES[tag]
         code = re.sub(r"[^A-Za-z0-9]", "", parts[1][3:])[:8].upper()
         if code:
             kb = InlineKeyboardMarkup()
             kb.add(InlineKeyboardButton(
-                f"🂡 Войти в комнату {code}",
-                web_app=WebAppInfo(url=f"{WEBAPP_URL}#dk={code}")))
+                f"{icon} Сесть за стол {code}",
+                web_app=WebAppInfo(url=f"{WEBAPP_URL}#{tag}={code}")))
             bot.send_message(
                 msg.chat.id,
-                f"🂡 <b>Тебя зовут в дурака</b>\n\n"
-                f"Комната: <code>{code}</code>\n"
+                f"{icon} <b>Тебя зовут сыграть {what}</b>\n\n"
+                f"Стол: <code>{code}</code>\n"
                 f"Жми кнопку — карты раздадутся сами.",
                 parse_mode="HTML", reply_markup=kb)
             return
@@ -317,6 +324,36 @@ def cmd_durak(msg):
         "даже если приложение свёрнуто.\n\n"
         "Карты соседей хранятся на сервере — подсмотреть их нельзя.",
         parse_mode="HTML", reply_markup=kb)
+
+# ── /poker и /21 ─────────────────────────────────────────────
+@bot.message_handler(commands=["poker", "holdem"])
+def cmd_poker(msg):
+    register_user(msg.from_user)
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("♠ Открыть покер", web_app=WebAppInfo(url=f"{WEBAPP_URL}#pk")))
+    bot.send_message(
+        msg.chat.id,
+        "♠ <b>Техасский холдем</b>\n\n"
+        "Столы на 2–5 игроков. В лобби список живых столов — жмёшь «Зайти» и садишься.\n\n"
+        "Фишки игровые, на деньги ничего не играется.\n"
+        "Не играл раньше — там же кнопка «Правила для новичков»: "
+        "все комбинации показаны настоящими картами.",
+        parse_mode="HTML", reply_markup=kb)
+
+
+@bot.message_handler(commands=["blackjack", "ochko"])
+def cmd_blackjack(msg):
+    register_user(msg.from_user)
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("🂱 Открыть «21»", web_app=WebAppInfo(url=f"{WEBAPP_URL}#bj")))
+    bot.send_message(
+        msg.chat.id,
+        "🂱 <b>Двадцать одно</b>\n\n"
+        "Играешь против дилера — можно одному, можно компанией до пяти человек.\n"
+        "Стол на одного начинается сразу, ждать никого не надо.\n\n"
+        "Блэкджек платит 3:2, дилер добирает до 17. Фишки игровые.",
+        parse_mode="HTML", reply_markup=kb)
+
 
 # ── /rating ──────────────────────────────────────────────────
 @bot.message_handler(commands=["rating", "top"])

@@ -268,6 +268,99 @@ chk("в руке от чужого хода ничего не анимирует
 chk("зато новая карта на столе оживает",
   defSaw.anim.some(a => a === "стол:pcPlay"), defSaw.anim.join(", ") || "анимаций не было");
 
+console.log("\n── покер ──");
+async function toTab(page, tab) {
+  await page.evaluate(t => { showPage("page-cards"); setNav("n-cards"); switchCards(t); }, tab);
+  await page.waitForTimeout(500);
+}
+await toTab(A.page, "pk");
+chk("в лобби покера выбор мест 2–5", await A.page.locator("#pk-seats button").count() === 4);
+await A.page.evaluate(() => PK.setSeats(2));
+await A.page.click("#pk-body .dk-btn");
+await A.page.waitForTimeout(700);
+const pcode = (await A.page.locator("#pk-body .dk-code").textContent() || "").trim();
+chk("покерный стол создан", /^[A-Z0-9]{5}$/.test(pcode), pcode);
+await toTab(B.page, "pk");
+await B.page.waitForTimeout(2500);
+chk("стол виден в списке живых", await B.page.locator("#pk-rooms .dk-room").count() === 1);
+await B.page.click("#pk-rooms .dk-room-b");
+await B.page.waitForTimeout(900);
+chk("карманные карты розданы", await B.page.locator("#pk-p-me .pc.up").count() === 2,
+  `карт у себя: ${await B.page.locator("#pk-p-me .pc.up").count()}`);
+chk("банк с блайндами показан", (await B.page.locator("#pk-p-mid .tb-pot b").textContent()) === "30",
+  await B.page.locator("#pk-p-mid .tb-pot b").textContent());
+chk("карты соперника закрыты", await B.page.locator("#pk-p-seats .pc.down").count() === 2);
+await A.page.waitForTimeout(2600);                 // ждём, пока создатель получит раздачу
+chk("создатель тоже увидел раздачу", await A.page.evaluate(() => !!PK.room?.g));
+const pkTurn = await A.page.evaluate(() => PK.room.g.turn === PK.room.g.me);
+const actPage = pkTurn ? A.page : B.page;
+await actPage.waitForTimeout(2200);
+chk("у ходящего есть кнопки", await actPage.locator("#pk-p-acts .dk-btn").count() >= 2,
+  `кнопок ${await actPage.locator("#pk-p-acts .dk-btn").count()}`);
+chk("есть ползунок повышения", await actPage.locator("#pk-slider").count() === 1);
+const potBefore = await actPage.evaluate(() => PK.room.g.pot);
+await actPage.evaluate(() => PK.move({ t: PK.room.g.opts.canCheck ? "check" : "call" }));
+await actPage.waitForTimeout(800);
+chk("ход прошёл", await actPage.evaluate(() => PK.room.g.ver) > 1);
+chk("фишки не потерялись", await actPage.evaluate(() =>
+  PK.room.g.stacks.reduce((a, b) => a + b, 0) + PK.room.g.pot === 2000));
+
+console.log("\n── «21» ──");
+await toTab(C.page, "bj");
+chk("в лобби «21» есть игра на одного", await C.page.locator("#bj-seats button").count() === 5);
+await C.page.evaluate(() => BJ.setSeats(1));
+await C.page.click("#bj-body .dk-btn");
+await C.page.waitForTimeout(900);
+chk("стол на одного начался сразу", await C.page.locator("#bj-p-dealer").count() === 1,
+  await C.page.evaluate(() => BJ.room?.status || "нет стола"));
+chk("предлагается поставить", await C.page.locator("#bj-slider").count() === 1);
+await C.page.evaluate(() => BJ.move({ t: "bet", amount: 50 }));
+await C.page.waitForTimeout(900);
+chk("карты розданы", await C.page.locator("#bj-p-seats .pc.up").count() >= 2,
+  `карт: ${await C.page.locator("#bj-p-seats .pc.up").count()}`);
+chk("у дилера одна открытая и одна закрытая",
+  await C.page.locator("#bj-p-dealer .pc.up").count() === 1 &&
+  await C.page.locator("#bj-p-dealer .pc.down").count() === 1);
+chk("очки посчитаны", /^\d+$/.test((await C.page.locator("#bj-p-seats .bj-pts").first().textContent() || "").replace("BJ", "21")));
+const hadButtons = await C.page.locator("#bj-p-acts .dk-btn").count();
+await C.page.evaluate(() => BJ.move({ t: "stand" }));
+await C.page.waitForTimeout(900);
+chk("после «хватит» раунд закрывается", await C.page.evaluate(() => BJ.room.g.phase) === "done",
+  await C.page.evaluate(() => BJ.room.g.phase));
+chk("закрытая карта дилера открылась", await C.page.locator("#bj-p-dealer .pc.down").count() === 0);
+chk("итог раунда показан", (await C.page.locator("#bj-p-seats .tb-sub").allTextContents()).join(" ").length > 0);
+chk("предлагается следующий раунд", hadButtons >= 2 && await C.page.locator("#bj-p-acts .dk-btn").count() === 1);
+
+console.log("\n── правила для новичков ──");
+for (const [tab, mustHave] of [["pk", "Стрит-флеш"], ["bj", "Блэкджек"], ["dk", "козырь"], ["sol", "короля"]]) {
+  await A.page.evaluate(t => showRules(t), tab);
+  await A.page.waitForTimeout(250);
+  const open = await A.page.locator("#rules-modal.on").count() === 1;
+  const text = await A.page.locator("#rules-body").textContent();
+  chk(`правила «${tab}» открываются и содержат суть`, open && text.includes(mustHave),
+    open ? "" : "окно не открылось");
+  if (tab === "pk") {
+    const combos = await A.page.locator("#rules-body .rl-combo").count();
+    const cards = await A.page.locator("#rules-body .rl-cards .pc").count();
+    chk("все девять комбинаций показаны настоящими картами", combos === 9 && cards === 45,
+      `комбинаций ${combos}, карт ${cards}`);
+    const readable = await A.page.evaluate(() => {
+      const bad = [];
+      for (const c of document.querySelectorAll("#rules-body .rl-cards .pc")) {
+        const ix = c.querySelector(".pc-ix");
+        const r = ix.getBoundingClientRect(), own = c.getBoundingClientRect();
+        if (!ix.textContent.trim()) bad.push("пустая карта");
+        if (r.right > own.right + 0.5 || r.bottom > own.bottom + 0.5) bad.push("надпись вылезла: " + ix.textContent);
+      }
+      return [...new Set(bad)];
+    });
+    chk("на карточках правил надписи не обрезаны", readable.length === 0, readable.slice(0, 2).join("; "));
+  }
+  await A.page.evaluate(() => hideRules());
+  await A.page.waitForTimeout(150);
+}
+chk("правила закрываются", await A.page.locator("#rules-modal.on").count() === 0);
+
 const errsAll = [...A.errs, ...B.errs, ...C.errs];
 chk("за всю партию ни одной ошибки в консоли", errsAll.length === 0, errsAll.slice(0, 2).join(" | "));
 

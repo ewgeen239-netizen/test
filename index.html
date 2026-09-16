@@ -609,6 +609,101 @@ select.fl-in{appearance:none}
   display:none;align-items:center;justify-content:center;padding:24px}
 .dk-over.on{display:flex}
 
+/* четыре вкладки в один ряд — подписи компактнее */
+.cd-tabs .hs-tab{font-size:9px;letter-spacing:.3px;padding:9px 2px}
+/* ── ПОКЕР и «21» ── */
+.tb-seat{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:11px;background:var(--c1);
+  border:1px solid var(--line);margin-bottom:6px}
+.tb-seat.turn{border-color:var(--accent);background:rgba(232,255,0,.05)}
+.tb-seat.fold{opacity:.4}
+.tb-ava{width:28px;height:28px;border-radius:9px;background:var(--c3);border:1px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.tb-who{flex:1;min-width:0}
+.tb-nm{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-sub{font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:1px}
+.tb-chips{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0}
+.tb-bet{font-family:var(--mono);font-size:9px;color:var(--sub);text-align:right}
+.tb-mini{display:flex;gap:2px;flex-shrink:0}
+.tb-mini .pc{width:17px;height:24px;border-radius:3px}
+.tb-tag{display:inline-block;font-family:var(--mono);font-size:7.5px;letter-spacing:1px;text-transform:uppercase;
+  padding:2px 5px;border-radius:5px;margin-left:5px;vertical-align:1px;background:var(--c3);color:var(--dim)}
+.tb-tag.d{background:rgba(232,255,0,.12);color:var(--accent)}
+.tb-tag.w{background:rgba(34,197,94,.14);color:#86efac}
+/* середина стола */
+.tb-mid{text-align:center;padding:12px 0 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  margin:8px 0 10px}
+.tb-pot{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase}
+.tb-pot b{display:block;font-size:22px;color:var(--accent);letter-spacing:-.5px;margin-top:2px}
+.tb-board{display:flex;gap:5px;justify-content:center;margin-top:10px;min-height:calc(var(--tcw)*1.4)}
+.tb-board .pc{width:var(--tcw);height:calc(var(--tcw)*1.4)}
+.tb-board .pc-ix{font-size:calc(var(--tcw)*.30)}
+.tb-board .pc-mid{font-size:calc(var(--tcw)*.36)}
+.tb-hand{display:flex;gap:6px;justify-content:center;padding:6px 0 10px}
+.tb-hand .pc{width:calc(var(--tcw)*1.25);height:calc(var(--tcw)*1.75)}
+.tb-hand .pc-ix{font-size:calc(var(--tcw)*.36)}
+.tb-hand .pc-mid{font-size:calc(var(--tcw)*.44)}
+.tb-me{text-align:center;font-family:var(--mono);font-size:9.5px;letter-spacing:1.5px;color:var(--sub);
+  text-transform:uppercase;padding-bottom:6px}
+.tb-me b{color:var(--accent)}
+/* кнопки действий */
+.tb-acts{display:flex;gap:6px;margin-top:4px}
+.tb-acts .dk-btn{padding:12px 4px;font-size:12px}
+.tb-raise{display:flex;align-items:center;gap:8px;margin-top:8px;background:var(--c1);border:1px solid var(--line);
+  border-radius:11px;padding:9px 11px}
+.tb-raise input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+.tb-raise-v{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);min-width:54px;text-align:right}
+.tb-quick{display:flex;gap:5px;margin-top:6px}
+.tb-quick button{flex:1;padding:7px 2px;background:var(--c2);border:1px solid var(--line);border-radius:8px;
+  color:var(--sub);font-family:var(--mono);font-size:9.5px;cursor:pointer}
+.tb-quick button:active{border-color:var(--accent);color:var(--accent)}
+.tb-log{font-family:var(--mono);font-size:9px;color:var(--dim);line-height:1.7;margin-top:10px;
+  background:var(--c1);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+/* «21»: руки игроков */
+.bj-hand{display:flex;gap:4px;align-items:flex-end;margin-top:6px;flex-wrap:wrap}
+.bj-hand .pc{width:calc(var(--tcw)*.95);height:calc(var(--tcw)*1.33)}
+.bj-hand .pc-ix{font-size:calc(var(--tcw)*.28)}
+.bj-hand .pc-mid{font-size:calc(var(--tcw)*.34)}
+.bj-pts{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 7px;border-radius:7px;
+  background:var(--c3);color:var(--text);align-self:center}
+.bj-pts.bust{background:rgba(239,68,68,.15);color:#fca5a5}
+.bj-pts.bj{background:rgba(232,255,0,.15);color:var(--accent)}
+.bj-box{background:var(--c1);border:1px solid var(--line);border-radius:12px;padding:10px 11px;margin-bottom:7px}
+.bj-box.turn{border-color:var(--accent)}
+.bj-box.me{background:var(--c2)}
+/* ── ПРАВИЛА ── */
+.rules{position:fixed;inset:0;z-index:350;background:rgba(10,10,10,.94);backdrop-filter:blur(6px);
+  display:none;align-items:flex-end;justify-content:center}
+.rules.on{display:flex}
+.rules-card{width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;background:var(--c1);
+  border:1px solid var(--line2);border-radius:18px 18px 0 0;animation:rlIn .28s ease}
+@keyframes rlIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.rules-head{display:flex;align-items:center;gap:10px;padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.rules-t{flex:1;font-size:17px;font-weight:800;letter-spacing:-.3px}
+.rules-x{width:30px;height:30px;border-radius:9px;background:var(--c3);display:flex;align-items:center;
+  justify-content:center;cursor:pointer;color:var(--sub);font-size:13px}
+.rules-body{overflow-y:auto;padding:14px 18px 22px;font-size:13px;line-height:1.65;color:var(--sub)}
+.rules-body h4{color:var(--text);font-size:13.5px;margin:16px 0 7px;letter-spacing:-.2px}
+.rules-body h4:first-child{margin-top:0}
+.rules-body p{margin-bottom:9px}
+.rules-body b{color:var(--text)}
+.rules-body ul{margin:0 0 10px 16px}
+.rules-body li{margin-bottom:5px}
+.rl-step{display:flex;gap:10px;margin-bottom:9px}
+.rl-n{width:21px;height:21px;border-radius:7px;background:rgba(232,255,0,.11);color:var(--accent);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700}
+/* таблица комбинаций настоящими картами */
+.rl-combo{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rl-combo:last-child{border-bottom:none}
+.rl-rank{width:19px;font-family:var(--mono);font-size:10px;color:var(--dim);flex-shrink:0}
+.rl-cards{display:flex;gap:2px;flex-shrink:0}
+.rl-cards .pc{width:22px;height:31px;border-radius:4px}
+.rl-cards .pc-ix{font-size:8px;letter-spacing:-.3px}
+.rl-cards .pc-ix i{display:inline;margin-left:.5px;font-weight:600}
+.rl-cards .pc-mid{display:none}
+.rl-name{flex:1;min-width:0}
+.rl-name b{display:block;font-size:12.5px;color:var(--text)}
+.rl-name span{font-size:10.5px;color:var(--sub)}
+
 /* ── SOLITAIRE (Косынка) ── */
 .sol-wrap{padding:10px 10px 90px;--gap:4px;--cw:calc((100% - var(--gap)*6)/7);--fd:10px;--fu:18px}
 .sol-hud{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
@@ -1255,13 +1350,18 @@ select.fl-in{appearance:none}
     <div class="top-r">
       <div class="badge" id="sol-mode" onclick="solToggleMode()">1 КАРТА</div>
       <div class="badge" id="dk-badge" onclick="dkLeave()" style="display:none">—</div>
+      <div class="badge" id="pk-badge" onclick="PK.leave()" style="display:none">—</div>
+      <div class="badge" id="bj-badge" onclick="BJ.leave()" style="display:none">—</div>
+      <div class="badge" id="cd-help" onclick="showRules()" style="display:none">? ПРАВИЛА</div>
     </div>
   </div>
 
   <div class="pad" style="padding-top:12px">
-    <div class="hs-tabs">
+    <div class="hs-tabs cd-tabs">
       <div class="hs-tab act" id="cd-tab-sol" onclick="switchCards('sol')">🃏 КОСЫНКА</div>
-      <div class="hs-tab"     id="cd-tab-dk"  onclick="switchCards('dk')">🂡 ДУРАК ОНЛАЙН</div>
+      <div class="hs-tab"     id="cd-tab-dk"  onclick="switchCards('dk')">🂡 ДУРАК</div>
+      <div class="hs-tab"     id="cd-tab-pk"  onclick="switchCards('pk')">♠ ПОКЕР</div>
+      <div class="hs-tab"     id="cd-tab-bj"  onclick="switchCards('bj')">🂱 21</div>
     </div>
   </div>
 
@@ -1290,6 +1390,31 @@ select.fl-in{appearance:none}
       <div id="dk-err"></div>
       <div id="dk-body"></div>
     </div>
+  </div>
+
+  <div id="cd-pk" style="display:none">
+    <div class="dk-wrap">
+      <div id="pk-err"></div>
+      <div id="pk-body"></div>
+    </div>
+  </div>
+
+  <div id="cd-bj" style="display:none">
+    <div class="dk-wrap">
+      <div id="bj-err"></div>
+      <div id="bj-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ ПРАВИЛА ДЛЯ НОВИЧКОВ ═══════════ -->
+<div class="rules" id="rules-modal">
+  <div class="rules-card">
+    <div class="rules-head">
+      <div class="rules-t" id="rules-title">Правила</div>
+      <div class="rules-x" onclick="hideRules()">✕</div>
+    </div>
+    <div class="rules-body" id="rules-body"></div>
   </div>
 </div>
 
@@ -3260,27 +3385,36 @@ function openFromLink(){
   const h=(location.hash||'').replace(/^#/,'');
   if(!h) return;
   const go=t=>{ showPage('page-cards'); setNav('n-cards'); switchCards(t); };
-  const m=h.match(/^dk=([A-Za-z0-9]{4,8})$/);
-  if(m){ DB.dk={code:m[1].toUpperCase()}; sv(); go('dk'); return; }
-  if(h==='dk')  { go('dk');  return; }
-  if(h==='sol') { go('sol'); }
+  const m=h.match(/^(dk|pk|bj)=([A-Za-z0-9]{4,8})$/);
+  if(m){ DB[m[1]]={code:m[2].toUpperCase()}; sv(); go(m[1]); return; }
+  if(['dk','pk','bj','sol'].includes(h)) go(h);
 }
 
 // ── вкладка «Карты»: две игры под одним переключателем ──
 let cardsTab = 'sol';
+const CARD_GAMES = {
+  sol: { title:'Косынка',      open:()=>solOpen() },
+  dk:  { title:'Дурак онлайн', open:()=>dkOpen()  },
+  pk:  { title:'Холдем',       open:()=>PK.open() },
+  bj:  { title:'Двадцать одно',open:()=>BJ.open() },
+};
 function switchCards(t){
+  if(!CARD_GAMES[t]) t='sol';
   cardsTab = t;
-  document.getElementById('cd-tab-sol').classList.toggle('act', t==='sol');
-  document.getElementById('cd-tab-dk').classList.toggle('act', t==='dk');
-  document.getElementById('cd-sol').style.display = t==='sol' ? 'block' : 'none';
-  document.getElementById('cd-dk').style.display  = t==='dk'  ? 'block' : 'none';
-  document.getElementById('cd-title').textContent = t==='sol' ? 'Косынка' : 'Дурак онлайн';
+  for(const k of Object.keys(CARD_GAMES)){
+    document.getElementById('cd-tab-'+k).classList.toggle('act', k===t);
+    document.getElementById('cd-'+k).style.display = k===t ? 'block' : 'none';
+  }
+  document.getElementById('cd-title').textContent = CARD_GAMES[t].title;
   document.getElementById('sol-mode').style.display = t==='sol' ? '' : 'none';
   document.getElementById('dk-badge').style.display = t==='dk'  ? '' : 'none';
+  document.getElementById('pk-badge').style.display = 'none';
+  document.getElementById('bj-badge').style.display = 'none';
+  document.getElementById('cd-help').style.display = '';
   DB.cardsTab = t; sv();
-  t==='sol' ? solOpen() : dkOpen();
+  CARD_GAMES[t].open();
 }
-function cardsOpen(){ switchCards(DB.cardsTab==='dk' ? 'dk' : 'sol'); }
+function cardsOpen(){ switchCards(CARD_GAMES[DB.cardsTab] ? DB.cardsTab : 'sol'); }
 
 function dkOpen(){
   dkErr('');
@@ -3635,6 +3769,583 @@ function dkPlay(i){
   }
   dkMove({t:'attack',c});
 }
+
+
+// ═══ ОБЩИЙ СЛОЙ СЕТЕВЫХ СТОЛОВ (покер и «21») ═══════════════════
+// Комнаты у всех игр устроены одинаково: создать → ждать → играть. Разница
+// только в отрисовке самого стола, поэтому лобби, опрос и ошибки живут тут
+// в одном месте, а каждая игра приносит свою функцию отрисовки.
+function makeTable(cfg){
+  const T = {
+    game: cfg.game, room: null, rooms: [], seats: cfg.seats[0],
+    poll: null, busy: false, tick: 0, sig: '', roomsSig: '', errT: null, parts: {},
+    el: id => document.getElementById(cfg.prefix + '-' + id),
+  };
+
+  T.err = msg => {
+    const el = T.el('err'); if(!el) return;
+    el.innerHTML = msg ? `<div class="dk-err">${esc(msg)}</div>` : '';
+    clearTimeout(T.errT);
+    if(msg) T.errT = setTimeout(()=>{ el.innerHTML=''; }, msg.length>60?12000:4500);
+  };
+  T.note = msg => {
+    const el = T.el('err'); if(!el) return;
+    el.innerHTML = `<div class="dk-ok">${esc(msg)}</div>`;
+    clearTimeout(T.errT); T.errT = setTimeout(()=>{ el.innerHTML=''; }, 6000);
+    try{ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }catch{}
+    try{ navigator.vibrate?.(110); }catch{}
+  };
+
+  T.call = async (action, extra) => {
+    if(!TG_INIT){ T.err('Игра работает только внутри Telegram: нужна подпись профиля.'); return null; }
+    try{
+      const r = await fetch(DK_URL, { method:'POST',
+        headers:{ 'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json' },
+        body: JSON.stringify({ initData:TG_INIT, action, game:T.game,
+          name:(DB.name||'Игрок').slice(0,40), emoji:DB.emoji||'🙂', ...(extra||{}) }) });
+      const j = await r.json().catch(()=>null);
+      if(!j){ T.err(`Сервер ответил ${r.status}, но без данных.`); return null; }
+      if(j.error) T.err(j.error);
+      return j.error && !j.code ? null : j;
+    }catch{ T.err(await dkDiag()); return null; }
+  };
+
+  T.open = () => {
+    T.err('');
+    const saved = DB[cfg.prefix]?.code;
+    const hash = (location.hash||'').match(new RegExp('^#'+cfg.prefix+'=([A-Za-z0-9]{4,8})$'));
+    const deep = hash ? hash[1] : null;
+    T.seats = cfg.seats.includes(DB[cfg.prefix+'Seats']) ? DB[cfg.prefix+'Seats'] : cfg.seats[0];
+    if(deep) T.join(deep);
+    else if(saved) T.join(saved);
+    else { T.room=null; T.render(true); T.loadRooms(); }
+    T.startPoll();
+  };
+
+  T.loadRooms = async () => {
+    const r = await T.call('rooms');
+    if(r && Array.isArray(r.rooms)){ T.rooms = r.rooms; if(!T.room) T.render(); }
+  };
+
+  T.startPoll = () => {
+    clearInterval(T.poll);
+    T.poll = setInterval(async () => {
+      if(T.busy || document.hidden) return;
+      if(!document.getElementById('page-cards').classList.contains('on') || cardsTab !== cfg.prefix) return;
+      if(!T.room?.code){ if(++T.tick % 3 === 0) T.loadRooms(); return; }
+      const was = T.room;
+      const r = await T.call('state', { code:T.room.code });
+      if(r){ T.room = r; T.render(); T.joined(was, r); }
+    }, 2000);
+  };
+
+  T.joined = (was, now) => {
+    if(was.status === 'wait' && now.status === 'play'){ T.note('Стол собрался — начинаем!'); return; }
+    const added = (now.players||[]).slice((was.players||[]).length);
+    if(added.length){
+      const p = added[added.length-1];
+      T.note(`${p.emoji||'🙂'} ${p.name||'Игрок'} сел за стол · ждём ещё ${now.seats-now.players.length}`);
+    }
+  };
+
+  T.create = async () => {
+    T.busy=true; const r = await T.call('create', { seats:T.seats }); T.busy=false;
+    if(r){ T.room=r; DB[cfg.prefix]={code:r.code}; sv(); T.render(true); }
+  };
+  T.join = async code => {
+    code = String(code||'').trim().toUpperCase();
+    if(code.length<4){ T.err('Код слишком короткий'); return; }
+    T.busy=true; const r = await T.call('join', { code }); T.busy=false;
+    if(r){ T.room=r; DB[cfg.prefix]={code:r.code}; sv(); T.render(true); }
+    else { if(DB[cfg.prefix]?.code===code){ DB[cfg.prefix]=null; sv(); } T.render(true); T.loadRooms(); }
+  };
+  T.joinInput = () => T.join(T.el('code-in')?.value);
+  T.leave = async () => {
+    const code = T.room?.code, wait = T.room?.status==='wait';
+    T.room=null; DB[cfg.prefix]=null; sv(); T.err(''); T.render(true);
+    if(code && wait) await T.call('leave', { code });
+    T.loadRooms();
+  };
+  T.setSeats = n => { T.seats=n; DB[cfg.prefix+'Seats']=n; sv(); T.seatsBar(); };
+  T.move = async m => {
+    if(!T.room?.code || T.busy) return;
+    T.busy=true; const r = await T.call('move', { code:T.room.code, move:m }); T.busy=false;
+    if(r){ T.room=r; T.render(); }
+  };
+  T.next = async () => {
+    T.busy=true; const r = await T.call('next', { code:T.room.code }); T.busy=false;
+    if(r){ T.room=r; T.render(); }
+  };
+  T.rematch = async () => {
+    T.busy=true; const r = await T.call('rematch', { code:T.room.code }); T.busy=false;
+    if(r){ T.room=r; T.render(true); }
+  };
+  T.invite = () => {
+    const code = T.room?.code; if(!code) return;
+    const link = BOT_USERNAME ? `https://t.me/${BOT_USERNAME}?start=${cfg.prefix}_${code}` : '';
+    const text = `${cfg.title} — стол ${code}`;
+    if(window.Telegram?.WebApp?.openTelegramLink && link){
+      Telegram.WebApp.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+    } else {
+      navigator.clipboard?.writeText(link||code).then(
+        ()=>T.err('Код скопирован — отправь соседу'), ()=>T.err('Код стола: '+code));
+    }
+  };
+
+  // перерисовываем только изменившиеся куски — карты не должны дёргаться
+  T.part = (id, sig, html) => {
+    if(T.parts[id] === sig) return;
+    T.parts[id] = sig;
+    const el = document.getElementById(id); if(el) el.innerHTML = html;
+  };
+
+  T.render = force => {
+    const body = T.el('body'), badge = T.el('badge');
+    if(!body) return;
+    if(force){ T.sig=''; }
+    if(!T.room){ T.lobby(body, badge); return; }
+    const sig = JSON.stringify([T.room.code, T.room.status, T.room.players.map(p=>p.name), T.room.g?.ver]);
+    if(sig === T.sig) return;
+    T.sig = sig;
+    badge.style.display=''; badge.textContent='✕ ВЫЙТИ';
+    body.dataset.view='room';
+    if(T.room.status==='wait'){ T.wait(body); return; }
+    const g = T.room.g;
+    if(!g){ body.innerHTML='<div class="dk-empty">Загрузка…</div>'; return; }
+    if(body.dataset.stage!=='1'){
+      body.dataset.stage='1'; T.parts={};
+      body.innerHTML = cfg.shell;
+    }
+    cfg.renderPlay(T, g);
+  };
+
+  T.lobby = (body, badge) => {
+    badge.style.display='none';
+    if(body.dataset.view!=='lobby'){
+      T.sig=''; body.dataset.view='lobby'; body.dataset.stage=''; T.roomsSig='';
+      body.innerHTML = `
+        <div class="dk-lobby">
+          <div class="dk-card">
+            <div class="dk-h">${esc(cfg.title)} · свой стол</div>
+            <div class="dk-seats" id="${cfg.prefix}-seats"></div>
+            <button class="dk-btn" onclick="${cfg.obj}.create()">СОЗДАТЬ СТОЛ</button>
+            <div class="dk-note" style="margin-top:10px">${cfg.hint}</div>
+          </div>
+          <div class="dk-card">
+            <div class="dk-h">Живые столы</div>
+            <div id="${cfg.prefix}-rooms"><div class="dk-note">Смотрим, кто играет…</div></div>
+          </div>
+          <div class="dk-card">
+            <div class="dk-h">Войти по коду</div>
+            <div class="dk-row">
+              <input class="dk-in" id="${cfg.prefix}-code-in" maxlength="5" placeholder="КОД" inputmode="latin">
+              <button class="dk-btn sec" style="width:auto;padding:12px 16px" onclick="${cfg.obj}.joinInput()">ВОЙТИ</button>
+            </div>
+          </div>
+          <button class="dk-btn sec" onclick="showRules('${cfg.prefix}')">📖 ПРАВИЛА ДЛЯ НОВИЧКОВ</button>
+        </div>`;
+      T.seatsBar();
+    }
+    const sig = JSON.stringify(T.rooms.map(r=>[r.code,r.taken,r.seats]));
+    if(sig === T.roomsSig) return;
+    T.roomsSig = sig;
+    const el = T.el('rooms'); if(!el) return;
+    el.innerHTML = T.rooms.length ? T.rooms.map(r=>`
+      <div class="dk-room">
+        <div class="dk-room-e">${r.players.map(p=>esc(p.emoji||'🙂')).join('')}</div>
+        <div class="dk-room-i">
+          <div class="dk-room-n">${esc(r.players.map(p=>p.name||'Игрок').join(', '))}</div>
+          <div class="dk-room-s">${r.taken}/${r.seats} · ждут ${r.seats-r.taken}</div>
+        </div>
+        <button class="dk-room-b${r.mine?' sec':''}" onclick="${cfg.obj}.join('${esc(r.code)}')">${r.mine?'ВЕРНУТЬСЯ':'ЗАЙТИ'}</button>
+      </div>`).join('')
+      : `<div class="dk-note">Сейчас никто не ждёт. Создай стол — он появится здесь у всех.</div>`;
+  };
+
+  T.seatsBar = () => {
+    const el = T.el('seats'); if(!el) return;
+    el.innerHTML = cfg.seats.map(n=>
+      `<button class="${n===T.seats?'on':''}" onclick="${cfg.obj}.setSeats(${n})">${n===1?'ОДИН':n+' ИГР.'}</button>`).join('');
+  };
+
+  T.wait = body => {
+    body.dataset.stage='';
+    const free = T.room.seats - T.room.players.length;
+    body.innerHTML = `
+      <div class="dk-card">
+        <div class="dk-h">${esc(cfg.title)} · ждём ещё ${free}</div>
+        <div class="dk-code">${esc(T.room.code)}</div>
+        <div class="dk-code-l">код стола</div>
+        <div class="dk-chairs">
+          ${T.room.players.map(p=>`<div class="dk-chair">${esc(p.emoji||'🙂')} ${esc(p.name||'Игрок')}</div>`).join('')}
+          ${Array.from({length:free},()=>`<div class="dk-chair free">свободно</div>`).join('')}
+        </div>
+        <div style="height:10px"></div>
+        <button class="dk-btn" onclick="${cfg.obj}.invite()">📨 ПОЗВАТЬ В TELEGRAM</button>
+        <div style="height:8px"></div>
+        <button class="dk-btn sec" onclick="${cfg.obj}.leave()">ОТМЕНИТЬ</button>
+        <div class="dk-note" style="margin-top:12px;text-align:center">Стол виден в списке живых —
+          подсесть может кто угодно.</div>
+      </div>`;
+  };
+
+  return T;
+}
+
+// ширина карты на столе подгоняется под экран
+function tblCardW(el){
+  const w = el?.clientWidth || 340;
+  return Math.max(30, Math.min(54, Math.floor((w - 5*6) / 5)));
+}
+const tblCard = (c, R, S, cls) => c
+  ? `<div class="pc up ${(c.s===1||c.s===2)?'red':'blk'}${cls?' '+cls:''}">`+
+    `<span class="pc-ix">${R[c.r]}<i>${S[c.s]}</i></span><span class="pc-mid">${S[c.s]}</span></div>`
+  : `<div class="pc down"></div>`;
+
+// ═══ ПОКЕР ═══════════════════════════════════════════════════════
+const PK_R = ['2','3','4','5','6','7','8','9','10','В','Д','К','Т'];
+const PK_S = ['♠','♥','♦','♣'];
+const PK_CAT = ['старшая карта','пара','две пары','тройка','стрит','флеш','фулл-хаус','каре','стрит-флеш'];
+const pkCard = (c,cls) => tblCard(c, PK_R, PK_S, cls);
+let pkRaise = 0;
+
+const PK = makeTable({
+  game:'poker', prefix:'pk', obj:'PK', title:'Холдем', seats:[2,3,4,5],
+  hint:'Фишки игровые, на деньги ничего не играется. Стол появится в списке — подсесть может любой.',
+  shell:`<div id="pk-p-seats"></div><div id="pk-p-mid"></div><div id="pk-p-me"></div>`+
+        `<div id="pk-p-acts"></div><div id="pk-p-log"></div>`,
+  renderPlay(T,g){
+    const P = T.room.players, n = g.stacks.length;
+    const cw = tblCardW(document.getElementById('pk-body'));
+    document.getElementById('pk-body').style.setProperty('--tcw', cw+'px');
+    const seats=[]; for(let k=1;k<n;k++) seats.push((g.me+k)%n);
+
+    T.part('pk-p-seats', JSON.stringify([seats.map(i=>[g.stacks[i],g.bets[i],g.folded[i],g.allin[i],g.out[i]]),g.turn,g.btn,g.show,g.hands.map(h=>!!h)]),
+      seats.map(i=>{
+        const p=P[i]||{}, hand=g.hands[i];
+        const tag = g.out[i]?'<span class="tb-tag">без фишек</span>'
+                  : g.folded[i]?'<span class="tb-tag">пас</span>'
+                  : g.allin[i]?'<span class="tb-tag d">олл-ин</span>'
+                  : i===g.btn?'<span class="tb-tag d">дилер</span>':'';
+        return `<div class="tb-seat${i===g.turn?' turn':''}${g.folded[i]||g.out[i]?' fold':''}">
+          <div class="tb-ava">${esc(p.emoji||'🙂')}</div>
+          <div class="tb-who">
+            <div class="tb-nm">${esc(p.name||'Игрок')}${tag}</div>
+            <div class="tb-sub">${g.bets[i]?'в банке '+g.bets[i]:'&nbsp;'}</div>
+          </div>
+          <div class="tb-mini">${g.folded[i]?'' :
+            (hand ? hand.map(c=>pkCard(c)).join('') : '<div class="pc down"></div><div class="pc down"></div>')}</div>
+          <div class="tb-chips">${g.stacks[i]}</div>
+        </div>`;
+      }).join(''));
+
+    T.part('pk-p-mid', JSON.stringify([g.pot,g.board,g.street]), `
+      <div class="tb-mid">
+        <div class="tb-pot">банк<b>${g.pot}</b></div>
+        <div class="tb-board">
+          ${g.board.map(c=>pkCard(c,'pc-play')).join('')}
+          ${Array.from({length:5-g.board.length},()=>`<div class="pc down" style="opacity:.25"></div>`).join('')}
+        </div>
+      </div>`);
+
+    const meName = (P[g.me]||{}).name || 'Ты';
+    T.part('pk-p-me', JSON.stringify([g.hand,g.stacks[g.me],g.bets[g.me],g.turn===g.me,g.best?.[g.me],g.show]), `
+      <div class="tb-hand">${g.hand.map(c=>pkCard(c,'pc-deal')).join('')}</div>
+      <div class="tb-me">${esc(meName)} · <b>${g.stacks[g.me]}</b> фишек${
+        g.bets[g.me]?` · в банке ${g.bets[g.me]}`:''}${
+        g.show && g.best?.[g.me]!=null ? ` · ${PK_CAT[Math.floor(g.best[g.me]/371293)]}` : ''}</div>`);
+
+    // действия
+    const o = g.opts;
+    let acts = '';
+    if(g.street>=4){
+      const win = (g.res?.pots||[]).flatMap(p=>p.winners);
+      const mine = win.includes(g.me);
+      acts = `<div class="dk-card" style="text-align:center">
+          <div style="font-size:30px">${mine?'🏆':'🂠'}</div>
+          <div style="font-size:16px;font-weight:900;margin:4px 0 8px">${
+            mine?'Банк твой':'Раздача сыграна'}</div>
+          <div class="dk-note" style="margin-bottom:10px">${(g.res?.pots||[]).map(p=>
+            `${p.amount} → ${p.winners.map(w=>esc((P[w]||{}).name||('Игрок '+(w+1)))).join(', ')}`).join('<br>')}</div>
+          <button class="dk-btn" onclick="PK.next()">СЛЕДУЮЩАЯ РАЗДАЧА</button>
+        </div>`;
+    } else if(g.over){
+      acts = `<div class="dk-card" style="text-align:center">
+          <div style="font-size:30px">${g.over.winner===g.me?'🏆':'🃏'}</div>
+          <div style="font-size:16px;font-weight:900;margin:4px 0 8px">${
+            g.over.winner===g.me?'Ты забрал все фишки!':esc((P[g.over.winner]||{}).name||'Соперник')+' забрал все фишки'}</div>
+          <button class="dk-btn" onclick="PK.rematch()">ЕЩЁ ПАРТИЮ</button>
+        </div>`;
+    } else if(o){
+      const callTxt = o.canCheck ? 'ЧЕК' : `УРАВНЯТЬ ${o.callAmount}`;
+      if(pkRaise < o.minTo || pkRaise > o.maxTo) pkRaise = o.minTo;
+      acts = `
+        <div class="tb-acts">
+          <button class="dk-btn sec" onclick="PK.move({t:'fold'})">ПАС</button>
+          <button class="dk-btn" onclick="PK.move({t:'${o.canCheck?'check':'call'}'})">${callTxt}</button>
+        </div>
+        ${o.canRaise?`
+        <div class="tb-raise">
+          <input type="range" id="pk-slider" min="${o.minTo}" max="${o.maxTo}" step="10" value="${pkRaise}"
+            oninput="pkSlide(this.value)">
+          <div class="tb-raise-v" id="pk-raise-v">${pkRaise}</div>
+        </div>
+        <div class="tb-quick">
+          <button onclick="pkSet(${Math.min(o.maxTo,Math.max(o.minTo,Math.round((g.pot/2)/10)*10))})">½ банка</button>
+          <button onclick="pkSet(${Math.min(o.maxTo,Math.max(o.minTo,Math.round(g.pot/10)*10))})">банк</button>
+          <button onclick="pkSet(${o.maxTo})">всё</button>
+        </div>
+        <div style="height:6px"></div>
+        <button class="dk-btn" onclick="PK.move({t:'raise',to:pkRaise})">ПОВЫСИТЬ ДО <span id="pk-raise-b">${pkRaise}</span></button>`:''}`;
+    } else {
+      acts = `<div class="tb-me" style="padding:12px 0">ход игрока <b>${esc((P[g.turn]||{}).name||'соседа')}</b>…</div>`;
+    }
+    T.part('pk-p-acts', JSON.stringify([!!o,o,g.street,g.over,g.turn,g.res]), acts);
+    T.part('pk-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
+  },
+});
+function pkSlide(v){ pkRaise=+v; const a=document.getElementById('pk-raise-v'), b=document.getElementById('pk-raise-b');
+  if(a) a.textContent=v; if(b) b.textContent=v; }
+function pkSet(v){ const s=document.getElementById('pk-slider'); if(s) s.value=v; pkSlide(v); }
+
+// ═══ «21» ════════════════════════════════════════════════════════
+const BJ_R = ['2','3','4','5','6','7','8','9','10','В','Д','К','Т'];
+const BJ_S = ['♠','♥','♦','♣'];
+const bjCard = (c,cls) => tblCard(c, BJ_R, BJ_S, cls);
+let bjBet = 50;
+
+const BJ = makeTable({
+  game:'bj', prefix:'bj', obj:'BJ', title:'Двадцать одно', seats:[1,2,3,4,5],
+  hint:'Играем против дилера, фишки игровые. Стол на одного начинается сразу — ждать никого не надо.',
+  shell:`<div id="bj-p-dealer"></div><div id="bj-p-seats"></div><div id="bj-p-acts"></div><div id="bj-p-log"></div>`,
+  renderPlay(T,g){
+    const P = T.room.players;
+    const cw = tblCardW(document.getElementById('bj-body'));
+    document.getElementById('bj-body').style.setProperty('--tcw', cw+'px');
+
+    T.part('bj-p-dealer', JSON.stringify([g.dealer,g.hole,g.dealerPts,g.phase]), `
+      <div class="bj-box">
+        <div class="tb-sub">ДИЛЕР</div>
+        <div class="bj-hand">
+          ${g.dealer.map(c=>bjCard(c,'pc-play')).join('')}
+          ${g.hole?`<div class="pc down"></div>`:''}
+          <div class="bj-pts${!g.hole&&g.dealerPts>21?' bust':''}">${g.dealerPts}${g.hole?'+':''}</div>
+        </div>
+      </div>`);
+
+    T.part('bj-p-seats', JSON.stringify([g.hands,g.stacks,g.turn,g.hi,g.ready,g.res,g.phase]),
+      g.hands.map((hs,i)=>{
+        const p = P[i]||{}, mine = i===g.me;
+        const head = `<div class="tb-nm">${esc(p.name||'Игрок '+(i+1))}${
+          mine?'<span class="tb-tag d">ты</span>':''}${
+          g.out[i]?'<span class="tb-tag">без фишек</span>':''}</div>`;
+        const money = `<div class="tb-chips">${g.stacks[i]}</div>`;
+        if(!hs.length){
+          return `<div class="bj-box${mine?' me':''}">
+            <div class="tb-seat" style="background:none;border:none;padding:0;margin:0">
+              <div class="tb-ava">${esc(p.emoji||'🙂')}</div>
+              <div class="tb-who">${head}<div class="tb-sub">${g.ready[i]?'ставка принята':'делает ставку…'}</div></div>
+              ${money}
+            </div></div>`;
+        }
+        const res = g.res ? `<div class="tb-sub" style="margin-top:6px">${esc(g.res.text[i]||'')}${
+          g.res.win[i]?` · <b style="color:${g.res.win[i]>0?'var(--green)':'var(--red)'}">${g.res.win[i]>0?'+':''}${g.res.win[i]}</b>`:''}</div>` : '';
+        return `<div class="bj-box${mine?' me':''}${i===g.turn?' turn':''}">
+          <div class="tb-seat" style="background:none;border:none;padding:0;margin:0">
+            <div class="tb-ava">${esc(p.emoji||'🙂')}</div>
+            <div class="tb-who">${head}<div class="tb-sub">ставка ${hs.reduce((a,h)=>a+h.bet,0)}</div></div>
+            ${money}
+          </div>
+          ${hs.map((h,k)=>`<div class="bj-hand">
+            ${h.cards.map(c=>bjCard(c,'pc-deal')).join('')}
+            <div class="bj-pts${h.bust?' bust':h.bj?' bj':''}">${h.bj?'BJ':h.pts}</div>
+            ${hs.length>1?`<div class="tb-tag${i===g.turn&&k===g.hi?' d':''}">рука ${k+1}</div>`:''}
+          </div>`).join('')}
+          ${res}
+        </div>`;
+      }).join(''));
+
+    const o = g.opts;
+    let acts = '';
+    if(g.over){
+      acts = `<div class="dk-card" style="text-align:center">
+          <div style="font-size:30px">🂠</div>
+          <div style="font-size:16px;font-weight:900;margin:4px 0 8px">Фишки кончились</div>
+          <button class="dk-btn" onclick="BJ.rematch()">НАЧАТЬ ЗАНОВО</button>
+        </div>`;
+    } else if(g.phase==='done'){
+      acts = `<button class="dk-btn" onclick="BJ.next()">СЛЕДУЮЩИЙ РАУНД</button>`;
+    } else if(o && o.bet){
+      const max = Math.min(o.max, 500);
+      if(bjBet<o.min || bjBet>o.max) bjBet = Math.min(Math.max(o.min,50), o.max);
+      acts = `
+        <div class="tb-raise">
+          <input type="range" id="bj-slider" min="${o.min}" max="${o.max}" step="10" value="${bjBet}" oninput="bjSlide(this.value)">
+          <div class="tb-raise-v" id="bj-bet-v">${bjBet}</div>
+        </div>
+        <div class="tb-quick">
+          ${[10,50,100].filter(v=>v<=o.max).map(v=>`<button onclick="bjSet(${v})">${v}</button>`).join('')}
+          <button onclick="bjSet(${o.max})">всё</button>
+        </div>
+        <div style="height:6px"></div>
+        <button class="dk-btn" onclick="BJ.move({t:'bet',amount:bjBet})">ПОСТАВИТЬ <span id="bj-bet-b">${bjBet}</span></button>`;
+    } else if(o){
+      acts = `
+        <div class="tb-acts">
+          <button class="dk-btn" onclick="BJ.move({t:'hit'})">ЕЩЁ</button>
+          <button class="dk-btn sec" onclick="BJ.move({t:'stand'})">ХВАТИТ</button>
+        </div>
+        ${(o.canDouble||o.canSplit)?`<div class="tb-acts" style="margin-top:6px">
+          ${o.canDouble?`<button class="dk-btn sec" onclick="BJ.move({t:'double'})">УДВОИТЬ</button>`:''}
+          ${o.canSplit?`<button class="dk-btn sec" onclick="BJ.move({t:'split'})">РАЗДЕЛИТЬ</button>`:''}
+        </div>`:''}`;
+    } else {
+      acts = `<div class="tb-me" style="padding:12px 0">${
+        g.phase==='bet' ? 'ждём ставки остальных…'
+        : `ходит <b>${esc((P[g.turn]||{}).name||'сосед')}</b>…`}</div>`;
+    }
+    T.part('bj-p-acts', JSON.stringify([o,g.phase,g.over,g.turn,g.hi,g.res]), acts);
+    T.part('bj-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
+  },
+});
+function bjSlide(v){ bjBet=+v; const a=document.getElementById('bj-bet-v'), b=document.getElementById('bj-bet-b');
+  if(a) a.textContent=v; if(b) b.textContent=v; }
+function bjSet(v){ const s=document.getElementById('bj-slider'); if(s) s.value=v; bjSlide(v); }
+
+// ═══ ПРАВИЛА ДЛЯ НОВИЧКОВ ════════════════════════════════════════
+// Комбинации показываем настоящими картами — так понятнее любого текста.
+const rlHand = str => `<div class="rl-cards">${str.split(' ').map(x=>{
+  const r = PK_R.indexOf(x.slice(0,-1)), s = '♠♥♦♣'.indexOf(x.slice(-1));
+  return pkCard({r,s});
+}).join('')}</div>`;
+
+const RULES = {
+  pk: { title:'Холдем для новичков', body:()=>`
+    <p>Каждому сдают <b>две свои карты</b>, а на стол постепенно выкладывают <b>пять общих</b>.
+    Собери лучшую пятёрку из своих двух и пяти общих — можно использовать обе свои, одну или ни одной.</p>
+
+    <h4>Как идёт раздача</h4>
+    <div class="rl-step"><div class="rl-n">1</div><div><b>Блайнды.</b> Двое обязательно ставят вслепую (10 и 20),
+      чтобы в банке было за что бороться. Кружок дилера каждую раздачу едет к следующему.</div></div>
+    <div class="rl-step"><div class="rl-n">2</div><div><b>Первый круг.</b> Раздали по две карты — торгуемся.</div></div>
+    <div class="rl-step"><div class="rl-n">3</div><div><b>Флоп.</b> Три общие карты, снова торгуемся.</div></div>
+    <div class="rl-step"><div class="rl-n">4</div><div><b>Тёрн и ривер.</b> Ещё по одной общей карте, и после каждой круг торговли.</div></div>
+    <div class="rl-step"><div class="rl-n">5</div><div><b>Вскрытие.</b> Кто остался — показывает карты, банк забирает лучшая рука.</div></div>
+
+    <h4>Что можно сделать в свой ход</h4>
+    <ul>
+      <li><b>Пас</b> — бросить карты. Ты вне раздачи, всё вложенное остаётся в банке.</li>
+      <li><b>Чек</b> — пропустить, если никто не ставил. Бесплатно.</li>
+      <li><b>Уравнять</b> — доложить столько же, сколько поставил сосед.</li>
+      <li><b>Повысить</b> — поставить больше. Остальным придётся уравнять или бросить.</li>
+      <li><b>Олл-ин</b> — все фишки. Если их меньше ставки, ты играешь только за ту часть банка, куда вложился.</li>
+    </ul>
+
+    <h4>Комбинации, от старшей к младшей</h4>
+    <div class="rl-combo"><div class="rl-rank">1</div>${rlHand('Т♠ К♠ Д♠ В♠ 10♠')}
+      <div class="rl-name"><b>Стрит-флеш</b><span>пять подряд одной масти</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">2</div>${rlHand('9♠ 9♥ 9♦ 9♣ К♠')}
+      <div class="rl-name"><b>Каре</b><span>четыре одинаковых</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">3</div>${rlHand('К♠ К♥ К♦ 4♠ 4♥')}
+      <div class="rl-name"><b>Фулл-хаус</b><span>тройка плюс пара</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">4</div>${rlHand('Т♦ 9♦ 7♦ 4♦ 2♦')}
+      <div class="rl-name"><b>Флеш</b><span>пять одной масти</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">5</div>${rlHand('9♥ 8♦ 7♣ 6♠ 5♥')}
+      <div class="rl-name"><b>Стрит</b><span>пять подряд, масти любые</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">6</div>${rlHand('Т♠ Т♥ Т♦ 7♣ 2♠')}
+      <div class="rl-name"><b>Тройка</b><span>три одинаковых</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">7</div>${rlHand('Д♠ Д♥ 5♦ 5♣ 9♠')}
+      <div class="rl-name"><b>Две пары</b><span></span></div></div>
+    <div class="rl-combo"><div class="rl-rank">8</div>${rlHand('8♠ 8♥ Т♦ 4♣ 2♠')}
+      <div class="rl-name"><b>Пара</b><span>две одинаковых</span></div></div>
+    <div class="rl-combo"><div class="rl-rank">9</div>${rlHand('Т♠ Д♥ 9♦ 6♣ 3♠')}
+      <div class="rl-name"><b>Старшая карта</b><span>когда не собралось ничего</span></div></div>
+
+    <h4>Мелочи, о которые спотыкаются</h4>
+    <ul>
+      <li>Туз бывает и самым старшим, и самым младшим: <b>Т 2 3 4 5</b> — это стрит, но самый слабый.</li>
+      <li>При одинаковых комбинациях решает старшинство карт, потом кикер — пятая карта.</li>
+      <li>Совсем равные руки делят банк пополам.</li>
+    </ul>
+    <p style="margin-top:12px;color:var(--dim)">Фишки игровые: на деньги здесь ничего не играется,
+      проигранное не значит ничего, кроме места в рейтинге.</p>`,
+  },
+  bj: { title:'«Двадцать одно» для новичков', body:()=>`
+    <p>Играешь <b>против дилера</b>, а не против соседей. Задача — набрать больше него, но
+    <b>не больше 21</b>. Перебрал — проиграл сразу, что бы там ни было у дилера.</p>
+
+    <h4>Сколько стоят карты</h4>
+    <div class="rl-combo">${rlHand('2♠ 5♥ 9♦')}<div class="rl-name"><b>По номиналу</b><span>от 2 до 9</span></div></div>
+    <div class="rl-combo">${rlHand('10♠ В♥ Д♦ К♣')}<div class="rl-name"><b>Ровно 10</b><span>десятка и все картинки</span></div></div>
+    <div class="rl-combo">${rlHand('Т♠')}<div class="rl-name"><b>11 или 1</b><span>туз считается так, как тебе выгоднее</span></div></div>
+    <p>Например, <b>Т + 6</b> — это 17, но если добрать десятку, туз станет единицей и выйдет 17, а не перебор.</p>
+
+    <h4>Как идёт раунд</h4>
+    <div class="rl-step"><div class="rl-n">1</div><div><b>Ставка.</b> Ставишь фишки до раздачи. Минимум — 10.</div></div>
+    <div class="rl-step"><div class="rl-n">2</div><div><b>Раздача.</b> Тебе две карты в открытую, дилеру одну открытую и одну закрытую.</div></div>
+    <div class="rl-step"><div class="rl-n">3</div><div><b>Твой ход.</b> Берёшь ещё карты или останавливаешься.</div></div>
+    <div class="rl-step"><div class="rl-n">4</div><div><b>Дилер.</b> Открывает закрытую карту и добирает, пока у него меньше 17.</div></div>
+    <div class="rl-step"><div class="rl-n">5</div><div><b>Итог.</b> У кого ближе к 21 — тот и взял.</div></div>
+
+    <h4>Что можно сделать</h4>
+    <ul>
+      <li><b>Ещё</b> — взять карту. Хоть десять, пока не перебор.</li>
+      <li><b>Хватит</b> — остановиться и ждать дилера.</li>
+      <li><b>Удвоить</b> — только с двух карт: ставка удваивается, но карта приходит ровно одна.</li>
+      <li><b>Разделить</b> — если две карты одинакового достоинства, играешь двумя руками, вторая ставка равна первой.
+        Разделённые тузы получают по одной карте и на этом останавливаются.</li>
+    </ul>
+
+    <h4>Выплаты</h4>
+    <ul>
+      <li><b>Блэкджек</b> (туз с десяткой сразу, с двух карт) платит <b>3:2</b> — поставил 100, получил 250.</li>
+      <li>Обычный выигрыш платит <b>1:1</b>.</li>
+      <li>Одинаковые очки — ничья, ставка возвращается.</li>
+      <li>21 из трёх и более карт — просто 21, не блэкджек.</li>
+    </ul>
+
+    <h4>Чего здесь нет</h4>
+    <p>Страховки и «сдачи» (surrender) нет намеренно — это лишние кнопки, которые новичку только мешают.
+    Дилер стоит на любых 17, включая «мягкие» (с тузом). Колода — шесть штук и тасуется каждый раунд,
+    так что считать карты бесполезно.</p>
+    <p style="margin-top:12px;color:var(--dim)">Фишки игровые: на деньги здесь ничего не играется.</p>`,
+  },
+  dk: { title:'Дурак для новичков', body:()=>`
+    <p>Цель — <b>избавиться от карт</b>. Кто остался с картами последним, тот и дурак.</p>
+    <h4>Как играют</h4>
+    <ul>
+      <li>Колода 36 карт, каждому по шесть. Карта под колодой задаёт <b>козырь</b> — эта масть бьёт любую другую.</li>
+      <li>Первым ходит тот, у кого младший козырь.</li>
+      <li>Атакующий кладёт карту, сосед слева <b>отбивается</b>: старшей картой той же масти или козырем.</li>
+      <li>Остальные могут <b>подкинуть</b> — но только те достоинства, что уже лежат на столе.</li>
+      <li>Отбился и все сказали «бито» — карты уходят в отбой, отбившийся ходит сам.</li>
+      <li>Не смог или не захотел — <b>«беру»</b>, все карты со стола идут ему в руку, а ход переходит дальше.</li>
+      <li>После каждого круга все добирают до шести, пока в колоде есть карты.</li>
+    </ul>
+    <p>Больше шести карт на стол не кладут, и подкинуть больше, чем защитник может отбить, нельзя.</p>`,
+  },
+  sol: { title:'Косынка для новичков', body:()=>`
+    <p>Цель — собрать <b>все четыре масти</b> в верхних клетках, от туза до короля.</p>
+    <h4>Как играют</h4>
+    <ul>
+      <li>В столбцах карты кладут <b>по убыванию и через цвет</b>: чёрная девятка ложится на красную десятку.</li>
+      <li>На пустой столбец можно положить только <b>короля</b>.</li>
+      <li>Наверх, в базы, карты идут <b>по возрастанию и по масти</b>: туз, двойка, тройка…</li>
+      <li>Нечего сделать — снимай карту из колоды. Колода ходит по кругу без ограничений.</li>
+      <li>Двойное касание отправляет карту в базу, если она туда подходит.</li>
+    </ul>
+    <p>Раздаются только те расклады, которые <b>точно можно выиграть</b> — безнадёжных не будет.</p>`,
+  },
+};
+
+function showRules(which){
+  const key = which || cardsTab || 'pk';
+  const r = RULES[key] || RULES.pk;
+  document.getElementById('rules-title').textContent = r.title;
+  document.getElementById('rules-body').innerHTML = r.body();
+  document.getElementById('rules-modal').classList.add('on');
+}
+function hideRules(){ document.getElementById('rules-modal').classList.remove('on'); }
 
 </script>
 </body>
