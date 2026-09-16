@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════
-//  durak — ОДНОФАЙЛОВАЯ СБОРКА для вставки в редактор Supabase.
+//  Столы для карточных игр — ОДНОФАЙЛОВАЯ СБОРКА для редактора Supabase.
 //
-//  Собрано из engine.ts + index.ts скриптом bundle.py. Правь оригиналы,
-//  а не этот файл: он перегенерируется и правки потеряются. При деплое
-//  через CLI бери обычный index.ts — он подтянет engine.ts сам.
+//  Собрано скриптом bundle.py из engine.ts («дурак»), poker.ts (холдем),
+//  blackjack.ts («21») и index.ts. Правь оригиналы, а не этот файл: он
+//  перегенерируется и правки потеряются. При деплое через CLI бери обычный
+//  index.ts — он подтянет соседние модули сам.
 // ═══════════════════════════════════════════════════════════════════
 
 // Подкидной дурак на 2–4 игроков, колода 36 карт. Чистая логика без
@@ -229,9 +230,677 @@ export function view(s: St, p: number) {
 }
 
 
-// Edge Function: durak — комнаты «дурака» на 2–4 игроков.
+// Техасский холдем на 2–5 игроков, без лимита. Чистая логика без
+// ввода-вывода: этот же модуль гоняется тестами под node и используется
+// Edge Function. Фишки игровые, никаких денег.
+//
+// Что здесь реализовано по правилам:
+//   • блайнды, кнопка дилера двигается по кругу, хедз-ап играется по своим
+//     правилам (на двоих кнопка — это малый блайнд и он же ходит первым
+//     до флопа, а после флопа — вторым);
+//   • круг торговли закрывается, когда все, кто ещё в игре и не в олл-ине,
+//     сходили и уравняли ставку;
+//   • минимальный рейз равен размеру предыдущего повышения; олл-ин меньше
+//     минимального рейза не переоткрывает торговлю;
+//   • побочные банки: каждый игрок претендует только на ту часть банка, в
+//     которую успел вложиться;
+//   • при равных руках банк делится, лишние фишки уходят ближайшему к
+//     кнопке слева — как за настоящим столом.
+
+export type PC = { s: number; r: number };          // масть 0-3, ранг 0-12 (2..Т)
+export const PR = ["2","3","4","5","6","7","8","9","10","В","Д","К","Т"];
+export const PS = ["♠","♥","♦","♣"];
+export const P_MIN_SEATS = 2;
+export const P_MAX_SEATS = 5;
+export const P_START = 1000;                        // стартовый стек
+export const P_SB = 10, P_BB = 20;
+
+export type PMove =
+  | { t: "fold" } | { t: "check" } | { t: "call" }
+  | { t: "raise"; to: number } | { t: "allin" };
+
+export type PSt = {
+  deck: PC[];
+  hands: PC[][];
+  board: PC[];
+  stacks: number[];
+  bets: number[];                                   // поставлено в текущем круге
+  paid: number[];                                   // вложено за всю раздачу
+  folded: boolean[];
+  allin: boolean[];
+  out: boolean[];                                   // фишек не осталось
+  acted: boolean[];                                 // сходил после последнего повышения
+  btn: number;
+  turn: number;
+  street: number;                                   // 0 префлоп · 1 флоп · 2 тёрн · 3 ривер · 4 вскрытие
+  pot: number;                                      // собрано в прошлых кругах
+  toCall: number;
+  minRaise: number;
+  sb: number; bb: number;
+  show: boolean;                                    // вскрылись ли карты
+  res: null | { pots: { amount: number; winners: number[] }[]; best: (number|null)[] };
+  over: null | { winner: number };                  // вся игра, а не раздача
+  hand: number;                                     // номер раздачи
+  log: string[];
+  ver: number;
+};
+
+const pClone = (s: PSt): PSt => JSON.parse(JSON.stringify(s));
+const alive = (s: PSt, i: number) => !s.out[i] && !s.folded[i];
+const canAct = (s: PSt, i: number) => alive(s, i) && !s.allin[i];
+
+export function pokerDeck(rnd: () => number): PC[] {
+  const d: PC[] = [];
+  for (let s = 0; s < 4; s++) for (let r = 0; r < 13; r++) d.push({ s, r });
+  for (let i = d.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [d[i], d[j]] = [d[j], d[i]];
+  }
+  return d;
+}
+
+// следующий по кругу, к кому относится предикат
+function next(s: PSt, from: number, ok: (i: number) => boolean): number {
+  const n = s.stacks.length;
+  for (let k = 1; k <= n; k++) {
+    const i = (from + k) % n;
+    if (ok(i)) return i;
+  }
+  return from;
+}
+
+export function pokerStart(seats: number, rnd: () => number = Math.random): PSt {
+  const n = Math.max(P_MIN_SEATS, Math.min(P_MAX_SEATS, seats | 0));
+  const s: PSt = {
+    deck: [], hands: [], board: [],
+    stacks: Array(n).fill(P_START),
+    bets: Array(n).fill(0), paid: Array(n).fill(0),
+    folded: Array(n).fill(false), allin: Array(n).fill(false),
+    out: Array(n).fill(false), acted: Array(n).fill(false),
+    btn: n - 1, turn: 0, street: 0, pot: 0,
+    toCall: 0, minRaise: P_BB, sb: P_SB, bb: P_BB,
+    show: false, res: null, over: null, hand: 0, log: [], ver: 1,
+  };
+  return pokerDeal(s, rnd);
+}
+
+// новая раздача теми же стеками
+export function pokerDeal(prev: PSt, rnd: () => number = Math.random): PSt {
+  const s = pClone(prev);
+  const n = s.stacks.length;
+  s.out = s.stacks.map(v => v <= 0);
+  const live = s.out.filter(o => !o).length;
+  if (live <= 1) {
+    s.over = { winner: s.out.findIndex(o => !o) };
+    s.ver++;
+    return s;
+  }
+  s.deck = pokerDeck(rnd);
+  s.hands = s.stacks.map(() => []);
+  s.board = [];
+  s.bets = Array(n).fill(0);
+  s.paid = Array(n).fill(0);
+  s.folded = Array(n).fill(false);
+  s.allin = Array(n).fill(false);
+  s.acted = Array(n).fill(false);
+  s.street = 0; s.pot = 0; s.show = false; s.res = null;
+  s.hand++;
+  s.log = [];
+  s.btn = next(s, s.btn, i => !s.out[i]);
+
+  // блайнды: на двоих малый ставит кнопка, иначе — следующий за ней
+  const heads = live === 2;
+  const sbSeat = heads ? s.btn : next(s, s.btn, i => !s.out[i]);
+  const bbSeat = next(s, sbSeat, i => !s.out[i]);
+  put(s, sbSeat, Math.min(s.sb, s.stacks[sbSeat]));
+  put(s, bbSeat, Math.min(s.bb, s.stacks[bbSeat]));
+  s.toCall = s.bb;
+  s.minRaise = s.bb;
+  s.log.push(`Раздача ${s.hand}: блайнды ${s.sb}/${s.bb}`);
+
+  for (let k = 0; k < 2; k++)
+    for (let i = 0, p = sbSeat; i < n; i++, p = (p + 1) % n)
+      if (!s.out[p]) s.hands[p].push(s.deck.pop()!);
+
+  s.turn = next(s, bbSeat, i => canAct(s, i));
+  s.ver++;
+  return s;
+}
+
+function put(s: PSt, i: number, amount: number) {
+  const v = Math.max(0, Math.min(amount, s.stacks[i]));
+  s.stacks[i] -= v; s.bets[i] += v; s.paid[i] += v;
+  if (s.stacks[i] === 0) s.allin[i] = true;
+}
+
+// что игрок может сделать прямо сейчас
+export function pokerOptions(s: PSt, p: number) {
+  if (s.over || s.street >= 4 || s.turn !== p || !canAct(s, p)) return null;
+  const need = s.toCall - s.bets[p];
+  const stack = s.stacks[p];
+  const minTo = Math.min(s.toCall + s.minRaise, s.bets[p] + stack);
+  return {
+    canFold: true,
+    canCheck: need <= 0,
+    canCall: need > 0 && stack > 0,
+    callAmount: Math.min(need, stack),
+    canRaise: stack > need,                          // есть чем повышать
+    minTo, maxTo: s.bets[p] + stack,
+  };
+}
+
+export function pokerApply(st: PSt, p: number, m: PMove): PSt | string {
+  if (st.over) return "игра уже закончена";
+  if (st.street >= 4) return "раздача закончена";
+  if (p < 0 || p >= st.stacks.length) return "нет такого игрока";
+  if (st.turn !== p) return "сейчас не твой ход";
+  if (!canAct(st, p)) return "ты уже вне раздачи";
+  const s = pClone(st);
+  const o = pokerOptions(s, p)!;
+  const nm = `Игрок ${p + 1}`;
+
+  if (m.t === "fold") {
+    s.folded[p] = true; s.acted[p] = true;
+    s.log.push(`${nm}: пас`);
+  } else if (m.t === "check") {
+    if (!o.canCheck) return "нельзя чек — надо уравнять или пас";
+    s.acted[p] = true;
+    s.log.push(`${nm}: чек`);
+  } else if (m.t === "call") {
+    if (!o.canCall) return "уравнивать нечего";
+    put(s, p, o.callAmount); s.acted[p] = true;
+    s.log.push(`${nm}: уравнял ${o.callAmount}`);
+  } else if (m.t === "allin" && o.maxTo <= s.toCall) {
+    // Стека не хватает даже уравнять — это не повышение, а вход в банк на
+    // всё, что есть. Такой игрок претендует только на свою часть банка.
+    const amount = s.stacks[p];
+    put(s, p, amount); s.acted[p] = true;
+    s.log.push(`${nm}: олл-ин ${amount} (меньше ставки)`);
+  } else if (m.t === "raise" || m.t === "allin") {
+    const to = m.t === "allin" ? o.maxTo : Math.floor(m.to);
+    if (!(to > s.toCall)) return "повышать надо выше текущей ставки";
+    if (to > o.maxTo) return "столько фишек нет";
+    if (to < o.minTo && to < o.maxTo) return `минимальное повышение — до ${o.minTo}`;
+    const raiseBy = to - s.toCall;
+    put(s, p, to - s.bets[p]);
+    // Олл-ин меньше полного рейза торговлю не переоткрывает: те, кто уже
+    // сходил, второй раз не ходят — только уравнивают.
+    if (raiseBy >= s.minRaise) {
+      s.minRaise = raiseBy;
+      for (let i = 0; i < s.acted.length; i++) if (i !== p) s.acted[i] = false;
+    }
+    s.toCall = to;
+    s.acted[p] = true;
+    s.log.push(`${nm}: ${s.allin[p] ? "олл-ин " : "ставка до "}${to}`);
+  } else return "неизвестный ход";
+
+  return advance(s);
+}
+
+// закрыт ли круг торговли
+function roundDone(s: PSt): boolean {
+  const act = s.stacks.map((_, i) => i).filter(i => canAct(s, i));
+  if (!act.length) return true;
+  return act.every(i => s.acted[i] && s.bets[i] === s.toCall);
+}
+
+function advance(s: PSt): PSt {
+  s.ver++;
+  const inHand = s.stacks.map((_, i) => i).filter(i => alive(s, i));
+  if (inHand.length === 1) {                        // все спасовали
+    collect(s);
+    s.res = { pots: [{ amount: s.pot, winners: [inHand[0]] }], best: s.stacks.map(() => null) };
+    s.stacks[inHand[0]] += s.pot;
+    s.log.push(`Игрок ${inHand[0] + 1} забирает ${s.pot} — все спасовали`);
+    s.pot = 0; s.street = 4;
+    return s;
+  }
+  if (!roundDone(s)) {
+    s.turn = next(s, s.turn, i => canAct(s, i));
+    return s;
+  }
+  collect(s);
+  // если торговаться больше некому — открываем оставшийся борд и вскрываемся
+  const canStill = s.stacks.map((_, i) => i).filter(i => canAct(s, i));
+  if (canStill.length <= 1) {
+    while (s.board.length < 5) burnDeal(s, s.board.length === 0 ? 3 : 1);
+    return pokerShowdown(s);
+  }
+  s.street++;
+  if (s.street >= 4) return pokerShowdown(s);
+  burnDeal(s, s.street === 1 ? 3 : 1);
+  s.acted = s.acted.map(() => false);
+  s.toCall = 0; s.minRaise = s.bb;
+  s.turn = next(s, s.btn, i => canAct(s, i));        // после флопа первым говорит малый блайнд
+  s.log.push(["", "Флоп", "Тёрн", "Ривер"][s.street]);
+  return s;
+}
+
+function burnDeal(s: PSt, n: number) {
+  s.deck.pop();                                     // сжигаем карту, как за столом
+  for (let i = 0; i < n; i++) s.board.push(s.deck.pop()!);
+}
+
+function collect(s: PSt) {
+  s.pot += s.bets.reduce((a, b) => a + b, 0);
+  s.bets = s.bets.map(() => 0);
+}
+
+// ── вскрытие и побочные банки ──
+export function pokerShowdown(s: PSt): PSt {
+  s.street = 4; s.show = true;
+  const inHand = s.stacks.map((_, i) => i).filter(i => alive(s, i));
+  const best = s.stacks.map((_, i) => inHand.includes(i) ? score7([...s.hands[i], ...s.board]) : null);
+
+  // уровни вложений: каждый претендует только на то, во что вложился
+  const levels = [...new Set(s.paid.filter(v => v > 0))].sort((a, b) => a - b);
+  const pots: { amount: number; winners: number[] }[] = [];
+  let prev = 0;
+  for (const lv of levels) {
+    let amount = 0;
+    for (let i = 0; i < s.paid.length; i++)
+      amount += Math.min(s.paid[i], lv) - Math.min(s.paid[i], prev);
+    const eligible = inHand.filter(i => s.paid[i] >= lv);
+    prev = lv;
+    if (!amount) continue;
+    if (!eligible.length) { pots.push({ amount, winners: [] }); continue; }
+    const top = Math.max(...eligible.map(i => best[i]!));
+    const winners = eligible.filter(i => best[i] === top);
+    pots.push({ amount, winners });
+  }
+  // раздаём: поровну, остаток — ближайшему к кнопке слева
+  for (const pot of pots) {
+    if (!pot.winners.length) continue;
+    const each = Math.floor(pot.amount / pot.winners.length);
+    let rest = pot.amount - each * pot.winners.length;
+    for (const w of pot.winners) s.stacks[w] += each;
+    let seat = s.btn;
+    while (rest > 0) {
+      seat = (seat + 1) % s.stacks.length;
+      if (pot.winners.includes(seat)) { s.stacks[seat]++; rest--; }
+    }
+  }
+  s.pot = 0;
+  s.res = { pots, best };
+  const names = [...new Set(pots.flatMap(p => p.winners))].map(i => `Игрок ${i + 1}`);
+  if (names.length) s.log.push(`Выиграл: ${names.join(", ")} — ${handName(Math.max(...best.filter(b => b !== null) as number[]))}`);
+  s.ver++;
+  return s;
+}
+
+// ── сила руки ──
+// Пятикарточная комбинация упаковывается в одно число: сначала категория,
+// потом старшинство карт для сравнения равных категорий.
+export function score5(c: PC[]): number {
+  const rs = c.map(x => x.r).sort((a, b) => b - a);
+  const suited = c.every(x => x.s === c[0].s);
+  const cnt = new Map<number, number>();
+  rs.forEach(r => cnt.set(r, (cnt.get(r) || 0) + 1));
+  // группы: сначала по количеству, потом по старшинству
+  const groups = [...cnt.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const uniq = [...cnt.keys()].sort((a, b) => b - a);
+
+  let straightTop = -1;
+  if (uniq.length === 5) {
+    if (uniq[0] - uniq[4] === 4) straightTop = uniq[0];
+    else if (uniq[0] === 12 && uniq[1] === 3 && uniq[4] === 0) straightTop = 3;   // Т2345
+  }
+  const pack = (cat: number, ks: number[]) =>
+    ks.slice(0, 5).concat([0, 0, 0, 0, 0]).slice(0, 5)
+      .reduce((acc, v) => acc * 13 + v, cat);
+
+  if (straightTop >= 0 && suited) return pack(8, [straightTop]);
+  if (groups[0][1] === 4) return pack(7, [groups[0][0], groups[1][0]]);
+  if (groups[0][1] === 3 && groups[1][1] === 2) return pack(6, [groups[0][0], groups[1][0]]);
+  if (suited) return pack(5, rs);
+  if (straightTop >= 0) return pack(4, [straightTop]);
+  if (groups[0][1] === 3) return pack(3, [groups[0][0], ...uniq.filter(r => r !== groups[0][0])]);
+  if (groups[0][1] === 2 && groups[1][1] === 2) {
+    const [hi, lo] = [groups[0][0], groups[1][0]].sort((a, b) => b - a);
+    return pack(2, [hi, lo, ...uniq.filter(r => r !== hi && r !== lo)]);
+  }
+  if (groups[0][1] === 2) return pack(1, [groups[0][0], ...uniq.filter(r => r !== groups[0][0])]);
+  return pack(0, rs);
+}
+
+// лучшая пятёрка из семи карт
+export function score7(c: PC[]): number {
+  if (c.length < 5) return -1;
+  let best = -1;
+  const n = c.length;
+  for (let a = 0; a < n - 4; a++)
+    for (let b = a + 1; b < n - 3; b++)
+      for (let d = b + 1; d < n - 2; d++)
+        for (let e = d + 1; e < n - 1; e++)
+          for (let f = e + 1; f < n; f++) {
+            const v = score5([c[a], c[b], c[d], c[e], c[f]]);
+            if (v > best) best = v;
+          }
+  return best;
+}
+
+export const HAND_NAMES = [
+  "старшая карта", "пара", "две пары", "тройка", "стрит",
+  "флеш", "фулл-хаус", "каре", "стрит-флеш",
+];
+export function handCat(score: number): number {
+  return Math.floor(score / (13 ** 5));
+}
+export function handName(score: number): string {
+  return HAND_NAMES[handCat(score)] || "";
+}
+
+// то, что видит игрок p: свои карты целиком, чужие — только рубашки,
+// и лишь на вскрытии показываем руки тех, кто дошёл до конца
+export function pokerView(s: PSt, p: number) {
+  const inHand = s.stacks.map((_, i) => i).filter(i => alive(s, i));
+  const shown = s.show && inHand.length > 1;
+  return {
+    me: p,
+    hand: s.hands[p] ?? [],
+    board: s.board,
+    stacks: s.stacks, bets: s.bets, paid: s.paid,
+    folded: s.folded, allin: s.allin, out: s.out,
+    btn: s.btn, turn: s.turn, street: s.street,
+    pot: s.pot + s.bets.reduce((a, b) => a + b, 0),
+    toCall: s.toCall, minRaise: s.minRaise, sb: s.sb, bb: s.bb,
+    show: s.show,
+    hands: s.stacks.map((_, i) => (i === p || (shown && inHand.includes(i))) ? s.hands[i] : null),
+    best: s.show && s.res ? s.res.best : null,
+    res: s.res, over: s.over, handNo: s.hand,
+    log: s.log.slice(-6),
+    opts: pokerOptions(s, p),
+    ver: s.ver,
+  };
+}
+
+
+// «Двадцать одно» (блэкджек) на 2–5 игроков против дилера. Чистая логика без
+// ввода-вывода: этот же модуль гоняется тестами под node и используется
+// Edge Function. Фишки игровые, никаких денег.
+//
+// Правила, которые здесь зашиты:
+//   • колода из шести, тасуется каждый раунд — считать карты бессмысленно;
+//   • туз считается как 11 или 1 — берётся большее, при котором не перебор;
+//   • блэкджек (туз + десятка с первых двух карт) платит 3:2 и бьёт обычное
+//     21 из трёх и более карт;
+//   • дилер добирает до 17 и останавливается на любых 17, включая «мягкие»;
+//   • удвоение — только на первых двух картах, ровно одна карта добором;
+//   • сплит — на паре одинаковых достоинств, один раз; сплит тузов получает
+//     по одной карте на руку и дальше не добирает;
+//   • равенство — ничья, ставка возвращается.
+//   • Страховки и сдачи (surrender) намеренно нет — о них сказано в правилах.
+
+export type BC = { s: number; r: number };          // масть 0-3, ранг 0-12 (2..Т)
+export const B_MIN_SEATS = 1;
+export const B_MAX_SEATS = 5;
+export const B_START = 1000;
+export const B_MIN_BET = 10;
+export const B_DECKS = 6;
+
+export type BHand = { cards: BC[]; bet: number; done: boolean; doubled: boolean; split: boolean };
+export type BMove =
+  | { t: "bet"; amount: number }
+  | { t: "hit" } | { t: "stand" } | { t: "double" } | { t: "split" };
+
+export type BSt = {
+  shoe: BC[];
+  dealer: BC[];
+  hole: boolean;                                    // закрыта ли вторая карта дилера
+  hands: BHand[][];                                 // по игроку — одна или две руки
+  stacks: number[];
+  ready: boolean[];                                 // сделал ставку в этом раунде
+  out: boolean[];                                   // фишек не осталось
+  phase: "bet" | "play" | "done";
+  turn: number;
+  hi: number;                                       // активная рука текущего игрока
+  res: null | { win: number[]; text: string[] };    // итог раунда по игрокам
+  over: null | { winner: number };
+  round: number;
+  log: string[];
+  ver: number;
+};
+
+const bClone = (s: BSt): BSt => JSON.parse(JSON.stringify(s));
+
+export function shoe(rnd: () => number): BC[] {
+  const d: BC[] = [];
+  for (let k = 0; k < B_DECKS; k++)
+    for (let s = 0; s < 4; s++) for (let r = 0; r < 13; r++) d.push({ s, r });
+  for (let i = d.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [d[i], d[j]] = [d[j], d[i]];
+  }
+  return d;
+}
+
+// очки руки: туз считаем как 11, пока не перебор
+export function points(cards: BC[]): { total: number; soft: boolean } {
+  let total = 0, aces = 0;
+  for (const c of cards) {
+    if (c.r === 12) { aces++; total += 11; }        // туз
+    else total += Math.min(c.r + 2, 10);            // картинки по 10
+  }
+  let soft = aces > 0;
+  while (total > 21 && aces > 0) { total -= 10; aces--; soft = aces > 0; }
+  return { total, soft };
+}
+export const isBust = (h: BHand) => points(h.cards).total > 21;
+export const isBJ = (h: BHand) => !h.split && h.cards.length === 2 && points(h.cards).total === 21;
+
+export function bStart(seats: number, rnd: () => number = Math.random): BSt {
+  const n = Math.max(B_MIN_SEATS, Math.min(B_MAX_SEATS, seats | 0));
+  return {
+    shoe: [], dealer: [], hole: true,
+    hands: Array.from({ length: n }, () => []),
+    stacks: Array(n).fill(B_START),
+    ready: Array(n).fill(false),
+    out: Array(n).fill(false),
+    phase: "bet", turn: 0, hi: 0,
+    res: null, over: null, round: 0,
+    log: ["Делайте ставки"], ver: 1,
+  };
+}
+
+// новый раунд теми же стеками
+export function bNext(prev: BSt): BSt {
+  const s = bClone(prev);
+  s.out = s.stacks.map(v => v < B_MIN_BET);
+  if (s.out.every(o => o)) {                        // не на что играть
+    const best = s.stacks.indexOf(Math.max(...s.stacks));
+    s.over = { winner: best }; s.ver++;
+    return s;
+  }
+  s.dealer = []; s.hole = true;
+  s.hands = s.stacks.map(() => []);
+  s.ready = s.stacks.map((_, i) => s.out[i]);       // выбывшие «готовы» сразу
+  s.phase = "bet"; s.turn = 0; s.hi = 0; s.res = null;
+  s.log = ["Делайте ставки"];
+  s.ver++;
+  return s;
+}
+
+function dealRound(s: BSt, rnd: () => number) {
+  s.shoe = shoe(rnd);
+  for (let k = 0; k < 2; k++) {
+    for (let i = 0; i < s.hands.length; i++)
+      if (!s.out[i]) s.hands[i][0].cards.push(s.shoe.pop()!);
+    s.dealer.push(s.shoe.pop()!);
+  }
+  s.phase = "play";
+  s.log.push("Карты розданы");
+  // у кого сразу блэкджек — тот уже сходил
+  s.hands.forEach((hs, i) => { if (!s.out[i] && isBJ(hs[0])) { hs[0].done = true; s.log.push(`Игрок ${i + 1}: блэкджек!`); } });
+  s.turn = firstToAct(s);
+  s.hi = 0;
+  if (s.turn < 0) finish(s);
+}
+
+function firstToAct(s: BSt): number {
+  for (let i = 0; i < s.hands.length; i++)
+    if (!s.out[i] && s.hands[i].some(h => !h.done)) return i;
+  return -1;
+}
+
+export function bOptions(s: BSt, p: number) {
+  if (s.over || s.phase === "done") return null;
+  if (s.phase === "bet") {
+    if (s.out[p] || s.ready[p]) return null;
+    return { bet: true, min: B_MIN_BET, max: s.stacks[p] };
+  }
+  if (s.turn !== p) return null;
+  const h = s.hands[p][s.hi];
+  if (!h || h.done) return null;
+  const first = h.cards.length === 2;
+  const pair = first && h.cards[0].r === h.cards[1].r;
+  return {
+    bet: false,
+    canHit: true, canStand: true,
+    canDouble: first && s.stacks[p] >= h.bet,
+    canSplit: pair && s.hands[p].length === 1 && s.stacks[p] >= h.bet,
+    total: points(h.cards).total,
+  };
+}
+
+export function bApply(st: BSt, p: number, m: BMove, rnd: () => number = Math.random): BSt | string {
+  if (st.over) return "игра закончена";
+  if (p < 0 || p >= st.stacks.length) return "нет такого игрока";
+  if (st.out[p]) return "у тебя не осталось фишек";
+  const s = bClone(st);
+
+  if (s.phase === "bet") {
+    if (m.t !== "bet") return "сначала сделай ставку";
+    if (s.ready[p]) return "ставка уже принята";
+    const amount = Math.floor(m.amount);
+    if (!(amount >= B_MIN_BET)) return `минимальная ставка — ${B_MIN_BET}`;
+    if (amount > s.stacks[p]) return "столько фишек нет";
+    s.stacks[p] -= amount;
+    s.hands[p] = [{ cards: [], bet: amount, done: false, doubled: false, split: false }];
+    s.ready[p] = true;
+    s.log.push(`Игрок ${p + 1}: ставка ${amount}`);
+    if (s.ready.every(Boolean)) dealRound(s, rnd);
+    s.ver++;
+    return s;
+  }
+
+  if (s.phase !== "play") return "раунд уже сыгран";
+  if (s.turn !== p) return "сейчас не твой ход";
+  const o = bOptions(s, p);
+  if (!o || o.bet) return "сейчас ходить нельзя";
+  const h = s.hands[p][s.hi];
+
+  if (m.t === "hit") {
+    h.cards.push(s.shoe.pop()!);
+    const pt = points(h.cards).total;
+    s.log.push(`Игрок ${p + 1}: ещё карту — ${pt}`);
+    if (pt >= 21) h.done = true;
+  } else if (m.t === "stand") {
+    h.done = true;
+    s.log.push(`Игрок ${p + 1}: хватит (${points(h.cards).total})`);
+  } else if (m.t === "double") {
+    if (!o.canDouble) return "удвоить нельзя";
+    s.stacks[p] -= h.bet; h.bet *= 2; h.doubled = true;
+    h.cards.push(s.shoe.pop()!);
+    h.done = true;
+    s.log.push(`Игрок ${p + 1}: удвоил, ${points(h.cards).total}`);
+  } else if (m.t === "split") {
+    if (!o.canSplit) return "разделить нельзя";
+    const [a, b] = h.cards;
+    const bet = h.bet;
+    s.stacks[p] -= bet;
+    const aces = a.r === 12;
+    s.hands[p] = [
+      { cards: [a, s.shoe.pop()!], bet, done: aces, doubled: false, split: true },
+      { cards: [b, s.shoe.pop()!], bet, done: aces, doubled: false, split: true },
+    ];
+    s.log.push(`Игрок ${p + 1}: разделил${aces ? " тузы — по одной карте" : ""}`);
+  } else return "неизвестный ход";
+
+  // следующая рука или следующий игрок
+  if (s.hands[p].every(x => x.done)) {
+    const nx = nextPlayer(s, p);
+    if (nx < 0) finish(s, rnd);
+    else { s.turn = nx; s.hi = s.hands[nx].findIndex(x => !x.done); }
+  } else {
+    s.hi = s.hands[p].findIndex(x => !x.done);
+  }
+  s.ver++;
+  return s;
+}
+
+function nextPlayer(s: BSt, from: number): number {
+  for (let i = from + 1; i < s.hands.length; i++)
+    if (!s.out[i] && s.hands[i].some(h => !h.done)) return i;
+  return -1;
+}
+
+// дилер добирает и считаем итоги
+function finish(s: BSt, rnd: () => number = Math.random) {
+  s.hole = false;
+  const anyAlive = s.hands.some((hs, i) => !s.out[i] && hs.some(h => !isBust(h)));
+  if (anyAlive) {
+    while (points(s.dealer).total < 17) s.dealer.push(s.shoe.pop()!);
+  }
+  const dt = points(s.dealer).total;
+  const dbj = s.dealer.length === 2 && dt === 21;
+  s.log.push(dbj ? "У дилера блэкджек" : `Дилер: ${dt}${dt > 21 ? " — перебор" : ""}`);
+
+  const win = s.stacks.map(() => 0);
+  const text = s.stacks.map(() => "");
+  s.hands.forEach((hs, i) => {
+    if (s.out[i]) { text[i] = "вне раунда"; return; }
+    const parts: string[] = [];
+    for (const h of hs) {
+      const pt = points(h.cards).total;
+      let gain = 0, why = "";
+      if (isBust(h)) { gain = 0; why = "перебор"; }
+      else if (isBJ(h) && !dbj) { gain = Math.floor(h.bet * 2.5); why = "блэкджек 3:2"; }
+      else if (isBJ(h) && dbj) { gain = h.bet; why = "ничья — у обоих блэкджек"; }
+      else if (dbj) { gain = 0; why = "у дилера блэкджек"; }
+      else if (dt > 21) { gain = h.bet * 2; why = "перебор у дилера"; }
+      else if (pt > dt) { gain = h.bet * 2; why = `${pt} против ${dt}`; }
+      else if (pt === dt) { gain = h.bet; why = `ничья ${pt}`; }
+      else { gain = 0; why = `${pt} против ${dt}`; }
+      s.stacks[i] += gain;
+      win[i] += gain - h.bet;
+      parts.push(why);
+    }
+    text[i] = parts.join(" · ");
+  });
+  s.res = { win, text };
+  s.phase = "done";
+  s.turn = -1;
+}
+
+// то, что видит игрок p: закрытая карта дилера не уходит клиенту вовсе
+export function bView(s: BSt, p: number) {
+  const dealer = s.hole && s.phase !== "done" ? s.dealer.slice(0, 1) : s.dealer;
+  return {
+    me: p,
+    dealer,
+    dealerPts: s.hole && s.phase !== "done" ? points(dealer).total : points(s.dealer).total,
+    hole: s.hole && s.phase !== "done",
+    hands: s.hands.map(hs => hs.map(h => ({
+      cards: h.cards, bet: h.bet, done: h.done, doubled: h.doubled, split: h.split,
+      pts: points(h.cards).total, soft: points(h.cards).soft,
+      bust: isBust(h), bj: isBJ(h),
+    }))),
+    stacks: s.stacks, ready: s.ready, out: s.out,
+    phase: s.phase, turn: s.turn, hi: s.hi,
+    res: s.res, over: s.over, round: s.round,
+    minBet: B_MIN_BET,
+    opts: bOptions(s, p),
+    log: s.log.slice(-6),
+    left: s.shoe.length,
+    ver: s.ver,
+  };
+}
+
+
+// Edge Function: столы для карточных игр — «дурак» на 2–4 и холдем на 2–5.
 // Всё состояние партии живёт здесь: клиент не может увидеть чужие карты и
 // не может сходить не по правилам — каждый ход проверяется движком.
+// Обе игры в одной функции нарочно: так на проекте достаточно одного деплоя.
 //
 // Deploy:  supabase functions deploy durak --no-verify-jwt
 // Secrets: те же, что у submit-rank (BOT_TOKEN, PROJECT_URL, SERVICE_ROLE_KEY)
@@ -289,7 +958,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 // Сообщение в личку через Bot API: хозяин узнаёт о сопернике, даже если
 // свернул приложение. Кнопка открывает мини-апп сразу в нужной комнате.
-async function tgNotify(chatId: string, text: string, code: string) {
+async function tgNotify(chatId: string, text: string, code: string, link: "dk" | "pk" | "bj" = "dk") {
   if (!BOT_TOKEN || !chatId) return;
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -299,7 +968,7 @@ async function tgNotify(chatId: string, text: string, code: string) {
         chat_id: chatId,
         text,
         parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: "🂡 За стол", web_app: { url: `${WEBAPP_URL}#dk=${code}` } }]] },
+        reply_markup: { inline_keyboard: [[{ text: "🂡 За стол", web_app: { url: `${WEBAPP_URL}#${link}=${code}` } }]] },
       }),
     });
   } catch { /* уведомление не критично — партия уже началась */ }
@@ -313,18 +982,36 @@ const code4 = () => {
 type Seat = { uid: string; name: string; emoji: string };
 const seatsOf = (room: any): Seat[] => (Array.isArray(room.players) ? room.players : []);
 const seatIx = (room: any, uid: string) => seatsOf(room).findIndex(p => String(p.uid) === uid);
-const roomSize = (room: any) => Math.max(MIN_SEATS, Math.min(MAX_SEATS, Number(room.seats) || 2));
+type Game = "durak" | "poker" | "bj";
+const GAMES: Game[] = ["durak", "poker", "bj"];
+const gameOf = (room: any): Game => GAMES.includes(room?.game) ? room.game : "durak";
+const limits = (g: string) =>
+  g === "poker" ? { min: P_MIN_SEATS, max: P_MAX_SEATS }
+  : g === "bj"  ? { min: B_MIN_SEATS, max: B_MAX_SEATS }
+  : { min: MIN_SEATS, max: MAX_SEATS };
+// новая партия выбранной игры
+const startGame = (g: Game, size: number) =>
+  g === "poker" ? pokerStart(size) : g === "bj" ? bStart(size) : deal(size);
+const roomSize = (room: any) => {
+  const l = limits(gameOf(room));
+  return Math.max(l.min, Math.min(l.max, Number(room.seats) || 2));
+};
 
 // что отдаём клиенту: партия его глазами + кто сидит за столом.
 // uid соседей наружу не уходит — клиенту хватает имени и эмодзи.
 function room2client(room: any, uid: string) {
   const list = seatsOf(room);
   const me = seatIx(room, uid);
+  const g = gameOf(room);
   const out: Record<string, unknown> = {
-    code: room.code, status: room.status, seats: roomSize(room), me,
+    code: room.code, status: room.status, seats: roomSize(room), game: g, me,
     players: list.map(p => ({ name: p.name, emoji: p.emoji })),
   };
-  if (room.st && me >= 0) out.g = view(room.st as St, me);
+  if (room.st && me >= 0) {
+    out.g = g === "poker" ? pokerView(room.st as PSt, me)
+          : g === "bj"    ? bView(room.st as BSt, me)
+          : view(room.st as St, me);
+  }
   return out;
 }
 
@@ -342,10 +1029,15 @@ Deno.serve(async (req: Request) => {
   const emoji = String(body.emoji || "🙂").slice(0, 8);
   const action = String(body.action || "");
 
+  const wantGame: Game = GAMES.includes(body.game) ? body.game : "durak";
+
   if (action === "create") {
-    const seats = Math.max(MIN_SEATS, Math.min(MAX_SEATS, Number(body.seats) || 2));
+    const l = limits(wantGame);
+    const seats = Math.max(l.min, Math.min(l.max, Number(body.seats) || 2));
     const code = code4();
     const me: Seat = { uid, name, emoji };
+    // стол на одного («21» против дилера) начинается сразу, ждать некого
+    const solo = seats <= 1;
     const r = await q("durak_rooms", {
       method: "POST",
       headers: { Prefer: "return=representation" },
@@ -353,7 +1045,8 @@ Deno.serve(async (req: Request) => {
       // host_uid объявлена not null, да и уведомления удобнее слать по ней
       body: JSON.stringify({
         code, host_uid: uid, host_name: name, host_emoji: emoji,
-        seats, players: [me], status: "wait",
+        game: wantGame, seats, players: [me],
+        ...(solo ? { st: startGame(wantGame, seats), status: "play" } : { status: "wait" }),
       }),
     });
     if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
@@ -367,12 +1060,14 @@ Deno.serve(async (req: Request) => {
     q(`durak_rooms?updated_at=lt.${new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()}`,
       { method: "DELETE", headers: { Prefer: "return=minimal" } }).catch(() => {});
     const r = await q(`durak_rooms?status=eq.wait&updated_at=gte.${fresh}` +
-      `&select=code,seats,players,updated_at&order=updated_at.desc&limit=30`);
+      `&game=eq.${wantGame}` +
+      `&select=code,game,seats,players,updated_at&order=updated_at.desc&limit=30`);
     if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
     const rows = await r.json();
     return json({
       rooms: rows.map((x: any) => ({
         code: x.code,
+        game: gameOf(x),
         seats: roomSize(x),
         taken: seatsOf(x).length,
         mine: seatIx(x, uid) >= 0,
@@ -398,7 +1093,7 @@ Deno.serve(async (req: Request) => {
 
     const players = [...list, { uid, name, emoji }];
     const full = players.length >= size;
-    const st = full ? deal(size) : null;
+    const st = full ? startGame(gameOf(room), size) : null;
     const status = full ? "play" : "wait";
     await saveRoom(code, { players, ...(st ? { st } : {}), status });
 
@@ -407,7 +1102,8 @@ Deno.serve(async (req: Request) => {
     const what = full
       ? `${emoji} <b>${esc(name)}</b> зашёл — стол собрался, партия началась!`
       : `${emoji} <b>${esc(name)}</b> сел за стол <code>${code}</code> — ждём ещё ${size - players.length}.`;
-    for (const p of list) await tgNotify(String(p.uid), what, code);
+    const link = ({ poker: "pk", bj: "bj", durak: "dk" } as const)[gameOf(room)];
+    for (const p of list) await tgNotify(String(p.uid), what, code, link);
 
     return json(room2client({ ...room, players, st: st ?? room.st, status }, uid));
   }
@@ -431,18 +1127,45 @@ Deno.serve(async (req: Request) => {
     const me = seatIx(room, uid);
     if (me < 0) return json({ error: "ты не за этим столом" }, 403);
     if (!room.st) return json({ error: "партия ещё не началась" }, 409);
-    const res = apply(room.st as St, me, body.move as Move);
+    const g = gameOf(room);
+    const res = g === "poker" ? pokerApply(room.st as PSt, me, body.move as PMove)
+              : g === "bj"    ? bApply(room.st as BSt, me, body.move as BMove)
+              : apply(room.st as St, me, body.move as Move);
     if (typeof res === "string") return json({ error: res, ...room2client(room, uid) }, 200);
-    const status = res.over ? "done" : "play";
+    const status = (res as any).over ? "done" : "play";
     await saveRoom(code, { st: res, status });
     return json(room2client({ ...room, st: res, status }, uid));
+  }
+
+  // следующая раздача: в холдеме кнопка едет дальше, в «21» новый круг ставок
+  if (action === "next") {
+    const me = seatIx(room, uid);
+    if (me < 0) return json({ error: "ты не за этим столом" }, 403);
+    const g = gameOf(room);
+    if (g === "durak") return json({ error: "в дураке это «ещё партию»" }, 400);
+    if (!room.st) return json({ error: "партия ещё не началась" }, 409);
+    let st: PSt | BSt;
+    if (g === "poker") {
+      const cur = room.st as PSt;
+      if (cur.over) return json({ error: "игра закончена — начните заново" }, 409);
+      if (cur.street < 4) return json({ error: "раздача ещё идёт" }, 409);
+      st = pokerDeal(cur);
+    } else {
+      const cur = room.st as BSt;
+      if (cur.over) return json({ error: "игра закончена — начните заново" }, 409);
+      if (cur.phase !== "done") return json({ error: "раунд ещё идёт" }, 409);
+      st = bNext(cur);
+    }
+    const status = (st as any).over ? "done" : "play";
+    await saveRoom(code, { st, status });
+    return json(room2client({ ...room, st, status }, uid));
   }
 
   if (action === "rematch") {
     if (room.status !== "done") return json({ error: "партия ещё идёт" }, 409);
     const size = roomSize(room);
     if (seatsOf(room).length < size) return json({ error: "за столом не все" }, 409);
-    const st = deal(size);
+    const st = startGame(gameOf(room), size);
     await saveRoom(code, { st, status: "play" });
     return json(room2client({ ...room, st, status: "play" }, uid));
   }

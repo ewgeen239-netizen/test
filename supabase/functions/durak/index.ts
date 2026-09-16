@@ -1,10 +1,19 @@
-// Edge Function: durak — комнаты «дурака» на 2–4 игроков.
+// Edge Function: столы для карточных игр — «дурак» на 2–4 и холдем на 2–5.
 // Всё состояние партии живёт здесь: клиент не может увидеть чужие карты и
 // не может сходить не по правилам — каждый ход проверяется движком.
+// Обе игры в одной функции нарочно: так на проекте достаточно одного деплоя.
 //
 // Deploy:  supabase functions deploy durak --no-verify-jwt
 // Secrets: те же, что у submit-rank (BOT_TOKEN, PROJECT_URL, SERVICE_ROLE_KEY)
 import { apply, deal, MAX_SEATS, MIN_SEATS, view, type Move, type St } from "./engine.ts";
+import {
+  pokerApply, pokerDeal, pokerStart, pokerView,
+  P_MAX_SEATS, P_MIN_SEATS, type PMove, type PSt,
+} from "./poker.ts";
+import {
+  bApply, bNext, bStart, bView,
+  B_MAX_SEATS, B_MIN_SEATS, type BMove, type BSt,
+} from "./blackjack.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const PROJECT_URL = Deno.env.get("PROJECT_URL")!;
@@ -59,7 +68,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 // Сообщение в личку через Bot API: хозяин узнаёт о сопернике, даже если
 // свернул приложение. Кнопка открывает мини-апп сразу в нужной комнате.
-async function tgNotify(chatId: string, text: string, code: string) {
+async function tgNotify(chatId: string, text: string, code: string, link: "dk" | "pk" | "bj" = "dk") {
   if (!BOT_TOKEN || !chatId) return;
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -69,7 +78,7 @@ async function tgNotify(chatId: string, text: string, code: string) {
         chat_id: chatId,
         text,
         parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: "🂡 За стол", web_app: { url: `${WEBAPP_URL}#dk=${code}` } }]] },
+        reply_markup: { inline_keyboard: [[{ text: "🂡 За стол", web_app: { url: `${WEBAPP_URL}#${link}=${code}` } }]] },
       }),
     });
   } catch { /* уведомление не критично — партия уже началась */ }
@@ -83,18 +92,36 @@ const code4 = () => {
 type Seat = { uid: string; name: string; emoji: string };
 const seatsOf = (room: any): Seat[] => (Array.isArray(room.players) ? room.players : []);
 const seatIx = (room: any, uid: string) => seatsOf(room).findIndex(p => String(p.uid) === uid);
-const roomSize = (room: any) => Math.max(MIN_SEATS, Math.min(MAX_SEATS, Number(room.seats) || 2));
+type Game = "durak" | "poker" | "bj";
+const GAMES: Game[] = ["durak", "poker", "bj"];
+const gameOf = (room: any): Game => GAMES.includes(room?.game) ? room.game : "durak";
+const limits = (g: string) =>
+  g === "poker" ? { min: P_MIN_SEATS, max: P_MAX_SEATS }
+  : g === "bj"  ? { min: B_MIN_SEATS, max: B_MAX_SEATS }
+  : { min: MIN_SEATS, max: MAX_SEATS };
+// новая партия выбранной игры
+const startGame = (g: Game, size: number) =>
+  g === "poker" ? pokerStart(size) : g === "bj" ? bStart(size) : deal(size);
+const roomSize = (room: any) => {
+  const l = limits(gameOf(room));
+  return Math.max(l.min, Math.min(l.max, Number(room.seats) || 2));
+};
 
 // что отдаём клиенту: партия его глазами + кто сидит за столом.
 // uid соседей наружу не уходит — клиенту хватает имени и эмодзи.
 function room2client(room: any, uid: string) {
   const list = seatsOf(room);
   const me = seatIx(room, uid);
+  const g = gameOf(room);
   const out: Record<string, unknown> = {
-    code: room.code, status: room.status, seats: roomSize(room), me,
+    code: room.code, status: room.status, seats: roomSize(room), game: g, me,
     players: list.map(p => ({ name: p.name, emoji: p.emoji })),
   };
-  if (room.st && me >= 0) out.g = view(room.st as St, me);
+  if (room.st && me >= 0) {
+    out.g = g === "poker" ? pokerView(room.st as PSt, me)
+          : g === "bj"    ? bView(room.st as BSt, me)
+          : view(room.st as St, me);
+  }
   return out;
 }
 
@@ -112,10 +139,15 @@ Deno.serve(async (req: Request) => {
   const emoji = String(body.emoji || "🙂").slice(0, 8);
   const action = String(body.action || "");
 
+  const wantGame: Game = GAMES.includes(body.game) ? body.game : "durak";
+
   if (action === "create") {
-    const seats = Math.max(MIN_SEATS, Math.min(MAX_SEATS, Number(body.seats) || 2));
+    const l = limits(wantGame);
+    const seats = Math.max(l.min, Math.min(l.max, Number(body.seats) || 2));
     const code = code4();
     const me: Seat = { uid, name, emoji };
+    // стол на одного («21» против дилера) начинается сразу, ждать некого
+    const solo = seats <= 1;
     const r = await q("durak_rooms", {
       method: "POST",
       headers: { Prefer: "return=representation" },
@@ -123,7 +155,8 @@ Deno.serve(async (req: Request) => {
       // host_uid объявлена not null, да и уведомления удобнее слать по ней
       body: JSON.stringify({
         code, host_uid: uid, host_name: name, host_emoji: emoji,
-        seats, players: [me], status: "wait",
+        game: wantGame, seats, players: [me],
+        ...(solo ? { st: startGame(wantGame, seats), status: "play" } : { status: "wait" }),
       }),
     });
     if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
@@ -137,12 +170,14 @@ Deno.serve(async (req: Request) => {
     q(`durak_rooms?updated_at=lt.${new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()}`,
       { method: "DELETE", headers: { Prefer: "return=minimal" } }).catch(() => {});
     const r = await q(`durak_rooms?status=eq.wait&updated_at=gte.${fresh}` +
-      `&select=code,seats,players,updated_at&order=updated_at.desc&limit=30`);
+      `&game=eq.${wantGame}` +
+      `&select=code,game,seats,players,updated_at&order=updated_at.desc&limit=30`);
     if (!r.ok) return json({ error: "db", detail: await r.text() }, 500);
     const rows = await r.json();
     return json({
       rooms: rows.map((x: any) => ({
         code: x.code,
+        game: gameOf(x),
         seats: roomSize(x),
         taken: seatsOf(x).length,
         mine: seatIx(x, uid) >= 0,
@@ -168,7 +203,7 @@ Deno.serve(async (req: Request) => {
 
     const players = [...list, { uid, name, emoji }];
     const full = players.length >= size;
-    const st = full ? deal(size) : null;
+    const st = full ? startGame(gameOf(room), size) : null;
     const status = full ? "play" : "wait";
     await saveRoom(code, { players, ...(st ? { st } : {}), status });
 
@@ -177,7 +212,8 @@ Deno.serve(async (req: Request) => {
     const what = full
       ? `${emoji} <b>${esc(name)}</b> зашёл — стол собрался, партия началась!`
       : `${emoji} <b>${esc(name)}</b> сел за стол <code>${code}</code> — ждём ещё ${size - players.length}.`;
-    for (const p of list) await tgNotify(String(p.uid), what, code);
+    const link = ({ poker: "pk", bj: "bj", durak: "dk" } as const)[gameOf(room)];
+    for (const p of list) await tgNotify(String(p.uid), what, code, link);
 
     return json(room2client({ ...room, players, st: st ?? room.st, status }, uid));
   }
@@ -201,18 +237,45 @@ Deno.serve(async (req: Request) => {
     const me = seatIx(room, uid);
     if (me < 0) return json({ error: "ты не за этим столом" }, 403);
     if (!room.st) return json({ error: "партия ещё не началась" }, 409);
-    const res = apply(room.st as St, me, body.move as Move);
+    const g = gameOf(room);
+    const res = g === "poker" ? pokerApply(room.st as PSt, me, body.move as PMove)
+              : g === "bj"    ? bApply(room.st as BSt, me, body.move as BMove)
+              : apply(room.st as St, me, body.move as Move);
     if (typeof res === "string") return json({ error: res, ...room2client(room, uid) }, 200);
-    const status = res.over ? "done" : "play";
+    const status = (res as any).over ? "done" : "play";
     await saveRoom(code, { st: res, status });
     return json(room2client({ ...room, st: res, status }, uid));
+  }
+
+  // следующая раздача: в холдеме кнопка едет дальше, в «21» новый круг ставок
+  if (action === "next") {
+    const me = seatIx(room, uid);
+    if (me < 0) return json({ error: "ты не за этим столом" }, 403);
+    const g = gameOf(room);
+    if (g === "durak") return json({ error: "в дураке это «ещё партию»" }, 400);
+    if (!room.st) return json({ error: "партия ещё не началась" }, 409);
+    let st: PSt | BSt;
+    if (g === "poker") {
+      const cur = room.st as PSt;
+      if (cur.over) return json({ error: "игра закончена — начните заново" }, 409);
+      if (cur.street < 4) return json({ error: "раздача ещё идёт" }, 409);
+      st = pokerDeal(cur);
+    } else {
+      const cur = room.st as BSt;
+      if (cur.over) return json({ error: "игра закончена — начните заново" }, 409);
+      if (cur.phase !== "done") return json({ error: "раунд ещё идёт" }, 409);
+      st = bNext(cur);
+    }
+    const status = (st as any).over ? "done" : "play";
+    await saveRoom(code, { st, status });
+    return json(room2client({ ...room, st, status }, uid));
   }
 
   if (action === "rematch") {
     if (room.status !== "done") return json({ error: "партия ещё идёт" }, 409);
     const size = roomSize(room);
     if (seatsOf(room).length < size) return json({ error: "за столом не все" }, 409);
-    const st = deal(size);
+    const st = startGame(gameOf(room), size);
     await saveRoom(code, { st, status: "play" });
     return json(room2client({ ...room, st, status: "play" }, uid));
   }

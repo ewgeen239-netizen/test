@@ -114,7 +114,7 @@ create policy "sol read" on public.sol_leaderboard for select using (true);
 
 
 -- ─────────────────────────────────────────────────────────────
--- 3c. КОМНАТЫ «ДУРАКА». Состояние партии целиком на сервере, чтобы
+-- 3c. ИГРОВЫЕ СТОЛЫ («дурак» и холдем). Состояние партии целиком на сервере,
 --     клиент не видел чужих карт и не мог сходить не по правилам.
 --     Таблица приватная: ни читать, ни писать анон-ключом нельзя,
 --     работает с ней только Edge Function durak (service_role).
@@ -138,6 +138,9 @@ create table if not exists public.durak_rooms (
 -- (колонки guest_* остаются от старой схемы — они больше не используются).
 alter table public.durak_rooms add column if not exists seats   integer default 2;
 alter table public.durak_rooms add column if not exists players  jsonb  default '[]'::jsonb;
+-- за одним столом теперь может идти не только «дурак», но и холдем
+alter table public.durak_rooms add column if not exists game    text   default 'durak';
+update public.durak_rooms set game = 'durak' where game is null;
 
 -- старые комнаты «на двоих» переводим на новый формат, чтобы не потерять
 update public.durak_rooms
@@ -148,7 +151,7 @@ update public.durak_rooms
        ) end
  where players is null or jsonb_array_length(players) = 0;
 
-create index if not exists durak_rooms_open_idx on public.durak_rooms (status, updated_at desc);
+create index if not exists durak_rooms_open_idx on public.durak_rooms (game, status, updated_at desc);
 
 create index if not exists durak_rooms_updated_idx on public.durak_rooms (updated_at desc);
 
