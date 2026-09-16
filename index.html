@@ -1429,7 +1429,7 @@ select.fl-in{appearance:none}
   <div class="pad" style="padding-top:12px">
     <div class="hs-tabs">
       <div class="hs-tab act" id="rk-tab-bonus" onclick="switchRank('bonus')">💰 ПРЕМИЯ</div>
-      <div class="hs-tab"     id="rk-tab-sol"   onclick="switchRank('sol')">🃏 ПАСЬЯНС</div>
+      <div class="hs-tab"     id="rk-tab-cards" onclick="switchRank('cards')">🃏 КАРТЫ</div>
     </div>
   </div>
 
@@ -1444,11 +1444,14 @@ select.fl-in{appearance:none}
     <div class="pad" style="padding-bottom:84px"><div id="rank-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
   </div>
 
-  <!-- ПАСЬЯНС -->
-  <div id="rk-sol" style="display:none">
-    <div class="pad" style="padding-top:2px"><div id="sol-me"></div></div>
-    <div style="padding:10px 16px 6px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">🏆 Топ по победам в пасьянсе</div>
-    <div class="pad" style="padding-bottom:84px"><div id="sol-rank-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
+  <!-- КАРТЫ: подвкладка на каждую игру -->
+  <div id="rk-cards" style="display:none">
+    <div class="pad" style="padding-top:0">
+      <div class="hs-tabs cd-tabs" id="rk-games"></div>
+    </div>
+    <div class="pad" style="padding-top:2px"><div id="rk-me"></div></div>
+    <div id="rk-cap" style="padding:10px 16px 6px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--sub);text-transform:uppercase">🏆 Топ</div>
+    <div class="pad" style="padding-bottom:84px"><div id="rk-list"><div class="empty">ЗАГРУЗКА…</div></div></div>
   </div>
 </div>
 
@@ -3252,46 +3255,107 @@ function solOpen(){
   } else { solRender(); solTick(false); }
 }
 
-// ══ РЕЙТИНГ ПАСЬЯНСА ═════════════════════════════════════════
-let rankTab='bonus';
+// ══ РЕЙТИНГ ПО КАРТАМ ════════════════════════════════════════
+// Все четыре игры лежат в одной таблице game_stats: косынка попадает туда
+// зеркалом из sol_leaderboard, сетевые игры пишет сама Edge Function по
+// итогу партии — клиенту тут верить нельзя.
+const RK_GAMES = {
+  sol:   { tab:'🃏 КОСЫНКА', cap:'Топ по победам в косынке',
+           unit:'побед', note:'Победа — собранная партия.' },
+  durak: { tab:'🂡 ДУРАК',   cap:'Топ по победам в дураке',
+           unit:'побед', note:'Победа — любое место, кроме дурака.' },
+  pk:    { tab:'♠ ПОКЕР',   cap:'Топ по выигранным столам',
+           unit:'столов', note:'Победа — забрал все фишки за столом.', key:'poker' },
+  bj:    { tab:'🂱 21',      cap:'Топ по выигранным раундам',
+           unit:'раундов', note:'Победа — раунд, закрытый в плюс.' },
+};
+let rankTab='bonus', rkGame = 'sol';
+
 function switchRank(t){
   rankTab=t;
   document.getElementById('rk-tab-bonus').classList.toggle('act',t==='bonus');
-  document.getElementById('rk-tab-sol').classList.toggle('act',t==='sol');
+  document.getElementById('rk-tab-cards').classList.toggle('act',t==='cards');
   document.getElementById('rk-bonus').style.display = t==='bonus'?'block':'none';
-  document.getElementById('rk-sol').style.display   = t==='sol'?'block':'none';
+  document.getElementById('rk-cards').style.display = t==='cards'?'block':'none';
   rRankTab();
 }
-function rRankTab(){ rankTab==='sol' ? rSolRank() : rRating(); }
+function rRankTab(){
+  if(RK_GAMES[DB.rkGame]) rkGame = DB.rkGame;
+  rankTab==='cards' ? rCards() : rRating();
+}
 
-// свои показатели берём из локальной статистики — видны даже без связи
-function renderSolMe(){
-  const el=document.getElementById('sol-me'); if(!el) return;
-  const st=DB.solStats||{played:0,won:0,best:null};
-  const rate = st.played ? Math.round(st.won/st.played*100) : 0;
+function switchRkGame(g){
+  rkGame = RK_GAMES[g] ? g : 'sol';
+  DB.rkGame = rkGame; sv();
+  rCards();
+}
+
+function rkGamesBar(){
+  const el=document.getElementById('rk-games'); if(!el) return;
+  el.innerHTML = Object.entries(RK_GAMES).map(([k,v])=>
+    `<div class="hs-tab${k===rkGame?' act':''}" id="rk-g-${k}" onclick="switchRkGame('${k}')">${v.tab}</div>`).join('');
+}
+
+function rCards(){
+  if(!RK_GAMES[rkGame]) rkGame='sol';
+  const cfg = RK_GAMES[rkGame];
+  rkGamesBar();
+  document.getElementById('rk-cap').textContent = '🏆 '+cfg.cap;
+  rkMe();
+  if(rkGame==='sol') pushSolRank();               // косынка считается на устройстве
+  const wrap=document.getElementById('rk-list');
+  wrap.innerHTML='<div class="empty">ЗАГРУЗКА…</div>';
+  const game = cfg.key || rkGame;
+  const want = rkGame;
+  fetch(`${SB_URL}/rest/v1/game_stats?game=eq.${game}&order=wins.desc,score.desc&limit=100`,{headers:SB_HEAD})
+    .then(r=>r.ok?r.json():Promise.reject(r.status))
+    .then(rows=>{ if(rkGame===want) rkList(rows||[]); })
+    .catch(()=>{ if(rkGame!==want) return;
+      wrap.innerHTML='<div class="empty">НЕТ СВЯЗИ С БАЗОЙ</div>'+
+      '<div class="ar-hint" style="margin-top:8px">Свои показатели выше считаются на устройстве и попадут в общий топ, когда связь появится.</div>'; });
+}
+
+// своя карточка: в косынке — из локальной статистики (видна и без связи),
+// в сетевых играх считает сервер, поэтому берём свою строку из общего топа
+function rkMe(){
+  const el=document.getElementById('rk-me'); if(!el) return;
+  if(rkGame==='sol'){
+    const st=DB.solStats||{played:0,won:0,best:null};
+    const rate = st.played ? Math.round(st.won/st.played*100) : 0;
+    el.innerHTML=`<div class="sol-hud" style="margin-bottom:10px">
+      <div class="sol-hud-c"><div class="sol-hud-v" style="color:var(--accent)">${st.won||0}</div><div class="sol-hud-l">моих побед</div></div>
+      <div class="sol-hud-c"><div class="sol-hud-v">${st.played||0}</div><div class="sol-hud-l">партий</div></div>
+      <div class="sol-hud-c"><div class="sol-hud-v">${st.best?solTime(st.best):'—'}</div><div class="sol-hud-l">лучшее время</div></div>
+    </div>
+    <div class="sol-stats" style="margin:0 0 4px"><span>Доля побед: <b>${rate}%</b></span>
+      <span>Лучший счёт: <b>${st.bestScore||0}</b></span></div>`;
+    return;
+  }
+  const mine = rkMine[rkGame];
+  const cfg = RK_GAMES[rkGame];
+  if(!mine){
+    el.innerHTML=`<div class="ar-hint">${esc(cfg.note)} Сыграй партию — появишься в топе.</div>`;
+    return;
+  }
+  const rate = mine.played ? Math.round((mine.wins||0)/mine.played*100) : 0;
+  const chips = rkGame==='sol' ? '' : `
+    <div class="sol-hud-c"><div class="sol-hud-v" style="color:${(mine.score||0)>=0?'var(--green)':'var(--red)'}">${
+      (mine.score||0)>0?'+':''}${Math.round(mine.score||0)}</div><div class="sol-hud-l">фишек</div></div>`;
   el.innerHTML=`<div class="sol-hud" style="margin-bottom:10px">
-    <div class="sol-hud-c"><div class="sol-hud-v" style="color:var(--accent)">${st.won||0}</div><div class="sol-hud-l">моих побед</div></div>
-    <div class="sol-hud-c"><div class="sol-hud-v">${st.played||0}</div><div class="sol-hud-l">партий</div></div>
-    <div class="sol-hud-c"><div class="sol-hud-v">${st.best?solTime(st.best):'—'}</div><div class="sol-hud-l">лучшее время</div></div>
+    <div class="sol-hud-c"><div class="sol-hud-v" style="color:var(--accent)">${mine.wins||0}</div><div class="sol-hud-l">моих побед</div></div>
+    <div class="sol-hud-c"><div class="sol-hud-v">${mine.played||0}</div><div class="sol-hud-l">партий</div></div>
+    ${chips}
   </div>
   <div class="sol-stats" style="margin:0 0 4px"><span>Доля побед: <b>${rate}%</b></span>
-    <span>Лучший счёт: <b>${st.bestScore||0}</b></span></div>`;
+    <span>${esc(cfg.note)}</span></div>`;
 }
 
-function rSolRank(){
-  renderSolMe();
-  pushSolRank();                                  // заодно обновляем свою строку на сервере
-  const wrap=document.getElementById('sol-rank-list');
-  wrap.innerHTML='<div class="empty">ЗАГРУЗКА…</div>';
-  fetch(SB_URL+'/rest/v1/sol_leaderboard?order=wins.desc,best_sec.asc&limit=100',{headers:SB_HEAD})
-    .then(r=>r.ok?r.json():Promise.reject(r.status))
-    .then(rows=>renderSolRank(rows||[]))
-    .catch(()=>{ wrap.innerHTML='<div class="empty">НЕТ СВЯЗИ С БАЗОЙ</div>'+
-      '<div class="ar-hint" style="margin-top:8px">Свои победы выше считаются на устройстве и попадут в общий топ, когда связь появится.</div>'; });
-}
-
-function renderSolRank(rows){
-  const wrap=document.getElementById('sol-rank-list');
+let rkMine = {};                                  // своя строка по каждой игре
+function rkList(rows){
+  const wrap=document.getElementById('rk-list');
+  const cfg=RK_GAMES[rkGame];
+  rkMine[rkGame] = rows.find(r=>String(r.uid)===String(DB.uid)) || null;
+  if(rkGame!=='sol') rkMe();                      // своя карточка ждала данных
   if(!rows.length){ wrap.innerHTML='<div class="empty">ПОКА НИКОГО · БУДЬ ПЕРВЫМ</div>'; return; }
   const medal=['🥇','🥈','🥉'];
   wrap.innerHTML=rows.map((r,i)=>{
@@ -3301,14 +3365,17 @@ function renderSolRank(rows){
       ? `<img src="${esc(r.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`
       : esc(r.emoji||'🃏');
     const rate=r.played?Math.round((r.wins||0)/r.played*100):0;
+    const extra = rkGame==='sol'
+      ? (r.best_sec?' · лучшее '+solTime(r.best_sec):'')
+      : (r.score ? ` · ${r.score>0?'+':''}${Math.round(r.score)} фишек` : '');
     return `<div class="strow" style="${me?'border-color:var(--accent);background:rgba(232,255,0,.03)':''}">
       <div style="width:26px;text-align:center;font-weight:800;font-size:14px;color:var(--sub);flex-shrink:0">${rk}</div>
       <div class="strow-ic" style="background:var(--c3);border:1px solid var(--line2);font-size:16px;overflow:hidden">${av}</div>
       <div class="strow-body">
         <div class="strow-name">${esc(r.name||'Аноним')}${me?' <span style="color:var(--accent);font-size:9px">· ТЫ</span>':''}</div>
-        <div class="strow-meta">${r.played||0} партий · ${rate}% побед${r.best_sec?' · лучшее '+solTime(r.best_sec):''}</div>
+        <div class="strow-meta">${r.played||0} партий · ${rate}% побед${extra}</div>
       </div>
-      <div class="strow-r"><div class="strow-bonus" style="color:var(--accent)">${r.wins||0}</div><div class="strow-unit">побед</div></div>
+      <div class="strow-r"><div class="strow-bonus" style="color:var(--accent)">${r.wins||0}</div><div class="strow-unit">${cfg.unit}</div></div>
     </div>`;
   }).join('');
 }

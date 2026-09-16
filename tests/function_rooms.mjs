@@ -5,6 +5,7 @@
 let handler = null;
 const rows = [];
 globalThis.tg = [];
+globalThis.stats = [];
 globalThis.Deno = {
   env: { get: k => ({ BOT_TOKEN: "TESTTOKEN:abc", PROJECT_URL: "https://p", SERVICE_ROLE_KEY: "srv" })[k] },
   serve: h => { handler = h; },
@@ -20,6 +21,10 @@ globalThis.fetch = async (url, init = {}) => {
     if (u.search.includes("status=eq.wait"))
       return R(rows.filter(r => r.status === "wait" && (!game || (r.game || "durak") === game)));
     return R(rows.filter(r => r.code === code));
+  }
+  if (m === "POST" && u.pathname.endsWith("/rpc/bump_game_stats")) {
+    globalThis.stats.push(...JSON.parse(init.body).rows);
+    return R({});
   }
   if (m === "POST") { const row = JSON.parse(init.body); rows.push(row); return R([row], 201); }
   if (m === "PATCH") { Object.assign(rows.find(r => r.code === code), JSON.parse(init.body)); return R([{}]); }
@@ -200,6 +205,47 @@ console.log("\n── «21»: стол на троих ──");
     const wrong = await call({ initData: ids[(turn + 1) % 3 + 1], action: "move", code, move: { t: "hit" } });
     chk("чужой ход отбивается", !!wrong.body.error, wrong.body.error);
   }
+}
+
+console.log("\n── счёт ведёт сервер ──");
+{
+  rows.length = 0; globalThis.stats.length = 0;
+  // «21»: раунд доигрывается естественно
+  const c = await call({ initData: ids[1], action: "create", game: "bj", seats: 1, name: "A", emoji: "🙂" });
+  const code = c.body.code;
+  await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 100 } });
+  let g = (await call({ initData: ids[1], action: "state", code })).body.g, guard = 0;
+  while (g.phase === "play" && guard++ < 20) {
+    g = (await call({ initData: ids[1], action: "move", code, move: { t: "stand" } })).body.g;
+  }
+  const bjRow = globalThis.stats.find(r => r.game === "bj");
+  chk("после раунда «21» записан результат", !!bjRow && bjRow.played === 1,
+    JSON.stringify(bjRow || globalThis.stats));
+  chk("в счёт ушло реальное имя и uid", bjRow?.name === "A" && bjRow?.uid === "101", JSON.stringify(bjRow));
+  chk("выигрыш или проигрыш записан суммой", typeof bjRow?.score === "number", String(bjRow?.score));
+  const before = globalThis.stats.length;
+  await call({ initData: ids[1], action: "state", code });
+  chk("повторный просмотр счёт не удваивает", globalThis.stats.length === before);
+
+  // «дурак»: доводим стол до последнего хода руками
+  rows.length = 0; globalThis.stats.length = 0;
+  const d = await call({ initData: ids[1], action: "create", game: "durak", seats: 2, name: "A", emoji: "🙂" });
+  await call({ initData: ids[2], action: "join", code: d.body.code, name: "B", emoji: "😎" });
+  const room = rows.find(r => r.code === d.body.code);
+  const st = room.st;
+  // у первого одна карта, колода пуста — отобьётся и выйдет из игры
+  st.deck = []; st.table = []; st.discard = 30;
+  st.hands = [[{ s: 0, r: 8 }], [{ s: 1, r: 0 }, { s: 1, r: 1 }]];
+  st.att = 0; st.def = 1; st.passed = [false, false]; st.out = [false, false]; st.phase = "attack";
+  const mv = await call({ initData: ids[1], action: "move", code: d.body.code, move: { t: "attack", c: { s: 0, r: 8 } } });
+  chk("ход принят", !mv.body.error, mv.body.error || "");
+  const take = await call({ initData: ids[2], action: "move", code: d.body.code, move: { t: "take" } });
+  chk("партия закончилась", !!take.body.g?.over, JSON.stringify(take.body.g?.over));
+  const dRows = globalThis.stats.filter(r => r.game === "durak");
+  chk("записаны оба игрока", dRows.length === 2, JSON.stringify(dRows));
+  chk("победа только у того, кто вышел",
+    dRows.filter(r => r.wins === 1).length === 1 && dRows.every(r => r.played === 1),
+    JSON.stringify(dRows.map(r => `${r.name}:${r.wins}`)));
 }
 
 console.log("\n" + (bad ? `${bad} провал(ов)` : "функция готова к деплою"));

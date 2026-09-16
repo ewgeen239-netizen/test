@@ -8,7 +8,7 @@
 import { apply, deal, MAX_SEATS, MIN_SEATS, view, type Move, type St } from "./engine.ts";
 import {
   pokerApply, pokerDeal, pokerStart, pokerView,
-  P_MAX_SEATS, P_MIN_SEATS, type PMove, type PSt,
+  P_MAX_SEATS, P_MIN_SEATS, P_START, type PMove, type PSt,
 } from "./poker.ts";
 import {
   bApply, bNext, bStart, bView,
@@ -106,6 +106,51 @@ const roomSize = (room: any) => {
   const l = limits(gameOf(room));
   return Math.max(l.min, Math.min(l.max, Number(room.seats) || 2));
 };
+
+// ── счёт по итогам партии ──
+// Ведёт его сервер: клиент видит только свои карты и вообще не должен иметь
+// возможности приписать себе победу. Шлём прибавки, а не итоги, — два стола,
+// закончившихся одновременно, иначе затёрли бы счёт друг другу.
+async function bumpStats(rows: Record<string, unknown>[]) {
+  if (!rows.length) return;
+  try {
+    await q("rpc/bump_game_stats", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ rows }),
+    });
+  } catch { /* статистика — не повод ронять ход */ }
+}
+
+// что записать по переходу из состояния before в after
+function statRows(game: Game, room: any, before: any, after: any): Record<string, unknown>[] {
+  const seats = seatsOf(room);
+  const row = (i: number, wins: number, played: number, score = 0) => ({
+    uid: String(seats[i]?.uid ?? ""), game,
+    name: seats[i]?.name ?? "", emoji: seats[i]?.emoji ?? "",
+    wins, played, score,
+  });
+
+  if (game === "durak") {
+    if (before?.over || !after?.over) return [];
+    const loser = after.over.loser;                 // null — ничья
+    return seats.map((_, i) => row(i, loser === null || i === loser ? 0 : 1, 1));
+  }
+  if (game === "poker") {
+    if (before?.over || !after?.over) return [];
+    const win = after.over.winner;
+    // score — сколько фишек человек унёс со стола относительно старта
+    return seats.map((_, i) => row(i, i === win ? 1 : 0, 1, (after.stacks?.[i] ?? 0) - P_START));
+  }
+  if (game === "bj") {
+    if (before?.phase === "done" || after?.phase !== "done" || !after?.res) return [];
+    return seats.map((_, i) => {
+      const gain = after.res.win[i] ?? 0;
+      return row(i, gain > 0 ? 1 : 0, after.out?.[i] ? 0 : 1, gain);
+    });
+  }
+  return [];
+}
 
 // что отдаём клиенту: партия его глазами + кто сидит за столом.
 // uid соседей наружу не уходит — клиенту хватает имени и эмодзи.
@@ -244,6 +289,7 @@ Deno.serve(async (req: Request) => {
     if (typeof res === "string") return json({ error: res, ...room2client(room, uid) }, 200);
     const status = (res as any).over ? "done" : "play";
     await saveRoom(code, { st: res, status });
+    await bumpStats(statRows(g, room, room.st, res));
     return json(room2client({ ...room, st: res, status }, uid));
   }
 
@@ -268,6 +314,7 @@ Deno.serve(async (req: Request) => {
     }
     const status = (st as any).over ? "done" : "play";
     await saveRoom(code, { st, status });
+    await bumpStats(statRows(g, room, room.st, st));   // раздача могла добить последнего
     return json(room2client({ ...room, st, status }, uid));
   }
 

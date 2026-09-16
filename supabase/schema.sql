@@ -114,6 +114,116 @@ create policy "sol read" on public.sol_leaderboard for select using (true);
 
 
 -- ─────────────────────────────────────────────────────────────
+-- 3d. СТАТИСТИКА ПО ИГРАМ. Одна строка на «игрок × игра».
+--     Косынка считается на устройстве и приезжает через submit-rank,
+--     сетевые игры пишет сама Edge Function по итогу партии — клиенту
+--     тут верить нельзя, счёт должен вести тот, кто видит все карты.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.game_stats (
+  uid        text        not null,           -- Telegram user id
+  game       text        not null,           -- sol | durak | poker | bj
+  name       text,
+  emoji      text,
+  photo_url  text,
+  wins       integer     default 0,          -- победы (ключевая метрика)
+  played     integer     default 0,          -- партий сыграно
+  score      numeric     default 0,          -- доп. итог: фишки или очки
+  best_sec   integer,                        -- только для косынки
+  updated_at timestamptz default now(),
+  primary key (uid, game)
+);
+
+create index if not exists game_stats_top_idx
+  on public.game_stats (game, wins desc, score desc);
+
+alter table public.game_stats enable row level security;
+
+drop policy if exists "game_stats read" on public.game_stats;
+create policy "game_stats read" on public.game_stats for select using (true);
+-- политик insert/update нет → анон писать не может.
+
+
+-- Накопительное начисление: функция шлёт сюда список прибавок, а не итогов.
+-- Иначе два стола, закончившихся одновременно, затёрли бы счёт друг другу.
+create or replace function public.bump_game_stats(rows jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  insert into public.game_stats as g (uid, game, name, emoji, wins, played, score)
+  select r->>'uid', r->>'game', r->>'name', r->>'emoji',
+         coalesce((r->>'wins')::int, 0),
+         coalesce((r->>'played')::int, 0),
+         coalesce((r->>'score')::numeric, 0)
+    from jsonb_array_elements(rows) r
+   where coalesce(r->>'uid', '') <> ''
+  on conflict (uid, game) do update set
+    wins       = g.wins   + excluded.wins,
+    played     = g.played + excluded.played,
+    score      = g.score  + excluded.score,
+    name       = coalesce(nullif(excluded.name, ''), g.name),
+    emoji      = coalesce(nullif(excluded.emoji, ''), g.emoji),
+    updated_at = now();
+end
+$fn$;
+
+-- Звать её может только service_role (то есть наша функция). Роли anon и
+-- authenticated существуют лишь в Supabase, поэтому проверяем наличие —
+-- скрипт должен проходить и на обычном PostgreSQL.
+do $grants$
+begin
+  execute 'revoke all on function public.bump_game_stats(jsonb) from public';
+  if exists (select 1 from pg_roles where rolname = 'anon') then
+    execute 'revoke all on function public.bump_game_stats(jsonb) from anon';
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'authenticated') then
+    execute 'revoke all on function public.bump_game_stats(jsonb) from authenticated';
+  end if;
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    execute 'grant execute on function public.bump_game_stats(jsonb) to service_role';
+  end if;
+end
+$grants$;
+
+
+-- Косынка продолжает писаться в sol_leaderboard (так устроена submit-rank),
+-- а сюда зеркалится триггером — чтобы все игры лежали в одной таблице и
+-- не пришлось переделывать и передеплоивать вторую функцию.
+create or replace function public.sol_to_game_stats()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+begin
+  insert into public.game_stats (uid, game, name, emoji, photo_url, wins, played, best_sec, score, updated_at)
+  values (new.uid, 'sol', new.name, new.emoji, new.photo_url,
+          coalesce(new.wins, 0), coalesce(new.played, 0), new.best_sec,
+          coalesce(new.best_score, 0), now())
+  on conflict (uid, game) do update set
+    name = excluded.name, emoji = excluded.emoji, photo_url = excluded.photo_url,
+    wins = excluded.wins, played = excluded.played,
+    best_sec = excluded.best_sec, score = excluded.score, updated_at = now();
+  return new;
+end
+$fn$;
+
+drop trigger if exists sol_leaderboard_mirror on public.sol_leaderboard;
+create trigger sol_leaderboard_mirror
+  after insert or update on public.sol_leaderboard
+  for each row execute function public.sol_to_game_stats();
+
+-- разовый перенос того, что уже накоплено в косынке
+insert into public.game_stats (uid, game, name, emoji, photo_url, wins, played, best_sec, score)
+select uid, 'sol', name, emoji, photo_url,
+       coalesce(wins, 0), coalesce(played, 0), best_sec, coalesce(best_score, 0)
+  from public.sol_leaderboard
+on conflict (uid, game) do nothing;
+
+
+-- ─────────────────────────────────────────────────────────────
 -- 3c. ИГРОВЫЕ СТОЛЫ («дурак» и холдем). Состояние партии целиком на сервере,
 --     клиент не видел чужих карт и не мог сходить не по правилам.
 --     Таблица приватная: ни читать, ни писать анон-ключом нельзя,
@@ -181,5 +291,5 @@ select
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
-  and c.relname in ('leaderboard', 'sol_leaderboard', 'durak_rooms', 'consents', 'bot_users')
+  and c.relname in ('leaderboard', 'sol_leaderboard', 'game_stats', 'durak_rooms', 'consents', 'bot_users')
 order by c.relname;

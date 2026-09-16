@@ -59,7 +59,22 @@ async function initData(user) {
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8")
   .replace(/const SB_URL = '[^']*';/, "const SB_URL = location.origin;")
   .replace(/const DK_FN  = '[^']*';/, "const DK_FN  = 'durak';");
+// поддельный топ игр: проверяем отрисовку рейтинга, не саму базу
+const STATS = {
+  sol:   [{ uid: "501", name: "Антон", emoji: "🃏", wins: 9, played: 20, best_sec: 240, score: 1200 },
+          { uid: "777", name: "Ира",   emoji: "🙂", wins: 4, played: 10 }],
+  durak: [{ uid: "777", name: "Ира",   emoji: "🙂", wins: 12, played: 15 },
+          { uid: "501", name: "Антон", emoji: "🃏", wins: 3,  played: 15 }],
+  poker: [{ uid: "501", name: "Антон", emoji: "🃏", wins: 2, played: 5, score: 1500 }],
+  bj:    [{ uid: "501", name: "Антон", emoji: "🃏", wins: 7, played: 20, score: -350 }],
+};
 const srv = http.createServer(async (req, res) => {
+  if (req.url.startsWith("/rest/v1/game_stats")) {
+    const g = (req.url.match(/game=eq\.(\w+)/) || [])[1];
+    res.writeHead(200, { "content-type": "application/json", "access-control-allow-origin": "*" });
+    res.end(JSON.stringify(STATS[g] || []));
+    return;
+  }
   if (req.url.startsWith("/functions/v1/")) {
     const chunks = []; for await (const c of req) chunks.push(c);
     const r = await handler(new Request("http://x" + req.url, {
@@ -360,6 +375,38 @@ for (const [tab, mustHave] of [["pk", "Стрит-флеш"], ["bj", "Блэкд
   await A.page.waitForTimeout(150);
 }
 chk("правила закрываются", await A.page.locator("#rules-modal.on").count() === 0);
+
+console.log("\n── рейтинг по картам ──");
+await A.page.evaluate(() => { showPage("page-rating"); setNav("n-rank"); switchRank("cards"); });
+await A.page.waitForTimeout(600);
+chk("вкладка называется «Карты»", (await A.page.locator("#rk-tab-cards").textContent()).includes("КАРТЫ"));
+chk("подвкладок ровно четыре", await A.page.locator("#rk-games .hs-tab").count() === 4,
+  (await A.page.locator("#rk-games .hs-tab").allTextContents()).join(" | "));
+chk("косынка открыта первой", await A.page.locator("#rk-g-sol.act").count() === 1);
+chk("топ косынки отрисован", await A.page.locator("#rk-list .strow").count() === 2,
+  `строк ${await A.page.locator("#rk-list .strow").count()}`);
+
+for (const [g, wins, unit] of [["durak", "12", "побед"], ["pk", "2", "столов"], ["bj", "7", "раундов"]]) {
+  await A.page.evaluate(x => switchRkGame(x), g);
+  await A.page.waitForTimeout(500);
+  const rows = await A.page.locator("#rk-list .strow").count();
+  const top = await A.page.locator("#rk-list .strow-bonus").first().textContent();
+  const u = await A.page.locator("#rk-list .strow-unit").first().textContent();
+  chk(`«${g}»: топ загружен и подписан верно`, rows > 0 && top.trim() === wins && u.trim() === unit,
+    `строк ${rows}, сверху ${top}, единица «${u}»`);
+  chk(`«${g}»: активна своя подвкладка`, await A.page.locator(`#rk-g-${g}.act`).count() === 1);
+}
+
+const mine = await A.page.evaluate(() => document.getElementById("rk-me").textContent);
+chk("своя карточка показывает мои показатели", /7/.test(mine) && /побед/.test(mine), mine.slice(0, 80));
+chk("минус по фишкам виден", /-350/.test(mine), mine.slice(0, 120));
+
+await A.page.evaluate(() => switchRank("bonus"));
+await A.page.waitForTimeout(300);
+chk("вкладка премии по-прежнему работает", await A.page.locator("#rk-bonus").isVisible());
+await A.page.evaluate(() => { switchRank("cards"); });
+await A.page.waitForTimeout(500);
+chk("выбранная игра запомнилась", await A.page.locator("#rk-g-bj.act").count() === 1);
 
 const errsAll = [...A.errs, ...B.errs, ...C.errs];
 chk("за всю партию ни одной ошибки в консоли", errsAll.length === 0, errsAll.slice(0, 2).join(" | "));
