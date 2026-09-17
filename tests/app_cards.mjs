@@ -339,7 +339,27 @@ await C.page.click("#bj-body .dk-btn");
 await C.page.waitForTimeout(900);
 chk("стол на одного начался сразу", await C.page.locator("#bj-p-dealer").count() === 1,
   await C.page.evaluate(() => BJ.room?.status || "нет стола"));
-chk("предлагается поставить", await C.page.locator("#bj-slider").count() === 1);
+chk("есть ползунок ставки", await C.page.locator("#bj-slider").count() === 1);
+chk("вместо «поставить» — три множителя", await C.page.locator("#bj-mult .bj-mul").count() === 3,
+  (await C.page.locator("#bj-mult .bj-mul").allTextContents()).join(" | "));
+chk("кнопки «поставить» больше нет",
+  !(await C.page.locator("#bj-p-acts").textContent()).includes("ПОСТАВИТЬ"));
+{
+  // ползунок двигает базу, подписи множителей пересчитываются
+  await C.page.evaluate(() => { const s = document.getElementById("bj-slider"); s.value = 300; bjSlide(300); });
+  await C.page.waitForTimeout(150);
+  const sums = (await C.page.locator("#bj-mult .bj-mul span").allTextContents()).map(t => t.replace(/\s/g, ""));
+  chk("множители считаются от ползунка", sums.join(",") === "300,600,900", sums.join(","));
+  // множитель, который не влезает в баланс, недоступен
+  const bal = await C.page.evaluate(() => BJ.room.g.stacks[BJ.room.g.me]);
+  await C.page.evaluate(b => { const s = document.getElementById("bj-slider"); s.value = b; bjSlide(b); }, bal);
+  await C.page.waitForTimeout(150);
+  const off = await C.page.locator("#bj-mult .bj-mul[disabled]").count();
+  chk("×2 и ×3 гаснут, когда фишек не хватает", off === 2, `погашено ${off}`);
+  chk("×1 при этом доступен", await C.page.locator("#bj-mult .bj-mul:not([disabled])").count() === 1);
+  await C.page.evaluate(() => { const s = document.getElementById("bj-slider"); s.value = 100; bjSlide(100); });
+  await C.page.waitForTimeout(150);
+}
 chk("баланс показан отдельной строкой", await C.page.locator("#bj-p-bank .bj-bank-v").count() === 1,
   await C.page.locator("#bj-p-bank .bj-bank-v").textContent().catch(() => "нет"));
 chk("на старте выдана дневная норма 30 000",
@@ -355,7 +375,7 @@ chk("подписано, когда выдача", /выдача через/.tes
 // нужен обычный раунд, поэтому при необходимости начинаем следующий.
 let bjTries = 0;
 while (bjTries++ < 8) {
-  await C.page.evaluate(() => BJ.move({ t: "bet", amount: 50 }));
+  await C.page.locator("#bj-mult .bj-mul").nth(1).click();     // ×2 от 100 = 200
   await C.page.waitForTimeout(800);
   if (await C.page.evaluate(() => BJ.room.g.phase) === "play") break;
   await C.page.evaluate(() => BJ.next());
@@ -365,6 +385,9 @@ chk("дождались обычного раунда", await C.page.evaluate(()
   `попыток ${bjTries}, фаза ${await C.page.evaluate(() => BJ.room.g.phase)}`);
 chk("поставленное видно отдельно", await C.page.locator("#bj-p-bank .bj-bank-bet b").count() === 1,
   await C.page.locator("#bj-p-bank").textContent());
+chk("кнопка ×2 поставила вдвое больше базы",
+  (await C.page.locator("#bj-p-bank .bj-bank-bet b").textContent()).replace(/\s/g, "") === "200",
+  await C.page.locator("#bj-p-bank .bj-bank-bet b").textContent());
 chk("карты розданы", await C.page.locator("#bj-p-seats .pc.up").count() >= 2,
   `карт: ${await C.page.locator("#bj-p-seats .pc.up").count()}`);
 chk("у дилера одна открытая и одна закрытая",

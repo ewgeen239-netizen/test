@@ -680,6 +680,15 @@ select.fl-in{appearance:none}
 .bj-bank-bet b{display:block;font-size:15px;color:var(--text);margin-top:2px;letter-spacing:-.3px}
 .bj-bank-r{font-family:var(--mono);font-size:8.5px;color:var(--dim);text-align:right;max-width:88px;
   line-height:1.4;cursor:pointer;border-left:1px solid var(--line);padding-left:10px}
+/* кнопки-множители ставки в «21» */
+.bj-mult{display:flex;gap:6px;margin-top:8px}
+.bj-mul{flex:1;padding:9px 2px 8px;background:var(--c2);border:1px solid var(--line2);border-radius:11px;
+  color:var(--text);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bj-mul b{font-size:16px;font-weight:800;letter-spacing:-.5px;color:var(--accent)}
+.bj-mul span{font-family:var(--mono);font-size:10px;color:var(--sub)}
+.bj-mul:active{background:rgba(232,255,0,.1);border-color:var(--accent)}
+.bj-mul:disabled{opacity:.3;cursor:not-allowed}
+.bj-mul:disabled b{color:var(--dim)}
 /* ── ПРАВИЛА ── */
 .rules{position:fixed;inset:0;z-index:350;background:rgba(10,10,10,.94);backdrop-filter:blur(6px);
   display:none;align-items:flex-end;justify-content:center}
@@ -4283,19 +4292,17 @@ const BJ = makeTable({
     } else if(g.phase==='done'){
       acts = `<button class="dk-btn" onclick="BJ.next()">СЛЕДУЮЩИЙ РАУНД</button>`;
     } else if(o && o.bet){
-      const max = Math.min(o.max, 500);
+      // Ползунок задаёт базовую ставку, а кнопки ×1 ×2 ×3 сразу её и ставят,
+      // умножив. Отдельная кнопка «поставить» не нужна: ×1 — это она и есть.
       if(bjBet<o.min || bjBet>o.max) bjBet = Math.min(Math.max(o.min,100), o.max);
+      bjMin=o.min; bjMax=o.max;
       acts = `
         <div class="tb-raise">
           <input type="range" id="bj-slider" min="${o.min}" max="${o.max}" step="10" value="${bjBet}" oninput="bjSlide(this.value)">
           <div class="tb-raise-v" id="bj-bet-v">${bjNum(bjBet)}</div>
         </div>
-        <div class="tb-quick">
-          ${[100,500,2000].filter(v=>v<=o.max).map(v=>`<button onclick="bjSet(${v})">${bjNum(v)}</button>`).join('')}
-          <button onclick="bjSet(${o.max})">всё</button>
-        </div>
-        <div style="height:6px"></div>
-        <button class="dk-btn" onclick="BJ.move({t:'bet',amount:bjBet})">ПОСТАВИТЬ <span id="bj-bet-b">${bjNum(bjBet)}</span></button>`;
+        <div class="bj-mult" id="bj-mult">${bjMultHTML()}</div>
+        <div class="dk-note" style="text-align:center;margin-top:7px">Ползунком — размер ставки, кнопкой — во сколько раз</div>`;
     } else if(o){
       acts = `
         <div class="tb-acts">
@@ -4315,9 +4322,22 @@ const BJ = makeTable({
     T.part('bj-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
   },
 });
-function bjSlide(v){ bjBet=+v; const a=document.getElementById('bj-bet-v'), b=document.getElementById('bj-bet-b');
-  if(a) a.textContent=bjNum(v); if(b) b.textContent=bjNum(v); }
-function bjSet(v){ const s=document.getElementById('bj-slider'); if(s) s.value=v; bjSlide(v); }
+let bjMin=10, bjMax=30000;
+// Кнопки-множители: на подписи видно, сколько в итоге уйдёт на стол. Кратность,
+// которая не влезает в баланс, гасим — это честнее, чем молча обрезать ставку.
+function bjMultHTML(){
+  return [1,2,3].map(k=>{
+    const sum = bjBet*k, ok = sum>=bjMin && sum<=bjMax;
+    return `<button class="bj-mul" ${ok?`onclick="bjBetX(${k})"`:'disabled'}>`+
+      `<b>×${k}</b><span>${bjNum(sum)}</span></button>`;
+  }).join('');
+}
+function bjSlide(v){
+  bjBet=+v;
+  const a=document.getElementById('bj-bet-v'); if(a) a.textContent=bjNum(v);
+  const m=document.getElementById('bj-mult'); if(m) m.innerHTML=bjMultHTML();
+}
+function bjBetX(k){ BJ.move({t:'bet', amount: bjBet*k}); }
 
 // ═══ ПРАВИЛА ДЛЯ НОВИЧКОВ ════════════════════════════════════════
 // Комбинации показываем настоящими картами — так понятнее любого текста.
@@ -4388,7 +4408,9 @@ const RULES = {
     <p>Например, <b>Т + 6</b> — это 17, но если добрать десятку, туз станет единицей и выйдет 17, а не перебор.</p>
 
     <h4>Как идёт раунд</h4>
-    <div class="rl-step"><div class="rl-n">1</div><div><b>Ставка.</b> Ставишь фишки до раздачи. Минимум — 10.</div></div>
+    <div class="rl-step"><div class="rl-n">1</div><div><b>Ставка.</b> Ползунком выбираешь размер, кнопкой —
+      во сколько раз: <b>×1</b> ставит выбранное, <b>×2</b> вдвое больше, <b>×3</b> втрое.
+      Минимум — 10. Кратность, на которую не хватает фишек, гаснет.</div></div>
     <div class="rl-step"><div class="rl-n">2</div><div><b>Раздача.</b> Тебе две карты в открытую, дилеру одну открытую и одну закрытую.</div></div>
     <div class="rl-step"><div class="rl-n">3</div><div><b>Твой ход.</b> Берёшь ещё карты или останавливаешься.</div></div>
     <div class="rl-step"><div class="rl-n">4</div><div><b>Дилер.</b> Открывает закрытую карту и добирает, пока у него меньше 17.</div></div>
