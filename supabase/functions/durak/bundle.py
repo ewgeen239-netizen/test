@@ -16,14 +16,14 @@ HEAD = """\
 //  Столы для карточных игр — ОДНОФАЙЛОВАЯ СБОРКА для редактора Supabase.
 //
 //  Собрано скриптом bundle.py из engine.ts («дурак»), poker.ts (холдем),
-//  blackjack.ts («21») и index.ts. Правь оригиналы, а не этот файл: он
+//  blackjack.ts («21»), domino.ts и index.ts. Правь оригиналы, а не этот файл: он
 //  перегенерируется и правки потеряются. При деплое через CLI бери обычный
 //  index.ts — он подтянет соседние модули сам.
 // ═══════════════════════════════════════════════════════════════════
 
 """
 
-MODULES = ["engine.ts", "poker.ts", "blackjack.ts"]        # порядок = порядок в сборке
+MODULES = ["engine.ts", "poker.ts", "blackjack.ts", "domino.ts"]        # порядок = порядок в сборке
 
 parts = []
 index = (HERE / "index.ts").read_text(encoding="utf-8")

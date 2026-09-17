@@ -1,4 +1,4 @@
-// Edge Function: столы для карточных игр — «дурак» на 2–4 и холдем на 2–5.
+// Edge Function: игровые столы — «дурак», холдем, «21» и домино.
 // Всё состояние партии живёт здесь: клиент не может увидеть чужие карты и
 // не может сходить не по правилам — каждый ход проверяется движком.
 // Обе игры в одной функции нарочно: так на проекте достаточно одного деплоя.
@@ -14,6 +14,10 @@ import {
   bApply, bNext, bStart, bView,
   B_MAX_SEATS, B_MIN_SEATS, type BMove, type BSt,
 } from "./blackjack.ts";
+import {
+  dmApply, dmDeal, dmStart, dmView,
+  D_MAX_SEATS, D_MIN_SEATS, type DMove, type DSt,
+} from "./domino.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const PROJECT_URL = Deno.env.get("PROJECT_URL")!;
@@ -68,7 +72,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 // Сообщение в личку через Bot API: хозяин узнаёт о сопернике, даже если
 // свернул приложение. Кнопка открывает мини-апп сразу в нужной комнате.
-async function tgNotify(chatId: string, text: string, code: string, link: "dk" | "pk" | "bj" = "dk") {
+async function tgNotify(chatId: string, text: string, code: string, link: "dk" | "pk" | "bj" | "dm" = "dk") {
   if (!BOT_TOKEN || !chatId) return;
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -92,16 +96,20 @@ const code4 = () => {
 type Seat = { uid: string; name: string; emoji: string };
 const seatsOf = (room: any): Seat[] => (Array.isArray(room.players) ? room.players : []);
 const seatIx = (room: any, uid: string) => seatsOf(room).findIndex(p => String(p.uid) === uid);
-type Game = "durak" | "poker" | "bj";
-const GAMES: Game[] = ["durak", "poker", "bj"];
+type Game = "durak" | "poker" | "bj" | "dom";
+const GAMES: Game[] = ["durak", "poker", "bj", "dom"];
 const gameOf = (room: any): Game => GAMES.includes(room?.game) ? room.game : "durak";
 const limits = (g: string) =>
   g === "poker" ? { min: P_MIN_SEATS, max: P_MAX_SEATS }
   : g === "bj"  ? { min: B_MIN_SEATS, max: B_MAX_SEATS }
+  : g === "dom" ? { min: D_MIN_SEATS, max: D_MAX_SEATS }
   : { min: MIN_SEATS, max: MAX_SEATS };
 // новая партия выбранной игры
 const startGame = (g: Game, size: number) =>
-  g === "poker" ? pokerStart(size) : g === "bj" ? bStart(size) : deal(size);
+  g === "poker" ? pokerStart(size)
+  : g === "bj"  ? bStart(size)
+  : g === "dom" ? dmStart(size)
+  : deal(size);
 const roomSize = (room: any) => {
   const l = limits(gameOf(room));
   return Math.max(l.min, Math.min(l.max, Number(room.seats) || 2));
@@ -182,6 +190,12 @@ function statRows(game: Game, room: any, before: any, after: any): Record<string
       return row(i, gain > 0 ? 1 : 0, after.out?.[i] ? 0 : 1, gain);
     });
   }
+  if (game === "dom") {
+    // считаем по партии целиком, а не по кону: победа — это 101 очко
+    if (before?.over || !after?.over) return [];
+    const win = after.over.winner;
+    return seats.map((_, i) => row(i, i === win ? 1 : 0, 1, after.scores?.[i] ?? 0));
+  }
   return [];
 }
 
@@ -198,6 +212,7 @@ function room2client(room: any, uid: string) {
   if (room.st && me >= 0) {
     out.g = g === "poker" ? pokerView(room.st as PSt, me)
           : g === "bj"    ? bView(room.st as BSt, me)
+          : g === "dom"   ? dmView(room.st as DSt, me)
           : view(room.st as St, me);
   }
   return out;
@@ -296,7 +311,7 @@ Deno.serve(async (req: Request) => {
     const what = full
       ? `${emoji} <b>${esc(name)}</b> зашёл — стол собрался, партия началась!`
       : `${emoji} <b>${esc(name)}</b> сел за стол <code>${code}</code> — ждём ещё ${size - players.length}.`;
-    const link = ({ poker: "pk", bj: "bj", durak: "dk" } as const)[gameOf(room)];
+    const link = ({ poker: "pk", bj: "bj", dom: "dm", durak: "dk" } as const)[gameOf(room)];
     for (const p of list) await tgNotify(String(p.uid), what, code, link);
 
     return json(room2client({ ...room, players, st: st ?? room.st, status }, uid));
@@ -324,6 +339,7 @@ Deno.serve(async (req: Request) => {
     const g = gameOf(room);
     const res = g === "poker" ? pokerApply(room.st as PSt, me, body.move as PMove)
               : g === "bj"    ? bApply(room.st as BSt, me, body.move as BMove)
+              : g === "dom"   ? dmApply(room.st as DSt, me, body.move as DMove)
               : apply(room.st as St, me, body.move as Move);
     if (typeof res === "string") return json({ error: res, ...room2client(room, uid) }, 200);
     let next: any = res;
@@ -348,8 +364,13 @@ Deno.serve(async (req: Request) => {
     const g = gameOf(room);
     if (g === "durak") return json({ error: "в дураке это «ещё партию»" }, 400);
     if (!room.st) return json({ error: "партия ещё не началась" }, 409);
-    let st: PSt | BSt;
-    if (g === "poker") {
+    let st: PSt | BSt | DSt;
+    if (g === "dom") {
+      const cur = room.st as DSt;
+      if (cur.over) return json({ error: "партия закончена — начните заново" }, 409);
+      if (cur.phase !== "done") return json({ error: "кон ещё идёт" }, 409);
+      st = dmDeal(cur);
+    } else if (g === "poker") {
       const cur = room.st as PSt;
       if (cur.over) return json({ error: "игра закончена — начните заново" }, 409);
       if (cur.street < 4) return json({ error: "раздача ещё идёт" }, 409);

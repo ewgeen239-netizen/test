@@ -180,7 +180,14 @@ console.log("\n── «21»: стол на одного против дилер
   const code = c.body.code;
   chk("в списке живых одиночный стол не висит",
     !(await call({ initData: ids[2], action: "rooms", game: "bj" })).body.rooms.some(r => r.code === code));
-  const bet = await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 100 } });
+  // Натуральный блэкджек закрывает раунд сразу — для проверки хода нужен
+  // обычный, поэтому при необходимости начинаем следующий.
+  let bet = null;
+  for (let tries = 0; tries < 12; tries++) {
+    bet = await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 100 } });
+    if (bet.body.error || bet.body.g.phase === "play") break;
+    await call({ initData: ids[1], action: "next", code });
+  }
   chk("ставка принята, карты розданы", bet.body.g.phase === "play" && bet.body.g.hands[0][0].cards.length === 2,
     bet.body.error || `фаза ${bet.body.g.phase}`);
   chk("вторая карта дилера закрыта", bet.body.g.dealer.length === 1 && bet.body.g.hole === true);
@@ -262,6 +269,36 @@ console.log("\n── счёт ведёт сервер ──");
     JSON.stringify(dRows.map(r => `${r.name}:${r.wins}`)));
 }
 
+console.log("\n── домино: стол на троих ──");
+{
+  rows.length = 0; globalThis.stats.length = 0;
+  const c = await call({ initData: ids[1], action: "create", game: "dom", seats: 3, name: "A", emoji: "🁣" });
+  const code = c.body.code;
+  chk("стол домино создан", c.body.game === "dom" && c.body.seats === 3, c.body.error || "");
+  await call({ initData: ids[2], action: "join", code, name: "B", emoji: "🁤" });
+  const j = await call({ initData: ids[3], action: "join", code, name: "C", emoji: "🁥" });
+  chk("собрался — кости розданы", j.body.status === "play" && j.body.g.hand.length === 5,
+    j.body.error || `на руках ${j.body.g?.hand?.length}`);
+  chk("в базаре остальное", j.body.g.bone === 28 - 15, `базар ${j.body.g.bone}`);
+  chk("чужие кости не приходят", (JSON.stringify(j.body).match(/"hand"/g) || []).length === 1);
+  chk("базар клиенту не раскрыт", typeof j.body.g.bone === "number" && !JSON.stringify(j.body).includes('"bone":['));
+  chk("видно, у кого сколько костей", j.body.g.counts.join() === "5,5,5", j.body.g.counts.join());
+
+  const g = (await call({ initData: ids[1], action: "state", code })).body.g;
+  const turn = g.turn;
+  const wrong = await call({ initData: ids[(turn + 1) % 3 + 1], action: "move", code, move: { t: "play", i: 0, end: "R" } });
+  chk("чужой ход отбивается", !!wrong.body.error, wrong.body.error);
+
+  const mine = (await call({ initData: ids[turn + 1], action: "state", code })).body.g;
+  chk("первому ходу назначена кость", !!mine.must, JSON.stringify(mine.must));
+  const idx = mine.hand.findIndex(t => t.a === mine.must.a && t.b === mine.must.b);
+  const mv = await call({ initData: ids[turn + 1], action: "move", code, move: { t: "play", i: idx, end: "R" } });
+  chk("обязательная кость легла", !mv.body.error && mv.body.g.line.length === 1, mv.body.error || "");
+  chk("концы цепочки посчитаны", Array.isArray(mv.body.g.ends) && mv.body.g.ends.length === 2,
+    JSON.stringify(mv.body.g.ends));
+  chk("ход ушёл следующему", mv.body.g.turn !== turn);
+}
+
 console.log("\n── фишки «21» живут в кошельке, а не в партии ──");
 {
   rows.length = 0; globalThis.wallets.clear();
@@ -270,12 +307,19 @@ console.log("\n── фишки «21» живут в кошельке, а не 
   chk("за стол садишься с дневной нормой", c.body.g.stacks[0] === 30000, `стек ${c.body.g.stacks[0]}`);
 
   // играем раунд и смотрим, что кошелёк изменился ровно на итог
-  const before = globalThis.wallets.get("101").chips;
-  await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 500 } });
+  // Натуральный блэкджек закрывает раунд той же командой, и в кошельке
+  // окажется уже итог, а не одна ставка, — нужен обычный раунд.
+  let before = 0, g = null;
+  for (let tries = 0; tries < 12; tries++) {
+    before = globalThis.wallets.get("101").chips;
+    g = (await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 500 } })).body.g;
+    if (g.phase === "play") break;
+    await call({ initData: ids[1], action: "next", code });
+  }
   chk("ставка списывается сразу, а не по итогу раунда",
     globalThis.wallets.get("101").chips === before - 500,
     `в кошельке ${globalThis.wallets.get("101").chips}, было ${before}`);
-  let g = (await call({ initData: ids[1], action: "state", code })).body.g, guard = 0;
+  let guard = 0;
   while (g.phase === "play" && guard++ < 20)
     g = (await call({ initData: ids[1], action: "move", code, move: { t: "stand" } })).body.g;
   const gain = g.res.win[0];
@@ -316,9 +360,18 @@ console.log("\n── фишки «21» живут в кошельке, а не 
 
   // баланс общий: сел за второй стол — фишек там ровно столько, сколько
   // осталось, а не ещё одна дневная норма
-  await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 10000 } });
-  const bal = globalThis.wallets.get("101").chips;
-  chk("поставленное уже вычтено из кошелька", bal === 20000, `в кошельке ${bal}`);
+  // опять же: раунд, закрывшийся блэкджеком сразу, о списании ставки
+  // ничего не скажет — там в кошельке будет уже итог
+  let staked = 0, bal = 0;
+  for (let tries = 0; tries < 12; tries++) {
+    staked = globalThis.wallets.get("101").chips;
+    const r = await call({ initData: ids[1], action: "move", code, move: { t: "bet", amount: 10000 } });
+    bal = globalThis.wallets.get("101").chips;
+    if (r.body.g.phase === "play") break;
+    await call({ initData: ids[1], action: "next", code });
+  }
+  chk("поставленное уже вычтено из кошелька", bal === staked - 10000,
+    `в кошельке ${bal}, было ${staked}`);
   const other = await call({ initData: ids[1], action: "create", game: "bj", seats: 1, name: "A", emoji: "🙂" });
   chk("за вторым столом тот же кошелёк, а не новая норма", other.body.g.stacks[0] === bal,
     `${other.body.g.stacks[0]} против ${bal}`);

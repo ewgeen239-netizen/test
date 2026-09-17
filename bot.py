@@ -229,6 +229,13 @@ def main_kb():
         InlineKeyboardButton("🃏 Косынка",      web_app=WebAppInfo(url=f"{WEBAPP_URL}#sol")),
     )
     kb.add(
+        InlineKeyboardButton("♠ Покер",        web_app=WebAppInfo(url=f"{WEBAPP_URL}#pk")),
+        InlineKeyboardButton("🂱 Двадцать одно", web_app=WebAppInfo(url=f"{WEBAPP_URL}#bj")),
+    )
+    kb.add(
+        InlineKeyboardButton("🁣 Домино",       web_app=WebAppInfo(url=f"{WEBAPP_URL}#dm")),
+    )
+    kb.add(
         InlineKeyboardButton("🏆 Рейтинг",          callback_data="rating"),
         InlineKeyboardButton("➕ Добавить запись",  callback_data="add"),
         InlineKeyboardButton("📅 Сегодня",          callback_data="today"),
@@ -268,16 +275,17 @@ def confirm_kb():
 def cmd_start(msg):
     register_user(msg.from_user)          # реестр для рассылки
 
-    # ── приглашение за стол: ссылка вида t.me/бот?start=dk_КОД (pk_, bj_) ──
+    # ── приглашение за стол: ссылка вида t.me/бот?start=dk_КОД (pk_, bj_, dm_) ──
     GAMES = {
-        "dk": ("🂡", "в дурака"),
-        "pk": ("♠", "в покер"),
-        "bj": ("🂱", "в «двадцать одно»"),
+        "dk": ("🂡", "в дурака", "карты раздадутся сами"),
+        "pk": ("♠", "в покер", "карты раздадутся сами"),
+        "bj": ("🂱", "в «двадцать одно»", "карты раздадутся сами"),
+        "dm": ("🁣", "в домино", "кости раздадутся сами"),
     }
     parts = (msg.text or "").split(maxsplit=1)
     if len(parts) > 1 and parts[1][:3].lower() in (g + "_" for g in GAMES):
         tag = parts[1][:2].lower()
-        icon, what = GAMES[tag]
+        icon, what, dealt = GAMES[tag]
         code = re.sub(r"[^A-Za-z0-9]", "", parts[1][3:])[:8].upper()
         if code:
             kb = InlineKeyboardMarkup()
@@ -288,7 +296,7 @@ def cmd_start(msg):
                 msg.chat.id,
                 f"{icon} <b>Тебя зовут сыграть {what}</b>\n\n"
                 f"Стол: <code>{code}</code>\n"
-                f"Жми кнопку — карты раздадутся сами.",
+                f"Жми кнопку — {dealt}.",
                 parse_mode="HTML", reply_markup=kb)
             return
 
@@ -352,6 +360,22 @@ def cmd_blackjack(msg):
         "Играешь против дилера — можно одному, можно компанией до пяти человек.\n"
         "Стол на одного начинается сразу, ждать никого не надо.\n\n"
         "Блэкджек платит 3:2, дилер добирает до 17. Фишки игровые.",
+        parse_mode="HTML", reply_markup=kb)
+
+
+@bot.message_handler(commands=["domino", "domino6"])
+def cmd_domino(msg):
+    register_user(msg.from_user)
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("🁣 Открыть домино", web_app=WebAppInfo(url=f"{WEBAPP_URL}#dm")))
+    bot.send_message(
+        msg.chat.id,
+        "🁣 <b>Домино</b>\n\n"
+        "Набор дубль-шесть, столы на 2, 3 или 4 игроков, партия до 101 очка.\n\n"
+        "На двоих раздаётся по 7 костей, на троих-четверых по 5 — остальное в базаре. "
+        "Первый кон начинает младший дубль.\n\n"
+        "В лобби список живых столов — жмёшь «Зайти» и садишься. "
+        "Кости соседей лежат на сервере: видно только, сколько их у кого.",
         parse_mode="HTML", reply_markup=kb)
 
 

@@ -78,6 +78,7 @@ const STATS = {
           { uid: "501", name: "Антон", emoji: "🃏", wins: 3,  played: 15 }],
   poker: [{ uid: "501", name: "Антон", emoji: "🃏", wins: 2, played: 5, score: 1500 }],
   bj:    [{ uid: "501", name: "Антон", emoji: "🃏", wins: 7, played: 20, score: -350 }],
+  dom:   [{ uid: "501", name: "Антон", emoji: "🃏", wins: 4, played: 6, score: 101 }],
 };
 const srv = http.createServer(async (req, res) => {
   if (req.url.startsWith("/rest/v1/game_stats")) {
@@ -403,8 +404,124 @@ chk("закрытая карта дилера открылась", await C.page.
 chk("итог раунда показан", (await C.page.locator("#bj-p-seats .tb-sub").allTextContents()).join(" ").length > 0);
 chk("предлагается следующий раунд", hadButtons >= 2 && await C.page.locator("#bj-p-acts .dk-btn").count() === 1);
 
+console.log("\n── домино ──");
+// Отдельный стол на двоих: A и B уже сидят за покерным, домино этому не мешает.
+await toTab(A.page, "dm");
+chk("в лобби домино выбор мест 2–4", await A.page.locator("#dm-seats button").count() === 3,
+  (await A.page.locator("#dm-seats button").allTextContents()).join(" | "));
+await A.page.evaluate(() => DM.setSeats(2));
+await A.page.click("#dm-body .dk-btn");
+await A.page.waitForTimeout(700);
+const dcode = (await A.page.locator("#dm-body .dk-code").textContent() || "").trim();
+chk("стол домино создан", /^[A-Z0-9]{5}$/.test(dcode), dcode);
+
+await toTab(B.page, "dm");
+await B.page.waitForTimeout(2500);
+chk("стол виден в списке живых", await B.page.locator("#dm-rooms .dk-room").count() === 1);
+await B.page.click("#dm-rooms .dk-room-b");
+await B.page.waitForTimeout(900);
+await A.page.waitForTimeout(2600);
+
+chk("на двоих раздали по 7 костей", await B.page.locator("#dm-p-hand .dm-t").count() === 7,
+  `костей ${await B.page.locator("#dm-p-hand .dm-t").count()}`);
+chk("чужие кости не показываются", await B.page.locator("#dm-p-seats .dm-t").count() === 0);
+chk("видно, у кого сколько костей",
+  (await B.page.locator("#dm-p-seats .dm-seat-c").allTextContents()).every(t => /^7 кост/.test(t.trim())),
+  (await B.page.locator("#dm-p-seats .dm-seat-c").allTextContents()).join(" | "));
+chk("в базаре остальные 14", (await B.page.locator("#dm-p-top .dm-bone b").first().textContent()) === "14",
+  await B.page.locator("#dm-p-top .dm-bone b").first().textContent());
+chk("цепочка пока пуста", (await B.page.locator("#dm-p-line .dm-t").count()) === 0);
+
+// точки на половинках: их должно быть ровно столько, сколько написано в состоянии
+const pipsOk = await B.page.evaluate(() => {
+  const hand = DM.room.g.hand, els = [...document.querySelectorAll("#dm-p-hand .dm-t")];
+  const bad = [];
+  els.forEach((el, i) => {
+    const halves = [...el.querySelectorAll(".dm-half")]
+      .map(h => h.querySelectorAll(".dm-p:not(.o)").length);
+    if (halves[0] !== hand[i].a || halves[1] !== hand[i].b)
+      bad.push(`${hand[i].a}:${hand[i].b} нарисована как ${halves.join(":")}`);
+    if (el.querySelectorAll(".dm-p").length !== 18) bad.push("сетка точек сбита");
+  });
+  return bad;
+});
+chk("точки на костях совпадают с их числами", pipsOk.length === 0, pipsOk.slice(0, 2).join("; "));
+
+// ходит тот, у кого младший дубль, и обязан положить именно его
+const dmPages = [A.page, B.page];
+const dmWho = await A.page.evaluate(() => DM.room.g.turn === DM.room.g.me) ? 0 : 1;
+const dmP = dmPages[dmWho], dmOther = dmPages[1 - dmWho];
+await dmP.waitForTimeout(300);
+const must = await dmP.evaluate(() => DM.room.g.must);
+chk("первому ходу назначена обязательная кость", !!must && must.a === must.b,
+  must ? `${must.a}:${must.b}` : "нет");
+chk("подсказка про обязательную кость видна",
+  /первый ход/i.test(await dmP.locator("#dm-p-acts").textContent()),
+  (await dmP.locator("#dm-p-acts").textContent()).trim().slice(0, 60));
+chk("обязательная кость подсвечена одна", await dmP.locator("#dm-p-hand .dm-t.must").count() === 1,
+  `подсвечено ${await dmP.locator("#dm-p-hand .dm-t.must").count()}`);
+
+// чужой кость положить не даст
+await dmOther.evaluate(() => dmTap(0));
+await dmOther.waitForTimeout(400);
+chk("чужой ход отбивается", /не твой ход/i.test(await dmOther.locator("#dm-err").textContent()),
+  (await dmOther.locator("#dm-err").textContent()).trim());
+
+const mustIx = await dmP.evaluate(() => DM.room.g.opts.plays[0].i);
+await dmP.evaluate(i => dmTap(i), mustIx);
+await dmP.waitForTimeout(900);
+chk("обязательная кость легла", await dmP.locator("#dm-p-line .dm-t").count() === 1);
+chk("дубль на столе стоит поперёк", await dmP.locator("#dm-p-line .dm-t.v").count() === 1);
+chk("в руке стало на кость меньше", await dmP.locator("#dm-p-hand .dm-t").count() === 6);
+chk("концы цепочки подписаны",
+  (await dmP.locator("#dm-p-top .dm-end").allTextContents()).length === 2 &&
+  (await dmP.locator("#dm-p-top .dm-end").first().textContent()).trim().startsWith(String(must.a)),
+  (await dmP.locator("#dm-p-top .dm-end").allTextContents()).join(" | "));
+chk("ход ушёл соседу", await dmP.evaluate(() => DM.room.g.turn !== DM.room.g.me));
+await dmOther.waitForTimeout(2600);
+chk("сосед увидел кость на столе", await dmOther.locator("#dm-p-line .dm-t").count() === 1);
+chk("играбельные кости у него подсвечены, остальные погашены",
+  await dmOther.evaluate(() => {
+    const ok = document.querySelectorAll("#dm-p-hand .dm-t.ok").length;
+    const no = document.querySelectorAll("#dm-p-hand .dm-t.no").length;
+    const fits = DM.room.g.opts.plays.length;
+    return ok === fits && ok + no === DM.room.g.hand.length;
+  }));
+
+// кость, подходящая к обоим концам, спрашивает сторону
+const bothSides = await dmOther.evaluate(() => {
+  const o = DM.room.g.opts, e = o?.ends;
+  if (!o || !e || e[0] === e[1]) return null;
+  const p = o.plays.find(x => x.L && x.R);
+  return p ? p.i : -1;
+});
+if (bothSides !== null && bothSides >= 0) {
+  await dmOther.evaluate(i => dmTap(i), bothSides);
+  await dmOther.waitForTimeout(300);
+  chk("кость к обоим концам спрашивает сторону", await dmOther.locator(".dm-sides .dk-btn").count() === 2,
+    (await dmOther.locator(".dm-sides .dk-btn").allTextContents()).join(" | "));
+  chk("выбранная кость приподнята", await dmOther.locator("#dm-p-hand .dm-t.sel").count() === 1);
+  await dmOther.click(".dm-sides .dk-btn:last-child");
+  await dmOther.waitForTimeout(800);
+  chk("кость легла справа", await dmOther.locator("#dm-p-line .dm-t").count() === 2);
+} else {
+  // концы одинаковые или двусторонней кости нет — ходим чем есть
+  await dmOther.evaluate(() => {
+    const o = DM.room.g.opts;
+    if (!o) return;
+    o.plays.length ? dmTap(o.plays[0].i) : DM.move({ t: o.canDraw ? "draw" : "pass" });
+  });
+  await dmOther.waitForTimeout(800);
+  chk("сосед сходил или потянул из базара", await dmOther.evaluate(() => DM.room.g.ver) > 2);
+}
+chk("цепочка не разорвалась", await dmOther.evaluate(() => {
+  const L = DM.room.g.line;
+  return L.every((t, i) => i === 0 || L[i - 1].b === t.a);
+}));
+
 console.log("\n── правила для новичков ──");
-for (const [tab, mustHave] of [["pk", "Стрит-флеш"], ["bj", "Блэкджек"], ["dk", "козырь"], ["sol", "короля"]]) {
+for (const [tab, mustHave] of [["pk", "Стрит-флеш"], ["bj", "Блэкджек"], ["dk", "козырь"],
+                               ["sol", "короля"], ["dm", "дубль-шесть"]]) {
   await A.page.evaluate(t => showRules(t), tab);
   await A.page.waitForTimeout(250);
   const open = await A.page.locator("#rules-modal.on").count() === 1;
@@ -428,6 +545,11 @@ for (const [tab, mustHave] of [["pk", "Стрит-флеш"], ["bj", "Блэкд
     });
     chk("на карточках правил надписи не обрезаны", readable.length === 0, readable.slice(0, 2).join("; "));
   }
+  if (tab === "dm") {
+    const tiles = await A.page.locator("#rules-body .rl-dom .dm-t").count();
+    chk("правила домино показаны настоящими костями", tiles >= 8, `костей ${tiles}`);
+    chk("в правилах разобраны рыба и счёт", text.includes("рыбой") && text.includes("101"));
+  }
   await A.page.evaluate(() => hideRules());
   await A.page.waitForTimeout(150);
 }
@@ -437,13 +559,14 @@ console.log("\n── рейтинг по картам ──");
 await A.page.evaluate(() => { showPage("page-rating"); setNav("n-rank"); switchRank("cards"); });
 await A.page.waitForTimeout(600);
 chk("вкладка называется «Карты»", (await A.page.locator("#rk-tab-cards").textContent()).includes("КАРТЫ"));
-chk("подвкладок ровно четыре", await A.page.locator("#rk-games .hs-tab").count() === 4,
+chk("подвкладок ровно пять", await A.page.locator("#rk-games .hs-tab").count() === 5,
   (await A.page.locator("#rk-games .hs-tab").allTextContents()).join(" | "));
 chk("косынка открыта первой", await A.page.locator("#rk-g-sol.act").count() === 1);
 chk("топ косынки отрисован", await A.page.locator("#rk-list .strow").count() === 2,
   `строк ${await A.page.locator("#rk-list .strow").count()}`);
 
-for (const [g, wins, unit] of [["durak", "12", "побед"], ["pk", "2", "столов"], ["bj", "7", "раундов"]]) {
+for (const [g, wins, unit] of [["durak", "12", "побед"], ["pk", "2", "столов"],
+                               ["dm", "4", "партий"], ["bj", "7", "раундов"]]) {
   await A.page.evaluate(x => switchRkGame(x), g);
   await A.page.waitForTimeout(500);
   const rows = await A.page.locator("#rk-list .strow").count();

@@ -689,6 +689,74 @@ select.fl-in{appearance:none}
 .bj-mul:active{background:rgba(232,255,0,.1);border-color:var(--accent)}
 .bj-mul:disabled{opacity:.3;cursor:not-allowed}
 .bj-mul:disabled b{color:var(--dim)}
+/* ── ДОМИНО ──
+   Кость — два квадрата с точками. --dt задаёт сторону квадрата, всё
+   остальное считается от неё, поэтому одна и та же вёрстка годится и для
+   крупной кости в руке, и для мелкой в цепочке. */
+.dm-t{--dt:26px;display:flex;position:relative;isolation:isolate;flex-shrink:0;
+  background:linear-gradient(158deg,#fdfdfb 0%,#f4f4ee 55%,#e8e8df 100%);
+  border:1px solid #cfcfc6;border-radius:calc(var(--dt)*.17);
+  box-shadow:0 1px 2px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35)}
+.dm-t.v{flex-direction:column}                       /* вертикальная: половины друг над другом */
+.dm-half{width:var(--dt);height:var(--dt);display:grid;
+  grid-template:repeat(3,1fr)/repeat(3,1fr);padding:calc(var(--dt)*.11);box-sizing:border-box}
+.dm-t .dm-half+.dm-half{box-shadow:inset 1px 0 0 rgba(0,0,0,.22)}
+.dm-t.v .dm-half+.dm-half{box-shadow:inset 0 1px 0 rgba(0,0,0,.22)}
+.dm-p{width:calc(var(--dt)*.15);height:calc(var(--dt)*.15);border-radius:50%;
+  place-self:center;background:#1a1a1f}
+.dm-p.o{background:none}
+/* цепочка: лента с прокруткой, концы подсвечены */
+.dm-line{display:flex;align-items:center;gap:3px;overflow-x:auto;overflow-y:hidden;
+  padding:12px 10px;background:linear-gradient(160deg,#10331f,#0a1f13);
+  border:1px solid #1d4d30;border-radius:13px;min-height:74px;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.dm-line::-webkit-scrollbar{display:none}
+.dm-line .dm-t{--dt:22px}
+.dm-line .dm-t.last{outline:2px solid var(--accent);outline-offset:1px}
+.dm-empty-line{margin:auto;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;
+  color:rgba(255,255,255,.35);text-transform:uppercase}
+/* шапка стола: концы и базар */
+.dm-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.dm-ends{display:flex;gap:5px}
+.dm-end{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);
+  background:var(--c1);border:1px solid var(--line2);border-radius:9px;
+  min-width:30px;text-align:center;padding:5px 0}
+.dm-end span{display:block;font-size:7px;letter-spacing:1px;color:var(--sub);text-transform:uppercase}
+.dm-bone{flex:1;text-align:right;font-family:var(--mono);font-size:9px;letter-spacing:1px;
+  color:var(--sub);text-transform:uppercase}
+.dm-bone b{display:block;font-size:16px;color:var(--text);letter-spacing:-.3px}
+/* соперники */
+.dm-seats{display:flex;gap:6px;margin-bottom:8px}
+.dm-seat{flex:1;min-width:0;background:var(--c1);border:1px solid var(--line);border-radius:11px;
+  padding:7px 8px;text-align:center}
+.dm-seat.turn{border-color:var(--accent);background:rgba(232,255,0,.05)}
+.dm-seat.me{background:var(--c2)}
+.dm-seat-e{font-size:15px}
+.dm-seat-n{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.dm-seat-c{font-family:var(--mono);font-size:9px;color:var(--sub);margin-top:2px}
+.dm-seat-c b{color:var(--accent)}
+/* своя рука */
+.dm-hand{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:10px 0 4px}
+.dm-hand .dm-t{--dt:30px;cursor:pointer;transition:transform .13s,box-shadow .13s}
+.dm-hand .dm-t.ok{box-shadow:0 0 0 2px var(--accent),0 4px 10px rgba(0,0,0,.35)}
+.dm-hand .dm-t.no{opacity:.42;filter:grayscale(.6)}
+.dm-hand .dm-t.sel{transform:translateY(-7px)}
+.dm-hand .dm-t.must{animation:pcPulse 1.5s infinite}
+.dm-sides{display:flex;gap:6px;margin-top:4px}
+.dm-sides .dk-btn{padding:12px 4px;font-size:12px}
+/* итог кона */
+.dm-res{background:var(--c1);border:1px solid var(--line2);border-radius:12px;padding:12px 13px;margin-top:8px}
+.dm-res-t{font-size:14px;font-weight:800;text-align:center}
+.dm-res-t.fish{color:var(--accent)}
+.dm-score{display:flex;gap:6px;margin-top:9px}
+.dm-score div{flex:1;text-align:center;font-family:var(--mono);font-size:9px;color:var(--sub);
+  background:var(--c2);border-radius:9px;padding:6px 3px}
+.dm-score b{display:block;font-size:17px;color:var(--text);letter-spacing:-.5px;margin-top:1px}
+.dm-score .w b{color:var(--accent)}
+/* кости в правилах */
+.rl-dom{display:flex;gap:4px;flex-shrink:0;align-items:center}
+.rl-dom .dm-t{--dt:19px}
+.rl-dom-l{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
 /* ── ПРАВИЛА ── */
 .rules{position:fixed;inset:0;z-index:350;background:rgba(10,10,10,.94);backdrop-filter:blur(6px);
   display:none;align-items:flex-end;justify-content:center}
@@ -1371,6 +1439,7 @@ select.fl-in{appearance:none}
       <div class="badge" id="dk-badge" onclick="dkLeave()" style="display:none">—</div>
       <div class="badge" id="pk-badge" onclick="PK.leave()" style="display:none">—</div>
       <div class="badge" id="bj-badge" onclick="BJ.leave()" style="display:none">—</div>
+      <div class="badge" id="dm-badge" onclick="DM.leave()" style="display:none">—</div>
       <div class="badge" id="cd-help" onclick="showRules()" style="display:none">? ПРАВИЛА</div>
     </div>
   </div>
@@ -1381,6 +1450,7 @@ select.fl-in{appearance:none}
       <div class="hs-tab"     id="cd-tab-dk"  onclick="switchCards('dk')">🂡 ДУРАК</div>
       <div class="hs-tab"     id="cd-tab-pk"  onclick="switchCards('pk')">♠ ПОКЕР</div>
       <div class="hs-tab"     id="cd-tab-bj"  onclick="switchCards('bj')">🂱 21</div>
+      <div class="hs-tab"     id="cd-tab-dm"  onclick="switchCards('dm')">🁣 ДОМИНО</div>
     </div>
   </div>
 
@@ -1422,6 +1492,13 @@ select.fl-in{appearance:none}
     <div class="dk-wrap">
       <div id="bj-err"></div>
       <div id="bj-body"></div>
+    </div>
+  </div>
+
+  <div id="cd-dm" style="display:none">
+    <div class="dk-wrap">
+      <div id="dm-err"></div>
+      <div id="dm-body"></div>
     </div>
   </div>
 </div>
@@ -3287,6 +3364,8 @@ const RK_GAMES = {
            unit:'столов', note:'Победа — забрал все фишки за столом.', key:'poker' },
   bj:    { tab:'🂱 21',      cap:'Топ по выигранным раундам',
            unit:'раундов', note:'Победа — раунд, закрытый в плюс.' },
+  dm:    { tab:'🁣 ДОМИНО',  cap:'Топ по выигранным партиям',
+           unit:'партий', note:'Победа — партия, добитая до 101 очка.', key:'dom' },
 };
 let rankTab='bonus', rkGame = 'sol';
 
@@ -3471,9 +3550,9 @@ function openFromLink(){
   const h=(location.hash||'').replace(/^#/,'');
   if(!h) return;
   const go=t=>{ showPage('page-cards'); setNav('n-cards'); switchCards(t); };
-  const m=h.match(/^(dk|pk|bj)=([A-Za-z0-9]{4,8})$/);
+  const m=h.match(/^(dk|pk|bj|dm)=([A-Za-z0-9]{4,8})$/);
   if(m){ DB[m[1]]={code:m[2].toUpperCase()}; sv(); go(m[1]); return; }
-  if(['dk','pk','bj','sol'].includes(h)) go(h);
+  if(['dk','pk','bj','dm','sol'].includes(h)) go(h);
 }
 
 // ── вкладка «Карты»: две игры под одним переключателем ──
@@ -3483,6 +3562,7 @@ const CARD_GAMES = {
   dk:  { title:'Дурак онлайн', open:()=>dkOpen()  },
   pk:  { title:'Холдем',       open:()=>PK.open() },
   bj:  { title:'Двадцать одно',open:()=>BJ.open() },
+  dm:  { title:'Домино',       open:()=>DM.open() },
 };
 function switchCards(t){
   if(!CARD_GAMES[t]) t='sol';
@@ -3496,6 +3576,7 @@ function switchCards(t){
   document.getElementById('dk-badge').style.display = t==='dk'  ? '' : 'none';
   document.getElementById('pk-badge').style.display = 'none';
   document.getElementById('bj-badge').style.display = 'none';
+  document.getElementById('dm-badge').style.display = 'none';
   document.getElementById('cd-help').style.display = '';
   DB.cardsTab = t; sv();
   CARD_GAMES[t].open();
@@ -4339,11 +4420,174 @@ function bjSlide(v){
 }
 function bjBetX(k){ BJ.move({t:'bet', amount: bjBet*k}); }
 
+// ═══ ДОМИНО ══════════════════════════════════════════════════════
+// Половинка кости — сетка 3×3, в ней зажигаются нужные клетки. Индексы
+// идут слева направо, сверху вниз, поэтому шестёрка — это два столбика.
+const DM_PIPS = [[],[4],[0,8],[0,4,8],[0,2,6,8],[0,2,4,6,8],[0,2,3,5,6,8]];
+function dmHalf(n){
+  const on = DM_PIPS[n] || [];
+  let h = '';
+  for(let i=0;i<9;i++) h += `<i class="dm-p${on.indexOf(i)<0?' o':''}"></i>`;
+  return `<div class="dm-half">${h}</div>`;
+}
+// vert=true — половинки одна над другой: так кость лежит в руке, и так же
+// на столе ставится дубль, поперёк цепочки.
+const dmTile = (t, cls, vert) => t
+  ? `<div class="dm-t${vert?' v':''}${cls?' '+cls:''}">${dmHalf(t.a)}${dmHalf(t.b)}</div>` : '';
+
+let dmSel = -1, dmVer = -1, dmLineN = -1, dmLineL = '';
+
+const DM = makeTable({
+  game:'dom', prefix:'dm', obj:'DM', title:'Домино', seats:[2,3,4],
+  hint:'Дубль-шесть, партия до 101 очка. На двоих раздаётся по 7 костей, на троих-четверых по 5 — остальное уходит в базар.',
+  shell:`<div id="dm-p-top"></div><div id="dm-p-seats"></div><div id="dm-p-line"></div>`+
+        `<div id="dm-p-hand"></div><div id="dm-p-acts"></div><div id="dm-p-log"></div>`,
+  renderPlay(T,g){ dmDraw(T,g); },
+});
+
+function dmDraw(T,g){
+  const P = T.room.players, o = g.opts;
+  if(g.ver !== dmVer){ dmVer = g.ver; dmSel = -1; }
+
+  const ends = g.ends;
+  T.part('dm-p-top', JSON.stringify([g.round,ends,g.bone,g.target]), `
+    <div class="dm-top">
+      <div class="dm-ends">
+        ${ends ? `<div class="dm-end">${ends[0]}<span>слева</span></div>
+                  <div class="dm-end">${ends[1]}<span>справа</span></div>`
+               : `<div class="dm-end">—<span>стол пуст</span></div>`}
+      </div>
+      <div class="dm-bone">базар<b>${g.bone}</b></div>
+      <div class="dm-bone">кон ${g.round}<b>до ${g.target}</b></div>
+    </div>`);
+
+  T.part('dm-p-seats', JSON.stringify([g.counts,g.scores,g.turn,g.me]),
+    `<div class="dm-seats">${g.counts.map((c,i)=>{
+      const p = P[i]||{};
+      return `<div class="dm-seat${i===g.me?' me':''}${i===g.turn?' turn':''}">
+        <div class="dm-seat-e">${esc(p.emoji||'🙂')}</div>
+        <div class="dm-seat-n">${esc(i===g.me?'ты':(p.name||'Игрок '+(i+1)))}</div>
+        <div class="dm-seat-c">${c} кост. · <b>${g.scores[i]}</b></div>
+      </div>`;
+    }).join('')}</div>`);
+
+  const lastIx = g.line.length-1;
+  T.part('dm-p-line', JSON.stringify(g.line), `
+    <div class="dm-line" id="dm-strip">${
+      g.line.length
+        ? g.line.map((t,i)=>dmTile(t, (i===0||i===lastIx)?'last':'', t.a===t.b)).join('')
+        : `<div class="dm-empty-line">цепочка пока пуста</div>`}</div>`);
+  dmScroll(g);
+
+  // Рука: подсвечиваем то, чем можно пойти прямо сейчас. Остальное гасим,
+  // но оставляем на месте — иначе кости прыгали бы каждый ход.
+  const fit = {};
+  (o?.plays||[]).forEach(x=>{ fit[x.i] = x; });
+  T.part('dm-p-hand', JSON.stringify([g.hand,o?.plays,dmSel,!!g.must]),
+    `<div class="dm-hand">${g.hand.map((t,i)=>{
+      const f = fit[i];
+      const cls = (o ? (f?'ok':'no') : '') + (i===dmSel?' sel':'') +
+                  (g.must && f ? ' must' : '');
+      return `<div onclick="dmTap(${i})">${dmTile(t, cls, true)}</div>`;
+    }).join('') || '<div class="dm-empty-line">костей не осталось</div>'}</div>`);
+
+  let acts = '';
+  if(g.over){
+    const win = g.over.winner;
+    acts = `<div class="dk-card" style="text-align:center">
+        <div style="font-size:30px">${win===g.me?'🏆':'🁣'}</div>
+        <div style="font-size:16px;font-weight:900;margin:4px 0 2px">${
+          win===g.me ? 'Партия твоя!' : esc((P[win]||{}).name||'Сосед')+' добрал до '+g.target}</div>
+        <div class="dk-note" style="margin-bottom:9px">${g.scores.join(' : ')}</div>
+        <button class="dk-btn" onclick="DM.rematch()">ИГРАТЬ ЕЩЁ</button>
+      </div>`;
+  } else if(g.phase==='done'){
+    const r = g.res||{};
+    const txt = r.winner===null ? 'Рыба · поровну, очки не идут'
+      : r.fish ? `Рыба · забрал ${r.winner===g.me?'ты':esc((P[r.winner]||{}).name||'сосед')} · +${r.pts}`
+      : `${r.winner===g.me?'Ты вышел':esc((P[r.winner]||{}).name||'Сосед')+' вышел'} · +${r.pts}`;
+    acts = `<div class="dm-res">
+        <div class="dm-res-t${r.fish?' fish':''}">${txt}</div>
+        <div class="dm-score">${g.scores.map((s,i)=>
+          `<div class="${i===r.winner?'w':''}">${esc(i===g.me?'ты':(P[i]||{}).name||('И'+(i+1)))}<b>${s}</b>
+            <span style="opacity:.6">осталось ${(r.left||[])[i]??0}</span></div>`).join('')}</div>
+        <div style="height:10px"></div>
+        <button class="dk-btn" onclick="DM.next()">СЛЕДУЮЩИЙ КОН</button>
+      </div>`;
+  } else if(o){
+    const p = dmSel>=0 ? fit[dmSel] : null;
+    if(p && p.L && p.R && ends && ends[0]!==ends[1]){
+      acts = `<div class="dm-sides">
+          <button class="dk-btn" onclick="dmPut('L')">◀ СЛЕВА · ${ends[0]}</button>
+          <button class="dk-btn" onclick="dmPut('R')">СПРАВА · ${ends[1]} ▶</button>
+        </div>
+        <div class="dk-note" style="text-align:center;margin-top:7px">Кость подходит к обоим концам — выбери, куда класть</div>`;
+    } else if(o.plays.length){
+      acts = `<div class="tb-me" style="padding:10px 0">${
+        g.must ? `первый ход — кость <b>${g.must.a}:${g.must.b}</b>` : 'твой ход — жми на кость'}</div>`;
+    } else if(o.canDraw){
+      acts = `<button class="dk-btn" onclick="DM.move({t:'draw'})">ВЗЯТЬ ИЗ БАЗАРА · ${o.bone}</button>
+        <div class="dk-note" style="text-align:center;margin-top:7px">Ходить нечем — тяни, пока не попадётся подходящая</div>`;
+    } else {
+      acts = `<button class="dk-btn sec" onclick="DM.move({t:'pass'})">ПАС</button>
+        <div class="dk-note" style="text-align:center;margin-top:7px">Базар пуст, ходить нечем. Спасуют все подряд — кон закроется рыбой</div>`;
+    }
+  } else {
+    acts = `<div class="tb-me" style="padding:12px 0">ходит <b>${
+      esc((P[g.turn]||{}).name||'сосед')}</b>…</div>`;
+  }
+  T.part('dm-p-acts', JSON.stringify([o,g.phase,g.over,g.res,dmSel,g.turn]), acts);
+  T.part('dm-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
+}
+
+// Цепочка длиннее экрана: подкручиваем ленту к тому концу, который вырос,
+// и не трогаем её, пока ничего не менялось, — иначе она дёргалась бы сама.
+function dmScroll(g){
+  const strip = document.getElementById('dm-strip');
+  const left = JSON.stringify(g.line[0]||null);
+  if(!strip) return;
+  if(g.line.length !== dmLineN || left !== dmLineL){
+    const grewLeft = dmLineN >= 0 && left !== dmLineL && g.line.length > dmLineN;
+    strip.scrollLeft = g.line.length ? (grewLeft ? 0 : strip.scrollWidth) : 0;
+  }
+  dmLineN = g.line.length; dmLineL = left;
+}
+
+function dmTap(i){
+  const g = DM.room?.g; if(!g) return;
+  const o = g.opts;
+  if(!o){ DM.err('Сейчас не твой ход'); return; }
+  const p = (o.plays||[]).find(x=>x.i===i);
+  if(!p){
+    DM.err(g.must ? `Первый ход — только ${g.must.a}:${g.must.b}`
+                  : 'Эта кость не подходит ни к одному концу');
+    return;
+  }
+  // стол пуст, кость лезет только к одному концу или концы одинаковые —
+  // спрашивать не о чем, кладём сразу
+  if(!o.ends || !(p.L && p.R) || o.ends[0]===o.ends[1]){
+    dmSel = -1; DM.move({t:'play', i, end: p.L ? 'L' : 'R'}); return;
+  }
+  dmSel = (dmSel===i ? -1 : i);
+  try{ Telegram.WebApp.HapticFeedback.selectionChanged(); }catch{}
+  dmDraw(DM, g);
+}
+function dmPut(end){
+  const i = dmSel; if(i<0) return;
+  dmSel = -1;
+  DM.move({t:'play', i, end});
+}
+
 // ═══ ПРАВИЛА ДЛЯ НОВИЧКОВ ════════════════════════════════════════
 // Комбинации показываем настоящими картами — так понятнее любого текста.
 const rlHand = str => `<div class="rl-cards">${str.split(' ').map(x=>{
   const r = PK_R.indexOf(x.slice(0,-1)), s = '♠♥♦♣'.indexOf(x.slice(-1));
   return pkCard({r,s});
+}).join('')}</div>`;
+// то же для домино: «5:3 3:3» — цепочка из двух костей
+const rlTiles = str => `<div class="rl-dom">${str.split(' ').map(x=>{
+  const [a,b] = x.split(':').map(Number);
+  return dmTile({a,b}, '', a===b);
 }).join('')}</div>`;
 
 const RULES = {
@@ -4463,6 +4707,55 @@ const RULES = {
       <li>После каждого круга все добирают до шести, пока в колоде есть карты.</li>
     </ul>
     <p>Больше шести карт на стол не кладут, и подкинуть больше, чем защитник может отбить, нельзя.</p>`,
+  },
+  dm: { title:'Домино для новичков', body:()=>`
+    <p>Набор <b>дубль-шесть</b>: 28 костей, на каждой два числа от 0 до 6.
+    Цель кона — <b>выйти</b>, то есть выложить все свои кости раньше соседей.
+    Партия идёт до <b>101 очка</b>.</p>
+
+    <h4>Начало</h4>
+    <ul>
+      <li>На двоих раздаётся <b>по 7 костей</b>, на троих и четверых — <b>по 5</b>. Всё остальное лежит в <b>базаре</b>.</li>
+      <li>Первый кон начинает тот, у кого <b>младший дубль</b>, и обязан положить именно его.
+        Дублей нет ни у кого — ходит младшая кость по сумме очков.</li>
+      <li>Следующие коны начинает победитель предыдущего и кладёт что хочет.</li>
+    </ul>
+    <div class="rl-dom-l">${rlTiles('0:0 1:1 2:2 3:3')}</div>
+    <div class="dk-note">дубли, от младшего к старшему — 0:0 начинает партию</div>
+
+    <h4>Как ходят</h4>
+    <div class="rl-step"><div class="rl-n">1</div><div>У цепочки <b>два конца</b>. Кость прикладывается
+      к любому из них <b>совпадающим числом</b>.</div></div>
+    <div class="rl-step"><div class="rl-n">2</div><div>Подходит к обоим концам — приложение спросит,
+      с какой стороны класть. Подходит к одному — кладётся сразу.</div></div>
+    <div class="rl-step"><div class="rl-n">3</div><div>Дубли ставятся <b>поперёк</b> — на длину цепочки это не влияет,
+      просто так виднее.</div></div>
+    <div class="rl-combo">${rlTiles('5:3 3:3 3:1')}<div class="rl-name"><b>Так сходится</b><span>тройка к тройке</span></div></div>
+    <div class="rl-combo">${rlTiles('5:3 4:2')}<div class="rl-name"><b>А так нет</b><span>ни 4, ни 2 к концу 3 не подходят</span></div></div>
+
+    <h4>Нечем ходить</h4>
+    <ul>
+      <li><b>Тянешь из базара</b>, пока не попадётся подходящая кость. Ход при этом остаётся за тобой.</li>
+      <li>Базар пуст, а ходить всё равно нечем — <b>пас</b>.</li>
+      <li>Спасовали <b>все подряд</b> — кон закрывается <b>рыбой</b>.</li>
+    </ul>
+
+    <h4>Счёт</h4>
+    <ul>
+      <li><b>Вышел</b> — получаешь сумму очков, оставшихся на руках у всех соперников.</li>
+      <li><b>Рыба</b> — выигрывает тот, у кого очков меньше всех, и берёт разницу между чужими очками и своими.</li>
+      <li>Меньше всех поровну у нескольких — кон ничейный, очки никому не идут.</li>
+      <li>Дошёл до <b>101</b> — партия твоя.</li>
+    </ul>
+    <p style="color:var(--dim)">Очки на кости считаются просто суммой точек: 6:4 — это 10, дубль 0:0 — ноль.
+    Поэтому пустышки и мелочь под конец кона держать выгоднее, чем тяжёлые кости.</p>
+
+    <h4>Мелочи, о которые спотыкаются</h4>
+    <ul>
+      <li>Кости соседей хранятся на сервере — видно только <b>сколько</b> их у кого, но не какие.</li>
+      <li>Базар тоже закрыт: показывается только его размер.</li>
+      <li>Пропустить ход просто так нельзя. Есть чем ходить — ходи, есть базар — тяни.</li>
+    </ul>`,
   },
   sol: { title:'Косынка для новичков', body:()=>`
     <p>Цель — собрать <b>все четыре масти</b> в верхних клетках, от туза до короля.</p>
