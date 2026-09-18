@@ -705,16 +705,32 @@ select.fl-in{appearance:none}
 .dm-p{width:calc(var(--dt)*.15);height:calc(var(--dt)*.15);border-radius:50%;
   place-self:center;background:#1a1a1f}
 .dm-p.o{background:none}
-/* цепочка: лента с прокруткой, концы подсвечены */
-.dm-line{display:flex;align-items:center;gap:3px;overflow-x:auto;overflow-y:hidden;
-  padding:12px 10px;background:linear-gradient(160deg,#10331f,#0a1f13);
-  border:1px solid #1d4d30;border-radius:13px;min-height:74px;
-  scrollbar-width:none;-webkit-overflow-scrolling:touch}
-.dm-line::-webkit-scrollbar{display:none}
-.dm-line .dm-t{--dt:22px}
-.dm-line .dm-t.last{outline:2px solid var(--accent);outline-offset:1px}
-.dm-empty-line{margin:auto;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;
-  color:rgba(255,255,255,.35);text-transform:uppercase}
+/* поле: настоящий квадратный стол, кости кладутся в клетки */
+.dm-board{position:relative;width:100%;aspect-ratio:1/1;display:grid;
+  background:linear-gradient(160deg,#10331f,#0a1f13);
+  border:1px solid #1d4d30;border-radius:13px;padding:4px;box-sizing:border-box;
+  background-image:linear-gradient(160deg,#10331f,#0a1f13),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 1px,transparent 1px 100%),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 100%)}
+.dm-c{position:relative;display:flex;align-items:center;justify-content:center}
+/* подсветка ровно по клетке: разливаться пятном, как у карт, ей нельзя —
+   иначе не видно, куда именно ткнуть */
+@keyframes dmCell{0%,100%{background:rgba(232,255,0,.07)}50%{background:rgba(232,255,0,.19)}}
+.dm-c.ok{cursor:pointer;border-radius:5px;box-shadow:inset 0 0 0 1.5px rgba(232,255,0,.7);
+  animation:dmCell 1.6s infinite}
+.dm-c.ok:active{background:rgba(232,255,0,.3)}
+/* ниточка между соседями по цепочке: на повороте кости стоят под углом и
+   сами не смыкаются, а так сразу видно, куда цепочка идёт */
+.dm-lk{position:absolute;z-index:0;background:rgba(246,246,238,.2);border-radius:2px}
+.dm-lk.l{left:-50%;width:100%;top:39%;height:22%}
+.dm-lk.r{left:50%;width:100%;top:39%;height:22%}
+.dm-lk.u{top:-50%;height:100%;left:39%;width:22%}
+.dm-lk.d{top:50%;height:100%;left:39%;width:22%}
+.dm-board .dm-t{--dt:calc(var(--dcell)*.47);position:relative;z-index:1}
+.dm-board .dm-t.last{box-shadow:0 0 0 2px var(--accent),0 3px 8px rgba(0,0,0,.4)}
+.dm-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-align:center;
+  color:rgba(255,255,255,.35);text-transform:uppercase;pointer-events:none;padding:0 20px}
 /* шапка стола: концы и базар */
 .dm-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .dm-ends{display:flex;gap:5px}
@@ -740,7 +756,7 @@ select.fl-in{appearance:none}
 .dm-hand .dm-t{--dt:30px;cursor:pointer;transition:transform .13s,box-shadow .13s}
 .dm-hand .dm-t.ok{box-shadow:0 0 0 2px var(--accent),0 4px 10px rgba(0,0,0,.35)}
 .dm-hand .dm-t.no{opacity:.42;filter:grayscale(.6)}
-.dm-hand .dm-t.sel{transform:translateY(-7px)}
+.dm-hand .dm-t.sel{transform:translateY(-7px);box-shadow:0 0 0 2px var(--accent),0 9px 14px rgba(0,0,0,.5)}
 .dm-hand .dm-t.must{animation:pcPulse 1.5s infinite}
 .dm-sides{display:flex;gap:6px;margin-top:4px}
 .dm-sides .dk-btn{padding:12px 4px;font-size:12px}
@@ -4430,24 +4446,26 @@ function dmHalf(n){
   for(let i=0;i<9;i++) h += `<i class="dm-p${on.indexOf(i)<0?' o':''}"></i>`;
   return `<div class="dm-half">${h}</div>`;
 }
-// vert=true — половинки одна над другой: так кость лежит в руке, и так же
-// на столе ставится дубль, поперёк цепочки.
-const dmTile = (t, cls, vert) => t
-  ? `<div class="dm-t${vert?' v':''}${cls?' '+cls:''}">${dmHalf(t.a)}${dmHalf(t.b)}</div>` : '';
+// vert — половинки одна над другой (так кость лежит в руке и так же встаёт
+// дубль поперёк цепочки); rev — рисовать со стороны b, когда кость цепляется
+// к соседу другим концом.
+const dmTile = (t, cls, vert, rev) => t
+  ? `<div class="dm-t${vert?' v':''}${cls?' '+cls:''}">`+
+    (rev ? dmHalf(t.b)+dmHalf(t.a) : dmHalf(t.a)+dmHalf(t.b))+`</div>` : '';
 
-let dmSel = -1, dmVer = -1, dmLineN = -1, dmLineL = '';
+let dmSel = -1, dmVer = -1, dmAsk = null;
 
 const DM = makeTable({
   game:'dom', prefix:'dm', obj:'DM', title:'Домино', seats:[2,3,4],
   hint:'Дубль-шесть, партия до 101 очка. На двоих раздаётся по 7 костей, на троих-четверых по 5 — остальное уходит в базар.',
-  shell:`<div id="dm-p-top"></div><div id="dm-p-seats"></div><div id="dm-p-line"></div>`+
+  shell:`<div id="dm-p-top"></div><div id="dm-p-seats"></div><div id="dm-p-board"></div>`+
         `<div id="dm-p-hand"></div><div id="dm-p-acts"></div><div id="dm-p-log"></div>`,
   renderPlay(T,g){ dmDraw(T,g); },
 });
 
 function dmDraw(T,g){
   const P = T.room.players, o = g.opts;
-  if(g.ver !== dmVer){ dmVer = g.ver; dmSel = -1; }
+  if(g.ver !== dmVer){ dmVer = g.ver; dmSel = -1; dmAsk = null; }
 
   const ends = g.ends;
   T.part('dm-p-top', JSON.stringify([g.round,ends,g.bone,g.target]), `
@@ -4471,13 +4489,30 @@ function dmDraw(T,g){
       </div>`;
     }).join('')}</div>`);
 
-  const lastIx = g.line.length-1;
-  T.part('dm-p-line', JSON.stringify(g.line), `
-    <div class="dm-line" id="dm-strip">${
-      g.line.length
-        ? g.line.map((t,i)=>dmTile(t, (i===0||i===lastIx)?'last':'', t.a===t.b)).join('')
-        : `<div class="dm-empty-line">цепочка пока пуста</div>`}</div>`);
-  dmScroll(g);
+  // Поле — квадрат: кости лежат в клетках, цепочка вьётся по нему так, как её
+  // ведут игроки. Клетки, куда можно положить выбранную кость, подсвечены.
+  const B = g.board || 11, lastIx = g.line.length-1;
+  const at = {};
+  g.line.forEach((t,i)=>{
+    const p = i ? g.line[i-1] : null;
+    const lk = !p ? '' : (p.x < t.x ? 'l' : p.x > t.x ? 'r' : p.y < t.y ? 'u' : 'd');
+    at[t.y*B+t.x] = {t, lk, end: i===0 ? 'L' : (i===lastIx ? 'R' : '')};
+  });
+  const drop = {};
+  dmCells(g, dmSel).forEach(c=>{ drop[c.y*B+c.x] = c; });
+  let cells = '';
+  for(let y=0;y<B;y++) for(let x=0;x<B;x++){
+    const k = y*B+x, on = at[k], dr = drop[k];
+    cells += on
+      ? `<div class="dm-c">${on.lk?`<i class="dm-lk ${on.lk}"></i>`:''}`+
+        `${dmTile(on.t, on.end?'last':'', !on.t.h, on.t.rev)}</div>`
+      : `<div class="dm-c${dr?' ok':''}"${dr?` onclick="dmDrop(${x},${y})"`:''}></div>`;
+  }
+  T.part('dm-p-board', JSON.stringify([g.line, B, Object.keys(drop)]), `
+    <div class="dm-board" id="dm-board" style="grid-template-columns:repeat(${B},1fr)">
+      ${cells}${g.line.length?'':'<div class="dm-hint">возьми кость и положи её сюда</div>'}
+    </div>`);
+  dmFit();
 
   // Рука: подсвечиваем то, чем можно пойти прямо сейчас. Остальное гасим,
   // но оставляем на месте — иначе кости прыгали бы каждый ход.
@@ -4515,16 +4550,19 @@ function dmDraw(T,g){
         <button class="dk-btn" onclick="DM.next()">СЛЕДУЮЩИЙ КОН</button>
       </div>`;
   } else if(o){
-    const p = dmSel>=0 ? fit[dmSel] : null;
-    if(p && p.L && p.R && ends && ends[0]!==ends[1]){
+    if(dmAsk){
+      // клетка касается обоих концов сразу — от выбора зависит, какое число
+      // останется открытым, поэтому решает игрок, а не приложение
       acts = `<div class="dm-sides">
-          <button class="dk-btn" onclick="dmPut('L')">◀ СЛЕВА · ${ends[0]}</button>
-          <button class="dk-btn" onclick="dmPut('R')">СПРАВА · ${ends[1]} ▶</button>
+          <button class="dk-btn" onclick="dmPut('L')">◀ К КОНЦУ ${ends[0]}</button>
+          <button class="dk-btn" onclick="dmPut('R')">К КОНЦУ ${ends[1]} ▶</button>
         </div>
-        <div class="dk-note" style="text-align:center;margin-top:7px">Кость подходит к обоим концам — выбери, куда класть</div>`;
+        <div class="dk-note" style="text-align:center;margin-top:7px">Эта клетка примыкает к обоим концам — выбери, к какому цепляем</div>`;
     } else if(o.plays.length){
       acts = `<div class="tb-me" style="padding:10px 0">${
-        g.must ? `первый ход — кость <b>${g.must.a}:${g.must.b}</b>` : 'твой ход — жми на кость'}</div>`;
+        dmSel>=0 ? 'теперь ткни в <b>подсвеченную клетку</b> на поле'
+        : g.must ? `первый ход — кость <b>${g.must.a}:${g.must.b}</b>, ляжет в центр поля`
+        : 'твой ход — возьми кость, потом выбери клетку'}</div>`;
     } else if(o.canDraw){
       acts = `<button class="dk-btn" onclick="DM.move({t:'draw'})">ВЗЯТЬ ИЗ БАЗАРА · ${o.bone}</button>
         <div class="dk-note" style="text-align:center;margin-top:7px">Ходить нечем — тяни, пока не попадётся подходящая</div>`;
@@ -4536,23 +4574,37 @@ function dmDraw(T,g){
     acts = `<div class="tb-me" style="padding:12px 0">ходит <b>${
       esc((P[g.turn]||{}).name||'сосед')}</b>…</div>`;
   }
-  T.part('dm-p-acts', JSON.stringify([o,g.phase,g.over,g.res,dmSel,g.turn]), acts);
+  T.part('dm-p-acts', JSON.stringify([o,g.phase,g.over,g.res,dmSel,dmAsk,g.turn]), acts);
   T.part('dm-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
 }
 
-// Цепочка длиннее экрана: подкручиваем ленту к тому концу, который вырос,
-// и не трогаем её, пока ничего не менялось, — иначе она дёргалась бы сама.
-function dmScroll(g){
-  const strip = document.getElementById('dm-strip');
-  const left = JSON.stringify(g.line[0]||null);
-  if(!strip) return;
-  if(g.line.length !== dmLineN || left !== dmLineL){
-    const grewLeft = dmLineN >= 0 && left !== dmLineL && g.line.length > dmLineN;
-    strip.scrollLeft = g.line.length ? (grewLeft ? 0 : strip.scrollWidth) : 0;
-  }
-  dmLineN = g.line.length; dmLineL = left;
+// Клетка поля квадратная, размер считаем от ширины: так весь стол виден
+// целиком и не надо ничего прокручивать.
+function dmFit(){
+  const el = document.getElementById('dm-board'); if(!el) return;
+  const B = DM.room?.g?.board || 11;
+  const c = (el.clientWidth - 8) / B;
+  if(c > 0) el.style.setProperty('--dcell', c.toFixed(2)+'px');
+}
+addEventListener('resize', ()=>{ if(cardsTab==='dm') dmFit(); });
+
+// Куда можно положить кость i: свободные клетки у тех концов, к которым она
+// подходит. Клетка рядом сразу с двумя концами попадает сюда один раз, но
+// помнит оба — какой выбрать, потом спросим.
+function dmCells(g, i){
+  const o = g?.opts; if(!o || i<0) return [];
+  const p = (o.plays||[]).find(x=>x.i===i); if(!p) return [];
+  const B = g.board || 11, map = new Map();
+  const add = (list, end) => (list||[]).forEach(c=>{
+    const k = c.y*B+c.x, v = map.get(k) || {x:c.x, y:c.y, ends:[]};
+    v.ends.push(end); map.set(k, v);
+  });
+  if(p.L) add(o.spots?.L, 'L');
+  if(p.R) add(o.spots?.R, 'R');
+  return [...map.values()];
 }
 
+// шаг первый: берём кость из своей стопки
 function dmTap(i){
   const g = DM.room?.g; if(!g) return;
   const o = g.opts;
@@ -4563,19 +4615,32 @@ function dmTap(i){
                   : 'Эта кость не подходит ни к одному концу');
     return;
   }
-  // стол пуст, кость лезет только к одному концу или концы одинаковые —
-  // спрашивать не о чем, кладём сразу
-  if(!o.ends || !(p.L && p.R) || o.ends[0]===o.ends[1]){
-    dmSel = -1; DM.move({t:'play', i, end: p.L ? 'L' : 'R'}); return;
-  }
+  dmAsk = null;
   dmSel = (dmSel===i ? -1 : i);
   try{ Telegram.WebApp.HapticFeedback.selectionChanged(); }catch{}
   dmDraw(DM, g);
 }
+
+// шаг второй: кладём её в выбранную клетку поля
+function dmDrop(x, y){
+  const g = DM.room?.g; if(!g || dmSel<0) return;
+  const c = dmCells(g, dmSel).find(c=>c.x===x && c.y===y);
+  if(!c) return;
+  // Спрашиваем сторону, только когда выбор и правда что-то меняет: на пустом
+  // поле и при одинаковых концах открытое число выйдет одно и то же.
+  const e = g.ends;
+  if(c.ends.length === 1 || !g.line.length || !e || e[0] === e[1]){
+    const i = dmSel; dmSel = -1; dmAsk = null;
+    DM.move({t:'play', i, end:c.ends[0], x, y});
+    return;
+  }
+  dmAsk = {x, y};                                  // клетка у обоих концов — спросим
+  dmDraw(DM, g);
+}
 function dmPut(end){
-  const i = dmSel; if(i<0) return;
-  dmSel = -1;
-  DM.move({t:'play', i, end});
+  const i = dmSel, a = dmAsk; if(i<0 || !a) return;
+  dmSel = -1; dmAsk = null;
+  DM.move({t:'play', i, end, x:a.x, y:a.y});
 }
 
 // ═══ ПРАВИЛА ДЛЯ НОВИЧКОВ ════════════════════════════════════════
@@ -4724,11 +4789,18 @@ const RULES = {
     <div class="dk-note">дубли, от младшего к старшему — 0:0 начинает партию</div>
 
     <h4>Как ходят</h4>
+    <p>Поле — <b>квадратный стол 11×11 клеток</b>, а не полоска. Цепочка вьётся по нему так,
+    как её ведут игроки: хочешь — прямо, хочешь — змейкой или вокруг угла.</p>
     <div class="rl-step"><div class="rl-n">1</div><div>У цепочки <b>два конца</b>. Кость прикладывается
       к любому из них <b>совпадающим числом</b>.</div></div>
-    <div class="rl-step"><div class="rl-n">2</div><div>Подходит к обоим концам — приложение спросит,
-      с какой стороны класть. Подходит к одному — кладётся сразу.</div></div>
-    <div class="rl-step"><div class="rl-n">3</div><div>Дубли ставятся <b>поперёк</b> — на длину цепочки это не влияет,
+    <div class="rl-step"><div class="rl-n">2</div><div><b>Ставишь руками:</b> сначала тычешь в кость
+      у себя в стопке — она приподнимается, а на поле загораются клетки, куда её можно положить.
+      Потом тычешь в клетку. Передумал — жми по кости ещё раз.</div></div>
+    <div class="rl-step"><div class="rl-n">3</div><div>Самая первая кость кона ложится <b>в центр</b> поля,
+      дальше клетку выбираешь сам — любую свободную вплотную к нужному концу.</div></div>
+    <div class="rl-step"><div class="rl-n">4</div><div>Клетка примыкает сразу к обоим концам — приложение
+      спросит, к какому цепляем: от этого зависит, какое число останется открытым.</div></div>
+    <div class="rl-step"><div class="rl-n">5</div><div>Дубли ставятся <b>поперёк</b> — на цепочку это не влияет,
       просто так виднее.</div></div>
     <div class="rl-combo">${rlTiles('5:3 3:3 3:1')}<div class="rl-name"><b>Так сходится</b><span>тройка к тройке</span></div></div>
     <div class="rl-combo">${rlTiles('5:3 4:2')}<div class="rl-name"><b>А так нет</b><span>ни 4, ни 2 к концу 3 не подходят</span></div></div>
@@ -4755,6 +4827,8 @@ const RULES = {
       <li>Кости соседей хранятся на сервере — видно только <b>сколько</b> их у кого, но не какие.</li>
       <li>Базар тоже закрыт: показывается только его размер.</li>
       <li>Пропустить ход просто так нельзя. Есть чем ходить — ходи, есть базар — тяни.</li>
+      <li>Если завести цепочку в угол и обложить конец со всех сторон, класть туда станет некуда —
+        подходящая по числу кость просто не предложится. Поле большое, но место лучше не запирать.</li>
     </ul>`,
   },
   sol: { title:'Косынка для новичков', body:()=>`

@@ -19,22 +19,34 @@
 //     суммой чужих очков и своими. Поровну меньше всех у нескольких — кон
 //     считается ничейным, очки не начисляются;
 //   • партия идёт до 101 очка.
+//
+// Поле — квадрат 11×11 клеток, как настоящий стол, а не прямая полоса.
+// Кость кладётся в любую свободную клетку рядом с тем концом цепочки, к
+// которому она подходит: цепочка змеится по полю так, как игроки её ведут.
+// Логически это по-прежнему одна линия (line[i].b === line[i+1].a) — клетка
+// задаёт только то, где кость лежит и как повёрнута.
 
 export type DTile = { a: number; b: number };
+// кость на поле: a цепляется к предыдущей, b — к следующей;
+// h — лежит горизонтально, rev — рисуется со стороны b (к соседу смотрит a)
+export type DCell = { x: number; y: number };
+export type DPlaced = DTile & DCell & { h: boolean; rev: boolean };
+
 export const D_MIN_SEATS = 2;
 export const D_MAX_SEATS = 4;
 export const D_TARGET = 101;
 export const D_MAX_PIP = 6;
+export const D_BOARD = 11;                        // сторона поля в клетках
 
 export type DMove =
-  | { t: "play"; i: number; end: "L" | "R" }
+  | { t: "play"; i: number; end: "L" | "R"; x?: number; y?: number }
   | { t: "draw" }
   | { t: "pass" };
 
 export type DSt = {
   hands: DTile[][];
   bone: DTile[];                                    // базар
-  line: DTile[];                                    // цепочка слева направо
+  line: DPlaced[];                                  // цепочка от левого конца к правому
   hands0: number[];                                 // сколько костей у каждого (для чужих глаз)
   turn: number;
   passes: number;                                   // сколько пасов подряд
@@ -78,7 +90,42 @@ export function dmFits(s: DSt, t: DTile, end: "L" | "R"): boolean {
   return t.a === v || t.b === v;
 }
 export const dmCanPlay = (s: DSt, h: DTile[]) =>
-  h.some(t => dmFits(s, t, "L") || dmFits(s, t, "R"));
+  h.some(t => dmPlayable(s, t, "L") || dmPlayable(s, t, "R"));
+
+// ── поле ──
+const dmOn = (s: DSt, x: number, y: number) => s.line.some(p => p.x === x && p.y === y);
+const dmIn = (x: number, y: number) => x >= 0 && y >= 0 && x < D_BOARD && y < D_BOARD;
+
+// куда физически можно положить кость с этого конца: свободные клетки
+// вплотную к крайней кости. Пустое поле принимает первую кость в центр —
+// иначе первый ход означал бы выбор из всех 121 клетки ни о чём.
+export function dmSpots(s: DSt, end: "L" | "R"): DCell[] {
+  if (!s.line.length) return [{ x: D_BOARD >> 1, y: D_BOARD >> 1 }];
+  const t = end === "L" ? s.line[0] : s.line[s.line.length - 1];
+  const out: DCell[] = [];
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const x = t.x + dx, y = t.y + dy;
+    if (dmIn(x, y) && !dmOn(s, x, y)) out.push({ x, y });
+  }
+  return out;
+}
+
+// кость подходит по числу И этому концу есть куда лечь
+const dmPlayable = (s: DSt, t: DTile, end: "L" | "R") =>
+  dmFits(s, t, end) && dmSpots(s, end).length > 0;
+
+// Как повернуть кость в клетке c: та половина, которой она цепляется к
+// соседу (a при приставке справа, b — слева), должна смотреть на него.
+// Дубль ставится поперёк цепочки, как на настоящем столе, — оба его числа
+// одинаковые, на связь это не влияет.
+function dmOrient(t: DTile, c: DCell, to: DPlaced, end: "L" | "R") {
+  const dx = to.x - c.x, dy = to.y - c.y;
+  const horiz = dx !== 0;
+  const dbl = t.a === t.b;
+  const rev = horiz ? (end === "R" ? dx > 0 : dx < 0)
+                    : (end === "R" ? dy > 0 : dy < 0);
+  return { x: c.x, y: c.y, h: dbl ? !horiz : horiz, rev: dbl ? false : rev };
+}
 
 export function dmStart(seats: number, rnd: () => number = Math.random): DSt {
   const n = Math.max(D_MIN_SEATS, Math.min(D_MAX_SEATS, seats | 0));
@@ -134,8 +181,11 @@ export function dmDeal(prev: DSt, rnd: () => number = Math.random): DSt {
 export function dmOptions(s: DSt, p: number) {
   if (s.over || s.phase !== "play" || s.turn !== p) return null;
   const h = s.hands[p] ?? [];
+  const spots = { L: dmSpots(s, "L"), R: dmSpots(s, "R") };
   const can = h.map((t, i) => ({
-    i, L: dmFits(s, t, "L"), R: dmFits(s, t, "R"),
+    i,
+    L: dmFits(s, t, "L") && spots.L.length > 0,
+    R: dmFits(s, t, "R") && spots.R.length > 0,
   })).filter(x => x.L || x.R);
   return {
     plays: s.must ? can.filter(x => dmSame(h[x.i], s.must!)) : can,
@@ -143,6 +193,8 @@ export function dmOptions(s: DSt, p: number) {
     canPass: !can.length && s.bone.length === 0,
     bone: s.bone.length,
     ends: dmEnds(s),
+    spots,
+    board: D_BOARD,
   };
 }
 
@@ -160,15 +212,26 @@ export function dmApply(st: DSt, p: number, m: DMove): DSt | string {
     if (!t) return "нет такой кости";
     if (s.must && !dmSame(t, s.must)) return `первый ход — только ${s.must.a}:${s.must.b}`;
     if (!dmFits(s, t, m.end)) return "эта кость сюда не подходит";
+    const free = dmSpots(s, m.end);
+    if (!free.length) return "с этой стороны на поле нет места";
+    // клетку выбирает игрок; не выбрал — кладём в первую свободную
+    const c = (typeof m.x === "number" && typeof m.y === "number")
+      ? free.find(f => f.x === m.x && f.y === m.y)
+      : free[0];
+    if (!c) return "в эту клетку кость не ложится";
     s.hands[p].splice(m.i, 1);
     const e = dmEnds(s);
     if (!e) {
-      s.line.push(t);
+      s.line.push({ a: t.a, b: t.b, x: c.x, y: c.y, h: t.a !== t.b, rev: false });
     } else if (m.end === "L") {
       // к левому концу кость приставляется так, чтобы совпало правое число
-      s.line.unshift(t.b === e[0] ? t : { a: t.b, b: t.a });
+      const to = s.line[0];
+      const w = t.b === e[0] ? { a: t.a, b: t.b } : { a: t.b, b: t.a };
+      s.line.unshift({ ...w, ...dmOrient(w, c, to, "L") });
     } else {
-      s.line.push(t.a === e[1] ? t : { a: t.b, b: t.a });
+      const to = s.line[s.line.length - 1];
+      const w = t.a === e[1] ? { a: t.a, b: t.b } : { a: t.b, b: t.a };
+      s.line.push({ ...w, ...dmOrient(w, c, to, "R") });
     }
     s.must = null;
     s.passes = 0;
@@ -248,6 +311,7 @@ export function dmView(s: DSt, p: number) {
     counts: s.hands0,
     line: s.line,
     ends: dmEnds(s),
+    board: D_BOARD,
     bone: s.bone.length,
     turn: s.turn,
     passes: s.passes,

@@ -291,12 +291,31 @@ console.log("\n── домино: стол на троих ──");
 
   const mine = (await call({ initData: ids[turn + 1], action: "state", code })).body.g;
   chk("первому ходу назначена кость", !!mine.must, JSON.stringify(mine.must));
+  chk("поле квадратное и пустое", mine.board === 11 && mine.line.length === 0, `сторона ${mine.board}`);
+  chk("первую кость кладут в центр",
+    JSON.stringify(mine.opts.spots.R) === JSON.stringify([{ x: 5, y: 5 }]),
+    JSON.stringify(mine.opts.spots.R));
+
   const idx = mine.hand.findIndex(t => t.a === mine.must.a && t.b === mine.must.b);
-  const mv = await call({ initData: ids[turn + 1], action: "move", code, move: { t: "play", i: idx, end: "R" } });
-  chk("обязательная кость легла", !mv.body.error && mv.body.g.line.length === 1, mv.body.error || "");
+  const far = await call({ initData: ids[turn + 1], action: "move", code,
+    move: { t: "play", i: idx, end: "R", x: 0, y: 0 } });
+  chk("в произвольную клетку кость не кинуть", !!far.body.error, far.body.error);
+
+  const mv = await call({ initData: ids[turn + 1], action: "move", code,
+    move: { t: "play", i: idx, end: "R", x: 5, y: 5 } });
+  chk("обязательная кость легла в центр",
+    !mv.body.error && mv.body.g.line.length === 1 && mv.body.g.line[0].x === 5 && mv.body.g.line[0].y === 5,
+    mv.body.error || JSON.stringify(mv.body.g.line[0]));
   chk("концы цепочки посчитаны", Array.isArray(mv.body.g.ends) && mv.body.g.ends.length === 2,
     JSON.stringify(mv.body.g.ends));
   chk("ход ушёл следующему", mv.body.g.turn !== turn);
+
+  // следующему предлагают четыре клетки вокруг центра
+  const nx = (await call({ initData: ids[mv.body.g.turn + 1], action: "state", code })).body.g;
+  chk("вокруг лежащей кости четыре свободные клетки", nx.opts.spots.R.length === 4,
+    JSON.stringify(nx.opts.spots.R));
+  chk("все они вплотную к ней",
+    nx.opts.spots.R.every(c => Math.abs(c.x - 5) + Math.abs(c.y - 5) === 1));
 }
 
 console.log("\n── фишки «21» живут в кошельке, а не в партии ──");

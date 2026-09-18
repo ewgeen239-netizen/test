@@ -430,7 +430,16 @@ chk("видно, у кого сколько костей",
   (await B.page.locator("#dm-p-seats .dm-seat-c").allTextContents()).join(" | "));
 chk("в базаре остальные 14", (await B.page.locator("#dm-p-top .dm-bone b").first().textContent()) === "14",
   await B.page.locator("#dm-p-top .dm-bone b").first().textContent());
-chk("цепочка пока пуста", (await B.page.locator("#dm-p-line .dm-t").count()) === 0);
+chk("поле пока пусто", (await B.page.locator("#dm-p-board .dm-t").count()) === 0);
+chk("поле — квадрат 11×11 клеток", await B.page.locator("#dm-board .dm-c").count() === 121,
+  `клеток ${await B.page.locator("#dm-board .dm-c").count()}`);
+{
+  const box = await B.page.locator("#dm-board").boundingBox();
+  chk("поле нарисовано квадратом", Math.abs(box.width - box.height) < 2,
+    `${Math.round(box.width)}×${Math.round(box.height)}`);
+  chk("поле целиком помещается на экран", box.width <= 390 && box.height <= 844,
+    `${Math.round(box.width)}×${Math.round(box.height)}`);
+}
 
 // точки на половинках: их должно быть ровно столько, сколько написано в состоянии
 const pipsOk = await B.page.evaluate(() => {
@@ -467,19 +476,36 @@ await dmOther.waitForTimeout(400);
 chk("чужой ход отбивается", /не твой ход/i.test(await dmOther.locator("#dm-err").textContent()),
   (await dmOther.locator("#dm-err").textContent()).trim());
 
+// ставим руками: сначала берём кость из стопки, потом тычем в клетку
+chk("до выбора кости поле не подсвечено", await dmP.locator("#dm-board .dm-c.ok").count() === 0);
 const mustIx = await dmP.evaluate(() => DM.room.g.opts.plays[0].i);
 await dmP.evaluate(i => dmTap(i), mustIx);
+await dmP.waitForTimeout(300);
+chk("взятая кость приподнялась", await dmP.locator("#dm-p-hand .dm-t.sel").count() === 1);
+chk("первой кости подсвечена одна клетка — центр",
+  await dmP.locator("#dm-board .dm-c.ok").count() === 1,
+  `подсвечено ${await dmP.locator("#dm-board .dm-c.ok").count()}`);
+chk("подсказка зовёт в клетку", /клетк/i.test(await dmP.locator("#dm-p-acts").textContent()),
+  (await dmP.locator("#dm-p-acts").textContent()).trim().slice(0, 70));
+chk("кость на поле сама не легла", await dmP.locator("#dm-p-board .dm-t").count() === 0);
+
+await dmP.click("#dm-board .dm-c.ok");
 await dmP.waitForTimeout(900);
-chk("обязательная кость легла", await dmP.locator("#dm-p-line .dm-t").count() === 1);
-chk("дубль на столе стоит поперёк", await dmP.locator("#dm-p-line .dm-t.v").count() === 1);
+chk("обязательная кость легла на поле", await dmP.locator("#dm-p-board .dm-t").count() === 1);
+chk("легла именно в центр", await dmP.evaluate(() => {
+  const t = DM.room.g.line[0];
+  return t && t.x === 5 && t.y === 5;
+}), await dmP.evaluate(() => JSON.stringify(DM.room.g.line[0])));
+chk("дубль на поле стоит поперёк", await dmP.locator("#dm-p-board .dm-t.v").count() === 1);
 chk("в руке стало на кость меньше", await dmP.locator("#dm-p-hand .dm-t").count() === 6);
+chk("подсветка клеток погасла", await dmP.locator("#dm-board .dm-c.ok").count() === 0);
 chk("концы цепочки подписаны",
   (await dmP.locator("#dm-p-top .dm-end").allTextContents()).length === 2 &&
   (await dmP.locator("#dm-p-top .dm-end").first().textContent()).trim().startsWith(String(must.a)),
   (await dmP.locator("#dm-p-top .dm-end").allTextContents()).join(" | "));
 chk("ход ушёл соседу", await dmP.evaluate(() => DM.room.g.turn !== DM.room.g.me));
 await dmOther.waitForTimeout(2600);
-chk("сосед увидел кость на столе", await dmOther.locator("#dm-p-line .dm-t").count() === 1);
+chk("сосед увидел кость на поле", await dmOther.locator("#dm-p-board .dm-t").count() === 1);
 chk("играбельные кости у него подсвечены, остальные погашены",
   await dmOther.evaluate(() => {
     const ok = document.querySelectorAll("#dm-p-hand .dm-t.ok").length;
@@ -488,35 +514,54 @@ chk("играбельные кости у него подсвечены, ост�
     return ok === fits && ok + no === DM.room.g.hand.length;
   }));
 
-// кость, подходящая к обоим концам, спрашивает сторону
-const bothSides = await dmOther.evaluate(() => {
-  const o = DM.room.g.opts, e = o?.ends;
-  if (!o || !e || e[0] === e[1]) return null;
-  const p = o.plays.find(x => x.L && x.R);
-  return p ? p.i : -1;
+// сосед кладёт свою кость в клетку, которую выбирает сам
+const spot = await dmOther.evaluate(() => {
+  const o = DM.room.g.opts;
+  if (!o || !o.plays.length) return null;
+  const i = o.plays[0].i;
+  dmTap(i);
+  return { i, cells: dmCells(DM.room.g, i) };
 });
-if (bothSides !== null && bothSides >= 0) {
-  await dmOther.evaluate(i => dmTap(i), bothSides);
+if (spot) {
   await dmOther.waitForTimeout(300);
-  chk("кость к обоим концам спрашивает сторону", await dmOther.locator(".dm-sides .dk-btn").count() === 2,
-    (await dmOther.locator(".dm-sides .dk-btn").allTextContents()).join(" | "));
-  chk("выбранная кость приподнята", await dmOther.locator("#dm-p-hand .dm-t.sel").count() === 1);
-  await dmOther.click(".dm-sides .dk-btn:last-child");
-  await dmOther.waitForTimeout(800);
-  chk("кость легла справа", await dmOther.locator("#dm-p-line .dm-t").count() === 2);
+  chk("вокруг лежащей кости подсвечены свободные клетки",
+    await dmOther.locator("#dm-board .dm-c.ok").count() === spot.cells.length && spot.cells.length > 1,
+    `подсвечено ${await dmOther.locator("#dm-board .dm-c.ok").count()} из ${spot.cells.length}`);
+  chk("все они вплотную к кости на поле",
+    spot.cells.every(c => Math.abs(c.x - 5) + Math.abs(c.y - 5) === 1),
+    JSON.stringify(spot.cells));
+  // кладём не в первую попавшуюся, а в выбранную — проверяем, что слушают нас
+  const want = spot.cells[spot.cells.length - 1];
+  await dmOther.evaluate(c => dmDrop(c.x, c.y), want);
+  await dmOther.waitForTimeout(900);
+  const put = await dmOther.evaluate(() => DM.room.g.line.map(t => `${t.x},${t.y}`));
+  chk("кость легла именно в выбранную клетку",
+    put.includes(`${want.x},${want.y}`) && put.length === 2,
+    `${put.join(" · ")}, просили ${want.x},${want.y}`);
+  chk("на поле теперь две кости", await dmOther.locator("#dm-p-board .dm-t").count() === 2);
 } else {
-  // концы одинаковые или двусторонней кости нет — ходим чем есть
   await dmOther.evaluate(() => {
     const o = DM.room.g.opts;
-    if (!o) return;
-    o.plays.length ? dmTap(o.plays[0].i) : DM.move({ t: o.canDraw ? "draw" : "pass" });
+    if (o) DM.move({ t: o.canDraw ? "draw" : "pass" });
   });
   await dmOther.waitForTimeout(800);
-  chk("сосед сходил или потянул из базара", await dmOther.evaluate(() => DM.room.g.ver) > 2);
+  chk("сосед потянул из базара или спасовал", await dmOther.evaluate(() => DM.room.g.ver) > 2);
 }
 chk("цепочка не разорвалась", await dmOther.evaluate(() => {
   const L = DM.room.g.line;
   return L.every((t, i) => i === 0 || L[i - 1].b === t.a);
+}));
+chk("кости на поле не налезают друг на друга", await dmOther.evaluate(() => {
+  const L = DM.room.g.line, seen = new Set();
+  return L.every(t => {
+    const k = `${t.x},${t.y}`;
+    if (seen.has(k) || t.x < 0 || t.y < 0 || t.x > 10 || t.y > 10) return false;
+    seen.add(k); return true;
+  });
+}));
+chk("соседи по цепочке лежат вплотную", await dmOther.evaluate(() => {
+  const L = DM.room.g.line;
+  return L.every((t, i) => i === 0 || Math.abs(L[i - 1].x - t.x) + Math.abs(L[i - 1].y - t.y) === 1);
 }));
 
 console.log("\n── правила для новичков ──");

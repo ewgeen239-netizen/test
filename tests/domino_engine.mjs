@@ -1,8 +1,8 @@
 // Правила домино: раздача, первый ход, приклад к концам, базар, рыба, счёт.
 // Запуск: node tests/run-domino.mjs
 import {
-  dmStart, dmDeal, dmApply, dmOptions, dmView, dmSet, dmEnds, dmFits,
-  dmPips, dmHandPips, D_TARGET,
+  dmStart, dmDeal, dmApply, dmOptions, dmView, dmSet, dmEnds, dmFits, dmSpots,
+  dmPips, dmHandPips, D_TARGET, D_BOARD,
 } from "./.build/domino/domino.js";
 
 let bad = 0;
@@ -10,6 +10,30 @@ const chk = (n, c, e = "") => { console.log(`  ${c ? "✓" : "✗"} ${n}${e ? " 
 const rng = (seed) => () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 const all = s => [...s.hands.flat(), ...s.bone, ...s.line];
 const key = t => `${Math.min(t.a, t.b)}:${Math.max(t.a, t.b)}`;
+
+// Поле: каждая кость в своей клетке, соседи по цепочке лежат вплотную,
+// всё внутри квадрата. Возвращает описание первой поломки или "".
+function boardBroken(s) {
+  const seen = new Set();
+  for (let k = 0; k < s.line.length; k++) {
+    const t = s.line[k];
+    if (!Number.isInteger(t.x) || !Number.isInteger(t.y)) return `у кости ${k} нет клетки`;
+    if (t.x < 0 || t.y < 0 || t.x >= D_BOARD || t.y >= D_BOARD) return `кость ${k} вне поля (${t.x},${t.y})`;
+    const id = `${t.x},${t.y}`;
+    if (seen.has(id)) return `две кости в клетке ${id}`;
+    seen.add(id);
+    if (k) {
+      const p = s.line[k - 1];
+      if (Math.abs(p.x - t.x) + Math.abs(p.y - t.y) !== 1)
+        return `кости ${k - 1} и ${k} лежат не вплотную`;
+    }
+  }
+  return "";
+}
+// первый ход — в центр поля, дальше клетку выбирает игрок
+const mid = { x: D_BOARD >> 1, y: D_BOARD >> 1 };
+// кость на поле для положений, которые собираем руками
+const lay = (a, b, x = mid.x, y = mid.y) => ({ a, b, x, y, h: a !== b, rev: false });
 
 console.log("── набор костей ──");
 {
@@ -80,6 +104,66 @@ console.log("\n── приклад к концам ──");
     typeof r === "string" ? "" : JSON.stringify(r.line));
 }
 
+console.log("\n── квадратное поле ──");
+{
+  let s = dmStart(2, rng(45));
+  chk("пустое поле принимает первую кость в центр",
+    JSON.stringify(dmSpots(s, "R")) === JSON.stringify([mid]), JSON.stringify(dmSpots(s, "R")));
+  const i = s.hands[s.turn].findIndex(t => key(t) === key(s.must));
+  s = dmApply(s, s.turn, { t: "play", i, end: "R", ...mid });
+  chk("первая кость встала в центр", s.line[0].x === mid.x && s.line[0].y === mid.y,
+    `${s.line[0].x},${s.line[0].y}`);
+
+  const sp = dmSpots(s, "R");
+  chk("вокруг кости четыре свободные клетки", sp.length === 4, JSON.stringify(sp));
+  chk("все они вплотную к ней",
+    sp.every(c => Math.abs(c.x - mid.x) + Math.abs(c.y - mid.y) === 1));
+
+  // класть можно только в предложенную клетку, а не куда вздумается
+  const p = s.turn;
+  s.hands[p] = [{ a: s.line[0].b, b: (s.line[0].b + 1) % 7 }];   // заведомо не дубль
+  chk("в дальнюю клетку кость не ложится",
+    typeof dmApply(s, p, { t: "play", i: 0, end: "R", x: 0, y: 0 }) === "string",
+    String(dmApply(s, p, { t: "play", i: 0, end: "R", x: 0, y: 0 })));
+  chk("за край поля — тоже",
+    typeof dmApply(s, p, { t: "play", i: 0, end: "R", x: -1, y: mid.y }) === "string");
+  chk("в занятую клетку — тоже",
+    typeof dmApply(s, p, { t: "play", i: 0, end: "R", ...mid }) === "string");
+
+  // повороты: половина, которой кость цепляется, смотрит на соседа
+  for (const [dx, dy, wantH, wantRev] of [[1, 0, true, false], [-1, 0, true, true],
+                                          [0, 1, false, false], [0, -1, false, true]]) {
+    const r = dmApply(s, p, { t: "play", i: 0, end: "R", x: mid.x + dx, y: mid.y + dy });
+    const t = typeof r === "string" ? null : r.line.at(-1);
+    chk(`кость справа от центра на (${dx},${dy}) повёрнута верно`,
+      !!t && t.h === wantH && t.rev === wantRev,
+      t ? `h=${t.h} rev=${t.rev}` : String(r));
+  }
+  // дубль ложится поперёк цепочки
+  s.hands[p] = [{ a: s.line[0].b, b: s.line[0].b }];
+  const d = dmApply(s, p, { t: "play", i: 0, end: "R", x: mid.x + 1, y: mid.y });
+  chk("дубль встаёт поперёк", typeof d !== "string" && d.line.at(-1).h === false,
+    typeof d === "string" ? d : `h=${d.line.at(-1).h}`);
+
+  // конец, зажатый со всех сторон, ходов не даёт: цепочка свернулась в угол
+  // квадратом, и к её левому концу подойти уже негде
+  let boxed = dmStart(2, rng(46));
+  boxed.must = null; boxed.turn = 0; boxed.bone = []; boxed.passes = 0;
+  boxed.line = [lay(2, 4, 0, 0)];
+  chk("в углу поля у конца всего две клетки", dmSpots(boxed, "R").length === 2,
+    JSON.stringify(dmSpots(boxed, "R")));
+  boxed.line = [lay(2, 4, 0, 0), lay(4, 5, 1, 0), lay(5, 6, 1, 1), lay(6, 3, 0, 1)];
+  chk("левый конец замурован", dmSpots(boxed, "L").length === 0, JSON.stringify(dmSpots(boxed, "L")));
+  boxed.hands = [[{ a: 2, b: 1 }], [{ a: 2, b: 2 }]];   // подходит только к левому концу
+  const bo = dmOptions(boxed, 0);
+  chk("кость к замурованному концу не предлагается", bo.plays.length === 0,
+    JSON.stringify(bo.plays) + " · концы " + JSON.stringify(bo.ends));
+  chk("вместо этого предлагается пас", bo.canPass === true);
+  chk("и движок такой ход не пропустит",
+    typeof dmApply(boxed, 0, { t: "play", i: 0, end: "L" }) === "string",
+    String(dmApply(boxed, 0, { t: "play", i: 0, end: "L" })));
+}
+
 console.log("\n── базар ──");
 {
   let s = dmStart(2, rng(51));
@@ -114,7 +198,7 @@ console.log("\n── выход и счёт ──");
 {
   // собираем положение руками: у первого одна подходящая кость
   let s = dmStart(2, rng(61));
-  s.line = [{ a: 3, b: 4 }];
+  s.line = [lay(3, 4)];
   s.must = null; s.turn = 0; s.bone = [];
   s.hands = [[{ a: 4, b: 5 }], [{ a: 6, b: 6 }, { a: 2, b: 2 }]];
   const r = dmApply(s, 0, { t: "play", i: 0, end: "R" });
@@ -128,7 +212,7 @@ console.log("\n── выход и счёт ──");
 console.log("\n── рыба ──");
 {
   let s = dmStart(3, rng(71));
-  s.line = [{ a: 3, b: 3 }];
+  s.line = [lay(3, 3)];
   s.must = null; s.turn = 0; s.bone = []; s.passes = 0;
   s.hands = [[{ a: 1, b: 2 }], [{ a: 0, b: 1 }], [{ a: 5, b: 6 }, { a: 4, b: 4 }]];
   let r = dmApply(s, 0, { t: "pass" });
@@ -141,7 +225,7 @@ console.log("\n── рыба ──");
 
   // поровну меньше всех — ничья
   let t = dmStart(2, rng(72));
-  t.line = [{ a: 3, b: 3 }]; t.must = null; t.turn = 0; t.bone = []; t.passes = 0;
+  t.line = [lay(3, 3)]; t.must = null; t.turn = 0; t.bone = []; t.passes = 0;
   t.hands = [[{ a: 1, b: 1 }], [{ a: 2, b: 0 }]];
   let q = dmApply(t, 0, { t: "pass" });
   q = dmApply(q, 1, { t: "pass" });
@@ -153,7 +237,7 @@ console.log("\n── партия до 101 ──");
 {
   let s = dmStart(2, rng(81));
   s.scores = [D_TARGET - 5, 10];
-  s.line = [{ a: 3, b: 4 }]; s.must = null; s.turn = 0; s.bone = [];
+  s.line = [lay(3, 4)]; s.must = null; s.turn = 0; s.bone = [];
   s.hands = [[{ a: 4, b: 5 }], [{ a: 6, b: 6 }]];
   const r = dmApply(s, 0, { t: "play", i: 0, end: "R" });
   chk("набрал 101 — партия закончена", !!r.over && r.over.winner === 0,
@@ -185,6 +269,8 @@ for (const seats of [2, 3, 4]) {
       steps++;
       if (new Set(all(s).map(key)).size !== 28) { broke = `костей стало ${new Set(all(s).map(key)).size}`; break; }
       if (s.line.some((x, k) => k && s.line[k - 1].b !== x.a)) { broke = "цепочка разорвалась"; break; }
+      const bb = boardBroken(s);
+      if (bb) { broke = bb; break; }
       if (s.phase === "done") {
         if (s.res?.fish) fishes++;                 // считаем до раздачи: dmDeal обнуляет итог
         s = dmDeal(s, r); rounds++; continue;
@@ -193,8 +279,12 @@ for (const seats of [2, 3, 4]) {
       if (!o) { broke = `ходить некому на ходу ${s.turn}`; break; }
       let m;
       if (o.plays.length) {
+        // как живой игрок: берём кость и тычем в случайную свободную клетку
         const pick = o.plays[Math.floor(r() * o.plays.length)];
-        m = { t: "play", i: pick.i, end: pick.L && (!pick.R || r() < 0.5) ? "L" : "R" };
+        const end = pick.L && (!pick.R || r() < 0.5) ? "L" : "R";
+        const cells = o.spots[end];
+        const c = cells[Math.floor(r() * cells.length)];
+        m = { t: "play", i: pick.i, end, x: c.x, y: c.y };
       } else if (o.canDraw) m = { t: "draw" };
       else m = { t: "pass" };
       const res = dmApply(s, s.turn, m);
