@@ -609,8 +609,72 @@ select.fl-in{appearance:none}
   display:none;align-items:center;justify-content:center;padding:24px}
 .dk-over.on{display:flex}
 
-/* четыре вкладки в один ряд — подписи компактнее */
-.cd-tabs .hs-tab{font-size:9px;letter-spacing:.3px;padding:9px 2px}
+/* игр стало шесть — ряд вкладок едет вбок, а не сминается в кашу */
+.cd-tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cd-tabs::-webkit-scrollbar{display:none}
+.cd-tabs .hs-tab{font-size:9px;letter-spacing:.3px;padding:9px 9px;white-space:nowrap;flex:0 0 auto}
+/* ── МОРСКОЙ БОЙ ── */
+/* Клетки стоят вплотную, как в тетради: так соседние палубы одного корабля
+   сливаются в корабль, а не в россыпь квадратиков. */
+.sea-grid{display:grid;gap:0;width:100%}
+.sea-grid.lbl{grid-template-columns:13px repeat(10,1fr)}
+.sea-grid.plain{grid-template-columns:repeat(10,1fr)}
+.sea-h{font-family:var(--mono);font-size:7.5px;color:var(--sub);display:flex;
+  align-items:center;justify-content:center;line-height:1}
+.sea-c{aspect-ratio:1/1;background:rgba(120,190,255,.05);
+  box-shadow:inset 0 0 0 .5px rgba(120,190,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;font-weight:800;line-height:1}
+/* свой целый корабль: палубы разделены тонкой линией, корпус цельный */
+.sea-c.ship{background:linear-gradient(150deg,#e9e9e2,#c7c7bd);
+  box-shadow:inset 0 0 0 .5px rgba(90,90,84,.55)}
+/* мимо — точка; ранен — крест; убит — красная клетка */
+.sea-c.miss::after{content:'';width:20%;height:20%;border-radius:50%;background:rgba(190,220,255,.5)}
+.sea-c.hit{background:rgba(232,255,0,.18);box-shadow:inset 0 0 0 1px rgba(232,255,0,.6);color:var(--accent)}
+.sea-c.sunk{background:rgba(239,68,68,.32);box-shadow:inset 0 0 0 1px rgba(239,68,68,.65);color:#ffc9c9}
+.sea-c.hit::after,.sea-c.sunk::after{content:'✕'}
+.sea-c.aim{cursor:pointer}
+.sea-c.aim:active{background:rgba(232,255,0,.3);border-color:var(--accent)}
+.sea-c.fresh{animation:seaPop .34s ease}
+@keyframes seaPop{0%{transform:scale(.4);opacity:.2}60%{transform:scale(1.18)}100%{transform:none}}
+.sea-big .sea-c{font-size:calc(var(--scell)*.52)}
+.sea-big{border-radius:5px;overflow:hidden}
+.sea-mini .sea-c{font-size:7px}
+.sea-mini .sea-c.miss::after{width:26%;height:26%}
+.sea-mini{border-radius:4px;overflow:hidden}
+/* расстановка */
+.sea-dock{display:flex;gap:5px;margin:9px 0 7px}
+.sea-sh{flex:1;background:var(--c1);border:1px solid var(--line);border-radius:10px;
+  padding:7px 3px 6px;text-align:center;cursor:pointer;transition:all .15s}
+.sea-sh.on{border-color:var(--accent);background:rgba(232,255,0,.07)}
+.sea-sh.done{opacity:.32}
+.sea-sh-p{display:flex;gap:1.5px;justify-content:center;margin-bottom:4px}
+.sea-sh-p i{width:6px;height:6px;border-radius:1.5px;background:#d9d9d0}
+.sea-sh.on .sea-sh-p i{background:var(--accent)}
+.sea-sh-n{font-family:var(--mono);font-size:9px;color:var(--sub)}
+.sea-sh.on .sea-sh-n{color:var(--accent)}
+.sea-rot{display:flex;gap:6px;margin-bottom:8px}
+.sea-rot button{flex:1;padding:9px 2px;background:var(--c2);border:1px solid var(--line);
+  border-radius:9px;color:var(--sub);font-family:var(--mono);font-size:10px;cursor:pointer}
+.sea-rot button.on{border-color:var(--accent);color:var(--accent);background:rgba(232,255,0,.07)}
+/* колода полей */
+.sea-pick{display:flex;gap:6px;margin-bottom:8px}
+.sea-pick button{flex:1;min-width:0;padding:8px 4px;background:var(--c1);border:1px solid var(--line);
+  border-radius:10px;color:var(--sub);font-size:11px;font-weight:700;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sea-pick button.on{border-color:var(--accent);color:var(--text);background:rgba(232,255,0,.06)}
+.sea-pick button.dead{opacity:.35;text-decoration:line-through}
+.sea-box{background:var(--c1);border:1px solid var(--line);border-radius:13px;padding:10px 11px;margin-bottom:8px}
+.sea-box.turn{border-color:var(--accent)}
+.sea-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.sea-head .tb-nm{flex:1}
+.sea-left{font-family:var(--mono);font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:1px;
+  white-space:nowrap}
+.sea-left b{color:var(--accent);font-size:14px;letter-spacing:-.3px}
+.sea-mini-row{display:flex;gap:8px}
+.sea-mini-col{flex:1;min-width:0}
+.sea-mini-t{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:var(--sub);
+  text-transform:uppercase;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ── ПОКЕР и «21» ── */
 .tb-seat{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:11px;background:var(--c1);
   border:1px solid var(--line);margin-bottom:6px}
@@ -773,6 +837,46 @@ select.fl-in{appearance:none}
 .rl-dom{display:flex;gap:4px;flex-shrink:0;align-items:center}
 .rl-dom .dm-t{--dt:19px}
 .rl-dom-l{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+/* ── ЧТО НОВОГО ── */
+.news{position:fixed;inset:0;z-index:360;background:rgba(8,8,8,.95);backdrop-filter:blur(9px);
+  display:none;align-items:center;justify-content:center;padding:18px}
+.news.on{display:flex}
+.news-card{width:100%;max-width:460px;max-height:90vh;display:flex;flex-direction:column;
+  background:var(--c1);border:1px solid var(--line2);border-radius:20px;padding:19px 16px 15px;
+  animation:nwCard .42s cubic-bezier(.2,.9,.3,1.1)}
+@keyframes nwCard{from{opacity:0;transform:translateY(28px) scale(.95)}to{opacity:1;transform:none}}
+.news-badge{align-self:flex-start;font-family:var(--mono);font-size:8.5px;letter-spacing:2px;
+  text-transform:uppercase;color:#000;background:var(--accent);padding:4px 10px;border-radius:20px;
+  animation:nwBadge .5s cubic-bezier(.2,.9,.3,1.4) backwards .1s}
+@keyframes nwBadge{from{opacity:0;transform:scale(.5) translateY(-8px)}to{opacity:1;transform:none}}
+.news-t{font-size:25px;font-weight:900;letter-spacing:-.6px;margin:11px 0 2px;
+  animation:nwUp .45s ease backwards .16s}
+.news-sub{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--sub);
+  text-transform:uppercase;animation:nwUp .45s ease backwards .22s}
+@keyframes nwUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.news-list{flex:1;overflow-y:auto;margin:14px 0 4px;padding-right:2px}
+.news-it{display:flex;gap:11px;align-items:flex-start;padding:10px 11px;border-radius:13px;
+  background:var(--c2);border:1px solid var(--line);margin-bottom:7px;cursor:pointer;
+  opacity:0;animation:nwIn .5s cubic-bezier(.2,.9,.3,1.08) forwards}
+.news-it:active{border-color:var(--accent);background:rgba(232,255,0,.06)}
+@keyframes nwIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+.news-ic{width:37px;height:37px;border-radius:11px;background:var(--c3);border:1px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;
+  animation:nwPop .55s cubic-bezier(.2,.9,.3,1.6) backwards}
+@keyframes nwPop{from{opacity:0;transform:scale(.25) rotate(-20deg)}to{opacity:1;transform:none}}
+.news-tx{flex:1;min-width:0}
+.news-tx b{display:block;font-size:13.5px;font-weight:800;letter-spacing:-.2px}
+.news-tx>span{display:block;font-size:11.5px;line-height:1.5;color:var(--sub);margin-top:2px}
+.news-new{display:inline-block;font-family:var(--mono);font-size:7px;letter-spacing:1px;color:#000;
+  background:var(--accent);padding:2px 5px;border-radius:5px;margin-left:6px;vertical-align:2px}
+.news-btn{width:100%;padding:14px;background:var(--accent);border:none;border-radius:13px;color:#000;
+  font-size:15px;font-weight:800;cursor:pointer;margin-top:8px;
+  animation:nwUp .45s ease backwards .75s}
+.news-note{text-align:center;font-family:var(--mono);font-size:8px;letter-spacing:.5px;color:var(--dim);
+  margin-top:8px;text-transform:uppercase}
+@media (prefers-reduced-motion:reduce){
+  .news-card,.news-badge,.news-t,.news-sub,.news-it,.news-ic,.news-btn{animation:none;opacity:1}
+}
 /* ── ПРАВИЛА ── */
 .rules{position:fixed;inset:0;z-index:350;background:rgba(10,10,10,.94);backdrop-filter:blur(6px);
   display:none;align-items:flex-end;justify-content:center}
@@ -1456,6 +1560,7 @@ select.fl-in{appearance:none}
       <div class="badge" id="pk-badge" onclick="PK.leave()" style="display:none">—</div>
       <div class="badge" id="bj-badge" onclick="BJ.leave()" style="display:none">—</div>
       <div class="badge" id="dm-badge" onclick="DM.leave()" style="display:none">—</div>
+      <div class="badge" id="mb-badge" onclick="SEA.leave()" style="display:none">—</div>
       <div class="badge" id="cd-help" onclick="showRules()" style="display:none">? ПРАВИЛА</div>
     </div>
   </div>
@@ -1467,6 +1572,7 @@ select.fl-in{appearance:none}
       <div class="hs-tab"     id="cd-tab-pk"  onclick="switchCards('pk')">♠ ПОКЕР</div>
       <div class="hs-tab"     id="cd-tab-bj"  onclick="switchCards('bj')">🂱 21</div>
       <div class="hs-tab"     id="cd-tab-dm"  onclick="switchCards('dm')">🁣 ДОМИНО</div>
+      <div class="hs-tab"     id="cd-tab-mb"  onclick="switchCards('mb')">🚢 МОРСКОЙ БОЙ</div>
     </div>
   </div>
 
@@ -1515,6 +1621,13 @@ select.fl-in{appearance:none}
     <div class="dk-wrap">
       <div id="dm-err"></div>
       <div id="dm-body"></div>
+    </div>
+  </div>
+
+  <div id="cd-mb" style="display:none">
+    <div class="dk-wrap">
+      <div id="mb-err"></div>
+      <div id="mb-body"></div>
     </div>
   </div>
 </div>
@@ -1688,6 +1801,18 @@ select.fl-in{appearance:none}
 </div>
 
 <!-- ═══════════ SPLASH ═══════════ -->
+<!-- ═══════════ ЧТО НОВОГО · один раз на обновление ═══════════ -->
+<div class="news" id="news-modal">
+  <div class="news-card">
+    <div class="news-badge">★ Обновление</div>
+    <div class="news-t">Что нового</div>
+    <div class="news-sub" id="news-sub">В играх и рейтинге</div>
+    <div class="news-list" id="news-list"></div>
+    <button class="news-btn" onclick="hideNews()">ПОЕХАЛИ</button>
+    <div class="news-note">Жми по строке — откроется сразу нужная игра</div>
+  </div>
+</div>
+
 <div id="splash" class="splash">
   <div class="splash-inner">
     <div class="splash-logo">⚡</div>
@@ -1843,7 +1968,8 @@ function acceptConsent(){
   recordConsent();                            // фиксируем на сервере (у создателя)
   const gate = document.getElementById('consent-gate');
   gate.classList.add('closing');
-  setTimeout(()=>{ gate.classList.remove('on','closing'); playSplash(); }, 350);
+  setTimeout(()=>{ gate.classList.remove('on','closing'); playSplash();
+    setTimeout(showNews, 1900); }, 350);
 }
 function playSplash(){
   const s = document.getElementById('splash');
@@ -1945,6 +2071,7 @@ DB.sol=DB.sol||null;            // текущая партия пасьянса 
 DB.dk=DB.dk||null;              // код комнаты «дурака», чтобы вернуться в партию
 DB.cardsTab=DB.cardsTab||'sol'; // какая игра открыта во вкладке «Карты»
 DB.solStats=DB.solStats||{played:0,won:0,best:null,bestScore:0};
+DB.newsSeen=DB.newsSeen||null;  // какую версию «что нового» человек уже видел
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
 let curSt='os', ws='mon';
@@ -2005,6 +2132,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(DB.gen === DB_GEN) pushRank(); else restoreToDB();
   openFromLink();                             // бот может прислать ссылку сразу в игру
   if(needConsent()) showConsentGate();        // первый вход → экран согласия
+  else setTimeout(showNews, 650);             // что нового — один раз на обновление
 });
 function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
 
@@ -3382,6 +3510,8 @@ const RK_GAMES = {
            unit:'раундов', note:'Победа — раунд, закрытый в плюс.' },
   dm:    { tab:'🁣 ДОМИНО',  cap:'Топ по выигранным партиям',
            unit:'партий', note:'Победа — партия, добитая до 101 очка.', key:'dom' },
+  mb:    { tab:'🚢 МОРСКОЙ БОЙ', cap:'Топ по потопленным флотам',
+           unit:'побед', note:'Победа — весь флот соперника на дне.', key:'sea' },
 };
 let rankTab='bonus', rkGame = 'sol';
 
@@ -3566,9 +3696,9 @@ function openFromLink(){
   const h=(location.hash||'').replace(/^#/,'');
   if(!h) return;
   const go=t=>{ showPage('page-cards'); setNav('n-cards'); switchCards(t); };
-  const m=h.match(/^(dk|pk|bj|dm)=([A-Za-z0-9]{4,8})$/);
-  if(m){ DB[m[1]]={code:m[2].toUpperCase()}; sv(); go(m[1]); return; }
-  if(['dk','pk','bj','dm','sol'].includes(h)) go(h);
+  const m=h.match(/^(dk|pk|bj|dm|mb)=([A-Za-z0-9]{4,8})$/);
+  if(m){ DB[m[1]]={code:m[2].toUpperCase()}; sv(); deepLinked=true; go(m[1]); return; }
+  if(['dk','pk','bj','dm','mb','sol'].includes(h)) go(h);
 }
 
 // ── вкладка «Карты»: две игры под одним переключателем ──
@@ -3579,6 +3709,7 @@ const CARD_GAMES = {
   pk:  { title:'Холдем',       open:()=>PK.open() },
   bj:  { title:'Двадцать одно',open:()=>BJ.open() },
   dm:  { title:'Домино',       open:()=>DM.open() },
+  mb:  { title:'Морской бой',  open:()=>SEA.open() },
 };
 function switchCards(t){
   if(!CARD_GAMES[t]) t='sol';
@@ -3593,6 +3724,7 @@ function switchCards(t){
   document.getElementById('pk-badge').style.display = 'none';
   document.getElementById('bj-badge').style.display = 'none';
   document.getElementById('dm-badge').style.display = 'none';
+  document.getElementById('mb-badge').style.display = 'none';
   document.getElementById('cd-help').style.display = '';
   DB.cardsTab = t; sv();
   CARD_GAMES[t].open();
@@ -4148,7 +4280,8 @@ function makeTable(cfg){
   T.seatsBar = () => {
     const el = T.el('seats'); if(!el) return;
     el.innerHTML = cfg.seats.map(n=>
-      `<button class="${n===T.seats?'on':''}" onclick="${cfg.obj}.setSeats(${n})">${n===1?'ОДИН':n+' ИГР.'}</button>`).join('');
+      `<button class="${n===T.seats?'on':''}" onclick="${cfg.obj}.setSeats(${n})">${
+        cfg.seatName ? cfg.seatName(n) : (n===1?'ОДИН':n+' ИГР.')}</button>`).join('');
   };
 
   T.wait = body => {
@@ -4643,6 +4776,244 @@ function dmPut(end){
   DM.move({t:'play', i, end, x:a.x, y:a.y});
 }
 
+// ═══ МОРСКОЙ БОЙ ═════════════════════════════════════════════════
+// Поле, флот и правила — школьные. Расстановку игрок собирает у себя, а
+// сервер её перепроверяет: клиенту тут верить нельзя.
+const SEA_COLS = ['А','Б','В','Г','Д','Е','Ж','З','И','К'];
+const SEA_FLEET = [4,3,3,2,2,2,1,1,1,1];
+const SEA_N = 10;
+const SEA_NAMES = {4:'линкор', 3:'крейсер', 2:'эсминец', 1:'катер'};
+
+let seaFleet = [];          // свои корабли на этапе расстановки
+let seaSize = 4;            // какой ставим сейчас
+let seaHoriz = true;
+let seaAt = -1;             // по чьему полю целимся (в 2×2)
+let seaShot = null;         // куда прилетел последний выстрел — для вспышки
+let seaPlaying = false;     // была ли партия: нужно, чтобы сбросить флот к реваншу
+
+const seaKey = c => c.y*SEA_N + c.x;
+const seaIn = (x,y) => x>=0 && y>=0 && x<SEA_N && y<SEA_N;
+
+// клетка годится, если свободна и вокруг неё тоже пусто — то же правило,
+// что проверяет сервер
+function seaFree(taken, cells){
+  for(const c of cells){
+    if(!seaIn(c.x,c.y)) return false;
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){
+      const x=c.x+dx, y=c.y+dy;
+      if(seaIn(x,y) && taken.has(y*SEA_N+x)) return false;
+    }
+  }
+  return true;
+}
+const seaTaken = () => new Set(seaFleet.flat().map(seaKey));
+function seaNeed(){
+  const n = {}; SEA_FLEET.forEach(s=>n[s]=(n[s]||0)+1);
+  seaFleet.forEach(s=>n[s.length]--);
+  return n;
+}
+const seaNextSize = () => { const n = seaNeed();
+  return [4,3,2,1].find(s=>n[s]>0) || 0; };
+
+function seaRot(h){ seaHoriz = !!h; seaRedraw(); }
+function seaPick(s){ seaSize = s; seaRedraw(); }
+function seaClear(){ seaFleet = []; seaSize = 4; seaRedraw(); }
+function seaRedraw(){ const g = SEA.room?.g; if(g) seaDraw(SEA, g); }
+
+// Случайная расстановка: от больших к меньшим, каждый раз щупая свободное
+// место. Не сложилось за отведённые попытки — начинаем поле заново.
+function seaAuto(){
+  for(let a=0;a<80;a++){
+    const taken = new Set(), out = [];
+    let ok = true;
+    for(const size of SEA_FLEET){
+      let put = false;
+      for(let t=0;t<400 && !put;t++){
+        const h = Math.random()<.5;
+        const x = Math.floor(Math.random()*(h?SEA_N-size+1:SEA_N));
+        const y = Math.floor(Math.random()*(h?SEA_N:SEA_N-size+1));
+        const cells = Array.from({length:size},(_,k)=> h?{x:x+k,y}:{x,y:y+k});
+        if(!seaFree(taken, cells)) continue;
+        cells.forEach(c=>taken.add(seaKey(c)));
+        out.push(cells); put = true;
+      }
+      if(!put){ ok = false; break; }
+    }
+    if(ok){ seaFleet = out; seaSize = 0; seaRedraw(); return; }
+  }
+  SEA.err('Не получилось расставить автоматом — нажми ещё раз');
+}
+
+// тап по полю расстановки: по кораблю — снять, по пустому — поставить
+function seaPut(x,y){
+  const i = seaFleet.findIndex(s=>s.some(c=>c.x===x && c.y===y));
+  if(i>=0){ seaSize = seaFleet[i].length; seaFleet.splice(i,1); seaRedraw(); return; }
+  if(!seaSize){ SEA.err('Весь флот уже на поле — можно жать «Готов»'); return; }
+  if(seaNeed()[seaSize] <= 0){ seaSize = seaNextSize(); seaRedraw(); return; }
+  const cells = Array.from({length:seaSize},(_,k)=> seaHoriz?{x:x+k,y}:{x,y:y+k});
+  if(!cells.every(c=>seaIn(c.x,c.y))){ SEA.err('Корабль не влезает — разверни или сдвинь'); return; }
+  if(!seaFree(seaTaken(), cells)){ SEA.err('Сюда не встанет: корабли не должны касаться даже углами'); return; }
+  seaFleet.push(cells);
+  seaSize = seaNextSize();
+  try{ Telegram.WebApp.HapticFeedback.selectionChanged(); }catch{}
+  seaRedraw();
+}
+function seaReady(){
+  if(seaFleet.length !== SEA_FLEET.length){ SEA.err('Сначала расставь весь флот'); return; }
+  SEA.move({t:'place', ships:seaFleet});
+}
+function seaFire(at,x,y){
+  const g = SEA.room?.g;
+  if(!g || !g.opts || g.opts.place) return;
+  seaShot = {at, k:y*SEA_N+x};
+  SEA.move({t:'shot', at, x, y});
+}
+function seaAim(i){ seaAt = i; seaRedraw(); }
+
+// клетки поля: marks решают всё, свои целые корабли рисуем поверх пустых
+function seaCells(marks, ships, aim, at){
+  const own = new Set(); (ships||[]).forEach(s=>s.forEach(c=>own.add(seaKey(c))));
+  let h = '';
+  for(let y=0;y<SEA_N;y++) for(let x=0;x<SEA_N;x++){
+    const k = y*SEA_N+x, m = marks[k]|0;
+    const cls = m===1 ? 'miss' : m===2 ? 'hit' : m===3 ? 'sunk' : (own.has(k) ? 'ship' : '');
+    const can = aim && m===0;
+    const fresh = seaShot && seaShot.at===at && seaShot.k===k ? ' fresh' : '';
+    h += `<div class="sea-c ${cls}${can?' aim':''}${fresh}"${
+      can?` onclick="seaFire(${at},${x},${y})"`:''}></div>`;
+  }
+  return h;
+}
+// то же с буквами и цифрами по краям — для большого поля
+function seaLabeled(inner){
+  const cells = inner.split('<div class="sea-c').slice(1).map(s=>'<div class="sea-c'+s);
+  let h = '<div class="sea-h"></div>' + SEA_COLS.map(c=>`<div class="sea-h">${c}</div>`).join('');
+  for(let y=0;y<SEA_N;y++){
+    h += `<div class="sea-h">${y+1}</div>` + cells.slice(y*SEA_N,(y+1)*SEA_N).join('');
+  }
+  return h;
+}
+// поле расстановки: свои корабли плюс подсветка того, что уже стоит
+function seaSetupCells(){
+  const own = new Set(seaFleet.flat().map(seaKey));
+  let h = '';
+  for(let y=0;y<SEA_N;y++) for(let x=0;x<SEA_N;x++){
+    h += `<div class="sea-c ${own.has(y*SEA_N+x)?'ship':''} aim" onclick="seaPut(${x},${y})"></div>`;
+  }
+  return h;
+}
+
+const SEA = makeTable({
+  game:'sea', prefix:'mb', obj:'SEA', title:'Морской бой', seats:[2,4],
+  seatName: n => n===2 ? '1 НА 1' : '2 НА 2',
+  hint:'Классика: поле 10×10, десять кораблей, попал — стреляешь снова. Двое на двое — у каждого своё поле, команды сидят через одного.',
+  shell:`<div id="mb-p-top"></div><div id="mb-p-main"></div><div id="mb-p-acts"></div><div id="mb-p-log"></div>`,
+  renderPlay(T,g){ seaDraw(T,g); },
+});
+
+function seaDraw(T,g){
+  const P = T.room.players;
+  // реванш возвращает в расстановку — старый флот с прошлой партии убираем
+  if(g.phase !== 'setup') seaPlaying = true;
+  else if(seaPlaying && !g.ready[g.me]){ seaPlaying = false; seaFleet = []; seaSize = 4; seaAt = -1; seaShot = null; }
+
+  const nm = i => esc((P[i]||{}).name || ('Игрок '+(i+1)));
+  const foes = g.team.map((_,i)=>i).filter(i=>g.team[i]!==g.myTeam);
+  const mates = g.team.map((_,i)=>i).filter(i=>g.team[i]===g.myTeam);
+  if(seaAt<0 || !foes.includes(seaAt) || (!g.boards[seaAt].alive && foes.some(i=>g.boards[i].alive)))
+    seaAt = foes.find(i=>g.boards[i].alive) ?? foes[0];
+
+  // ── расстановка ──
+  if(g.phase === 'setup'){
+    T.part('mb-p-top', 'setup', `<div class="tb-me" style="padding:8px 0">расстановка флота</div>`);
+    if(!g.ready[g.me]){
+      const need = seaNeed(), done = seaFleet.length === SEA_FLEET.length;
+      T.part('mb-p-main', JSON.stringify([seaFleet,seaSize,seaHoriz]), `
+        <div class="sea-box">
+          <div class="tb-sub" style="margin-bottom:7px">ТВОЁ ПОЛЕ · жми по клетке, чтобы поставить; по кораблю — чтобы снять</div>
+          <div class="sea-grid lbl sea-big" id="mb-setup">${seaLabeled(seaSetupCells())}</div>
+        </div>
+        <div class="sea-rot">
+          <button class="${seaHoriz?'on':''}" onclick="seaRot(1)">↔ ВДОЛЬ</button>
+          <button class="${!seaHoriz?'on':''}" onclick="seaRot(0)">↕ ПОПЕРЁК</button>
+        </div>
+        <div class="sea-dock">${[4,3,2,1].map(s=>`
+          <div class="sea-sh${s===seaSize?' on':''}${need[s]<=0?' done':''}" onclick="seaPick(${s})">
+            <div class="sea-sh-p">${'<i></i>'.repeat(s)}</div>
+            <div class="sea-sh-n">${esc(SEA_NAMES[s])} · ${Math.max(0,need[s])}</div>
+          </div>`).join('')}</div>
+        <div class="tb-acts">
+          <button class="dk-btn sec" onclick="seaAuto()">АВТО</button>
+          <button class="dk-btn sec" onclick="seaClear()">ОЧИСТИТЬ</button>
+        </div>
+        <div style="height:7px"></div>
+        <button class="dk-btn" id="mb-ready" ${done?'':'disabled'} onclick="seaReady()">ГОТОВ · В БОЙ</button>
+        <div class="dk-note" style="text-align:center;margin-top:7px">Осталось поставить: ${
+          SEA_FLEET.length - seaFleet.length} из ${SEA_FLEET.length}</div>`);
+    } else {
+      const wait = g.ready.filter(r=>!r).length;
+      T.part('mb-p-main', 'wait'+wait, `
+        <div class="sea-box">
+          <div class="tb-sub" style="margin-bottom:7px">ТВОЙ ФЛОТ НА ПОЗИЦИИ</div>
+          <div class="sea-grid lbl sea-big">${seaLabeled(seaCells(g.boards[g.me].marks, g.boards[g.me].ships, false, g.me))}</div>
+        </div>
+        <div class="tb-me" style="padding:10px 0">ждём ещё ${wait} — расставляют флот…</div>`);
+    }
+    T.part('mb-p-acts','', '');
+    T.part('mb-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
+    seaFit();
+    return;
+  }
+
+  // ── бой ──
+  const my = g.turn === g.me && !g.over;
+  T.part('mb-p-top', JSON.stringify([g.turn,g.me,g.over]), `
+    <div class="tb-me" style="padding:8px 0">${
+      g.over ? (g.over.team===g.myTeam ? 'победа!' : 'поражение')
+      : my ? 'твой ход — <b>стреляй</b>'
+      : `стреляет <b>${nm(g.turn)}</b>…`}</div>`);
+
+  const aimOk = my && g.opts && !g.opts.place && g.opts.foes.includes(seaAt);
+  const b = g.boards[seaAt];
+  T.part('mb-p-main', JSON.stringify([g.boards,g.turn,seaAt,g.over,seaShot]), `
+    ${foes.length>1 ? `<div class="sea-pick">${foes.map(i=>
+      `<button class="${i===seaAt?'on':''}${g.boards[i].alive?'':' dead'}" onclick="seaAim(${i})">${nm(i)}</button>`).join('')}</div>` : ''}
+    <div class="sea-box${aimOk?' turn':''}">
+      <div class="sea-head">
+        <div class="tb-ava">${esc((P[seaAt]||{}).emoji||'🙂')}</div>
+        <div class="tb-who"><div class="tb-nm">${nm(seaAt)}${
+          b.alive?'':'<span class="tb-tag">потоплен</span>'}</div>
+          <div class="tb-sub">${aimOk?'жми по клетке':'поле соперника'}</div></div>
+        <div class="sea-left">кораблей<b>${b.left}</b></div>
+      </div>
+      <div class="sea-grid lbl sea-big">${seaLabeled(seaCells(b.marks, b.ships, aimOk, seaAt))}</div>
+    </div>
+    <div class="sea-mini-row">${mates.map(i=>`
+      <div class="sea-mini-col">
+        <div class="sea-mini-t">${i===g.me?'твоё поле':nm(i)} · ${g.boards[i].left} кор.</div>
+        <div class="sea-grid plain sea-mini">${seaCells(g.boards[i].marks, g.boards[i].ships, false, i)}</div>
+      </div>`).join('')}</div>`);
+
+  T.part('mb-p-acts', JSON.stringify([g.over,g.turn]), g.over ? `
+    <div class="dk-card" style="text-align:center;margin-top:10px">
+      <div style="font-size:30px">${g.over.team===g.myTeam?'🏆':'🚢'}</div>
+      <div style="font-size:16px;font-weight:900;margin:4px 0 9px">${
+        g.over.team===g.myTeam ? 'Флот соперника на дне' : 'Твой флот потоплен'}</div>
+      <button class="dk-btn" onclick="SEA.rematch()">ЕЩЁ ПАРТИЮ</button>
+    </div>` : '');
+  T.part('mb-p-log', JSON.stringify(g.log), `<div class="tb-log">${g.log.map(esc).join('<br>')}</div>`);
+  seaFit();
+}
+
+// размер клетки нужен только для размера крестиков внутри неё
+function seaFit(){
+  document.querySelectorAll('#mb-body .sea-big').forEach(el=>{
+    const c = (el.clientWidth - 13 - SEA_N*2) / SEA_N;
+    if(c > 0) el.style.setProperty('--scell', c.toFixed(2)+'px');
+  });
+}
+addEventListener('resize', ()=>{ if(cardsTab==='mb') seaFit(); });
+
 // ═══ ПРАВИЛА ДЛЯ НОВИЧКОВ ════════════════════════════════════════
 // Комбинации показываем настоящими картами — так понятнее любого текста.
 const rlHand = str => `<div class="rl-cards">${str.split(' ').map(x=>{
@@ -4831,6 +5202,56 @@ const RULES = {
         подходящая по числу кость просто не предложится. Поле большое, но место лучше не запирать.</li>
     </ul>`,
   },
+  mb: { title:'Морской бой · правила', body:()=>`
+    <p>Поле <b>10×10</b>, у каждого своё. Задача — потопить весь флот соперника раньше,
+    чем он потопит твой. Правила школьные, без выдумок.</p>
+
+    <h4>Флот</h4>
+    <p>Десять кораблей на двадцать клеток:</p>
+    <ul>
+      <li><b>1 линкор</b> — четыре клетки;</li>
+      <li><b>2 крейсера</b> — по три;</li>
+      <li><b>3 эсминца</b> — по две;</li>
+      <li><b>4 катера</b> — по одной.</li>
+    </ul>
+    <p>Корабль стоит <b>по прямой</b>, без изломов и разрывов, целиком внутри поля.
+    Корабли <b>не соприкасаются</b> — ни боком, ни углом: между любыми двумя должна быть
+    хотя бы одна пустая клетка.</p>
+
+    <h4>Расстановка</h4>
+    <div class="rl-step"><div class="rl-n">1</div><div>Внизу выбираешь, какой корабль ставишь,
+      и как он ляжет — <b>вдоль</b> или <b>поперёк</b>.</div></div>
+    <div class="rl-step"><div class="rl-n">2</div><div>Жмёшь по клетке — корабль встаёт оттуда.
+      Жмёшь по уже стоящему кораблю — он возвращается в запас.</div></div>
+    <div class="rl-step"><div class="rl-n">3</div><div>Кнопка <b>«Авто»</b> расставит весь флот сама,
+      <b>«Очистить»</b> уберёт всё.</div></div>
+    <div class="rl-step"><div class="rl-n">4</div><div>Жмёшь <b>«Готов»</b>. Бой начнётся, когда
+      будут готовы все.</div></div>
+
+    <h4>Бой</h4>
+    <ul>
+      <li>Стреляешь, ткнув в клетку чужого поля.</li>
+      <li><b>Попал или убил — стреляешь снова.</b> Промахнулся — ход переходит к сопернику.</li>
+      <li>Вокруг убитого корабля клетки сами открываются как пустые: по правилу
+        о несоприкосновении там ничего и не может стоять.</li>
+      <li>В одну клетку дважды не стреляют — приложение туда просто не даст ткнуть.</li>
+    </ul>
+    <p>Чужие корабли лежат <b>на сервере</b>: пока ты в них не попал, их координаты в телефон
+    не приходят вообще. Подсмотреть расстановку соперника нельзя.</p>
+
+    <h4>Двое на двое</h4>
+    <ul>
+      <li>У каждого из четверых <b>своё поле</b>. Команды сидят через одного: места 1 и 3 против 2 и 4.</li>
+      <li>Поле напарника тебе видно целиком — вы играете вместе.</li>
+      <li>Стрелять можно по <b>любому</b> живому полю соперников: сверху выбираешь, по чьему бьёшь.</li>
+      <li>Внутри команды ходят по очереди. У кого флот потоплен — тот больше не стреляет.</li>
+      <li>Команда проигрывает, когда потоплены <b>оба</b> её флота.</li>
+    </ul>
+
+    <h4>Чего здесь нет</h4>
+    <p>Никаких своих придумок: ни «торпед», ни радаров, ни кораблей странной формы,
+    ни хода после промаха. Только то, что рисуют в тетради в клетку.</p>`,
+  },
   sol: { title:'Косынка для новичков', body:()=>`
     <p>Цель — собрать <b>все четыре масти</b> в верхних клетках, от туза до короля.</p>
     <h4>Как играют</h4>
@@ -4844,6 +5265,51 @@ const RULES = {
     <p>Раздаются только те расклады, которые <b>точно можно выиграть</b> — безнадёжных не будет.</p>`,
   },
 };
+
+// ═══ «ЧТО НОВОГО» ════════════════════════════════════════════════
+// Показывается один раз на каждое обновление: сравниваем NEWS_V с тем, что
+// записано у человека. Отметку ставим при закрытии, а не при показе, — иначе
+// свёрнутое на полпути приложение съело бы новость навсегда.
+const NEWS_V = '2026-09-games';
+const NEWS = [
+  { i:'🚢', t:'Морской бой', fresh:true, tab:'mb',
+    d:'Один на один и двое на двое. Классика: поле 10×10, десять кораблей, попал — стреляешь снова.' },
+  { i:'🁣', t:'Домино', fresh:true, tab:'dm',
+    d:'Дубль-шесть до 101 очка. Поле — квадратный стол, кости ставишь руками в любую клетку.' },
+  { i:'♠', t:'Покер', tab:'pk',
+    d:'Техасский холдем на 2–5 человек: блайнды, побочные банки, всё по правилам.' },
+  { i:'🂱', t:'Двадцать одно', tab:'bj',
+    d:'Против дилера, одному или компанией. Каждый день в 02:00 всем выдаётся 30 000 фишек.' },
+  { i:'🏆', t:'Рейтинг по играм', page:'rank',
+    d:'Во вкладке «Карты» своя таблица на каждую игру — от косынки до морского боя.' },
+];
+let deepLinked = false;                       // зашли по приглашению — новость не мешаем
+
+function showNews(force){
+  if(!force){
+    if(DB.newsSeen === NEWS_V) return;
+    if(deepLinked) return;                    // человека позвали за стол, ему не до новостей
+  }
+  document.getElementById('news-list').innerHTML = NEWS.map((n,i)=>`
+    <div class="news-it" style="animation-delay:${(.14+i*.1).toFixed(2)}s" onclick="newsGo(${i})">
+      <div class="news-ic" style="animation-delay:${(.18+i*.1).toFixed(2)}s">${n.i}</div>
+      <div class="news-tx">
+        <b>${esc(n.t)}${n.fresh?'<span class="news-new">НОВОЕ</span>':''}</b>
+        <span>${esc(n.d)}</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('news-modal').classList.add('on');
+}
+function hideNews(){
+  document.getElementById('news-modal').classList.remove('on');
+  DB.newsSeen = NEWS_V; sv();
+}
+function newsGo(i){
+  const n = NEWS[i];
+  hideNews();
+  if(n.page === 'rank'){ showPage('page-rating'); setNav('n-rank'); switchRank('cards'); return; }
+  showPage('page-cards'); setNav('n-cards'); switchCards(n.tab);
+}
 
 function showRules(which){
   const key = which || cardsTab || 'pk';

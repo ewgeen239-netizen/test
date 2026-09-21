@@ -234,6 +234,7 @@ def main_kb():
     )
     kb.add(
         InlineKeyboardButton("🁣 Домино",       web_app=WebAppInfo(url=f"{WEBAPP_URL}#dm")),
+        InlineKeyboardButton("🚢 Морской бой",  web_app=WebAppInfo(url=f"{WEBAPP_URL}#mb")),
     )
     kb.add(
         InlineKeyboardButton("🏆 Рейтинг",          callback_data="rating"),
@@ -270,6 +271,41 @@ def confirm_kb():
     )
     return kb
 
+# ── «что нового»: один раз на обновление, каждому ────────────
+# Отметку храним в своём же JSON рядом с остальными данными человека —
+# отдельная колонка в базе ради одной новости не нужна.
+NEWS_V = "2026-09-games"
+NEWS_TEXT = (
+    "★ <b>Что нового</b>\n\n"
+    "🚢 <b>Морской бой</b> — один на один и двое на двое. Классика: "
+    "поле 10×10, десять кораблей, попал — стреляешь снова.\n\n"
+    "🁣 <b>Домино</b> — дубль-шесть до 101 очка. Поле квадратное, "
+    "кости ставишь руками в любую клетку.\n\n"
+    "♠ <b>Покер</b> — техасский холдем на 2–5 человек.\n\n"
+    "🂱 <b>Двадцать одно</b> — против дилера. Каждый день в 02:00 "
+    "всем выдаётся 30 000 фишек.\n\n"
+    "🏆 <b>Рейтинг</b> — своя таблица на каждую игру: от косынки до морского боя.\n\n"
+    "<i>Всё это внутри приложения, вкладка «Карты».</i>"
+)
+
+def news_kb():
+    kb = InlineKeyboardMarkup(row_width=2)
+    kb.add(InlineKeyboardButton("🚢 Морской бой", web_app=WebAppInfo(url=f"{WEBAPP_URL}#mb")),
+           InlineKeyboardButton("🁣 Домино",      web_app=WebAppInfo(url=f"{WEBAPP_URL}#dm")))
+    return kb
+
+def send_news_once(chat_id, user):
+    """Показать новость, если человек её ещё не видел. Меняет user на месте —
+    вызывающий сам сохранит базу."""
+    if user.get("news") == NEWS_V:
+        return False
+    user["news"] = NEWS_V
+    try:
+        bot.send_message(chat_id, NEWS_TEXT, parse_mode="HTML", reply_markup=news_kb())
+    except ApiTelegramException:
+        pass
+    return True
+
 # ── /start ───────────────────────────────────────────────────
 @bot.message_handler(commands=["start", "menu"])
 def cmd_start(msg):
@@ -281,6 +317,7 @@ def cmd_start(msg):
         "pk": ("♠", "в покер", "карты раздадутся сами"),
         "bj": ("🂱", "в «двадцать одно»", "карты раздадутся сами"),
         "dm": ("🁣", "в домино", "кости раздадутся сами"),
+        "mb": ("🚢", "в морской бой", "можно расставлять флот"),
     }
     parts = (msg.text or "").split(maxsplit=1)
     if len(parts) > 1 and parts[1][:3].lower() in (g + "_" for g in GAMES):
@@ -303,7 +340,6 @@ def cmd_start(msg):
     db   = load_db()
     user = get_user(db, msg.from_user.id)
     name = user["name"] or msg.from_user.first_name or "сотрудник"
-    save_db(db)
     bot.send_message(
         msg.chat.id,
         f"👋 Привет, <b>{name}</b>!\n\n"
@@ -313,6 +349,8 @@ def cmd_start(msg):
         parse_mode="HTML",
         reply_markup=main_kb()
     )
+    send_news_once(msg.chat.id, user)     # новость об играх — по разу на человека
+    save_db(db)
 
 # ── /durak ───────────────────────────────────────────────────
 @bot.message_handler(commands=["durak", "game", "igra"])
@@ -360,6 +398,22 @@ def cmd_blackjack(msg):
         "Играешь против дилера — можно одному, можно компанией до пяти человек.\n"
         "Стол на одного начинается сразу, ждать никого не надо.\n\n"
         "Блэкджек платит 3:2, дилер добирает до 17. Фишки игровые.",
+        parse_mode="HTML", reply_markup=kb)
+
+
+@bot.message_handler(commands=["sea", "seabattle", "morskoyboy"])
+def cmd_sea(msg):
+    register_user(msg.from_user)
+    kb = InlineKeyboardMarkup()
+    kb.add(InlineKeyboardButton("🚢 Открыть морской бой", web_app=WebAppInfo(url=f"{WEBAPP_URL}#mb")))
+    bot.send_message(
+        msg.chat.id,
+        "🚢 <b>Морской бой</b>\n\n"
+        "Один на один или двое на двое. Правила школьные: поле 10×10, "
+        "десять кораблей, корабли не касаются даже углами, попал — стреляешь снова.\n\n"
+        "Флот расставляешь сам — или жмёшь «Авто». "
+        "В лобби список живых столов: жмёшь «Зайти» и садишься.\n\n"
+        "Чужая расстановка лежит на сервере — подсмотреть её нельзя.",
         parse_mode="HTML", reply_markup=kb)
 
 

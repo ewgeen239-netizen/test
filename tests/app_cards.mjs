@@ -79,7 +79,12 @@ const STATS = {
   poker: [{ uid: "501", name: "Антон", emoji: "🃏", wins: 2, played: 5, score: 1500 }],
   bj:    [{ uid: "501", name: "Антон", emoji: "🃏", wins: 7, played: 20, score: -350 }],
   dom:   [{ uid: "501", name: "Антон", emoji: "🃏", wins: 4, played: 6, score: 101 }],
+  sea:   [{ uid: "501", name: "Антон", emoji: "🚢", wins: 5, played: 8, score: 3 }],
 };
+// версию «что нового» вынимаем из самого приложения: в обычных прогонах
+// открывашку гасим, иначе она перекрывает экран, — для неё есть свой раздел
+const NEWS_V = (html.match(/const NEWS_V = '([^']+)'/) || [])[1];
+
 const srv = http.createServer(async (req, res) => {
   if (req.url.startsWith("/rest/v1/game_stats")) {
     const g = (req.url.match(/game=eq\.(\w+)/) || [])[1];
@@ -108,11 +113,11 @@ const chk = (n, c, e = "") => { console.log(`  ${c ? "✓" : "✗"} ${n}${e ? " 
 
 const browser = await chromium.launch(
   process.env.CHROME ? { executablePath: process.env.CHROME } : {});
-async function openApp(user) {
+async function openApp(user, opt = {}) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   const id = await initData(user);
-  await page.addInitScript(({ id, u, base }) => {
+  await page.addInitScript(({ id, u, news }) => {
     window.Telegram = {
       WebApp: {
         initData: id, initDataUnsafe: { user: u },
@@ -126,9 +131,10 @@ async function openApp(user) {
     try {
       const raw = JSON.parse(localStorage.getItem("ad_db") || "{}");
       raw.consent = { v: "1.0", at: new Date().toISOString() };
+      if (news) raw.newsSeen = news;              // уже «видел» — окно не всплывёт
       localStorage.setItem("ad_db", JSON.stringify(raw));
     } catch {}
-  }, { id, u: user, base });
+  }, { id, u: user, news: opt.news === false ? null : NEWS_V });
   const errs = [];
   page.on("pageerror", e => errs.push(String(e)));
   await page.goto(base + "/", { waitUntil: "domcontentloaded" });
@@ -564,9 +570,147 @@ chk("соседи по цепочке лежат вплотную", await dmOthe
   return L.every((t, i) => i === 0 || Math.abs(L[i - 1].x - t.x) + Math.abs(L[i - 1].y - t.y) === 1);
 }));
 
+console.log("\n── морской бой ──");
+await toTab(A.page, "mb");
+chk("в лобби морского боя два режима", await A.page.locator("#mb-seats button").count() === 2,
+  (await A.page.locator("#mb-seats button").allTextContents()).join(" | "));
+chk("режимы подписаны по-человечески",
+  (await A.page.locator("#mb-seats button").allTextContents()).join("|") === "1 НА 1|2 НА 2",
+  (await A.page.locator("#mb-seats button").allTextContents()).join("|"));
+await A.page.evaluate(() => SEA.setSeats(2));
+await A.page.click("#mb-body .dk-btn");
+await A.page.waitForTimeout(700);
+const scode = (await A.page.locator("#mb-body .dk-code").textContent() || "").trim();
+chk("стол создан", /^[A-Z0-9]{5}$/.test(scode), scode);
+
+await toTab(B.page, "mb");
+await B.page.waitForTimeout(2500);
+chk("стол виден в списке живых", await B.page.locator("#mb-rooms .dk-room").count() === 1);
+await B.page.click("#mb-rooms .dk-room-b");
+await B.page.waitForTimeout(900);
+await A.page.waitForTimeout(2600);
+
+chk("началась расстановка, а не бой", await A.page.evaluate(() => SEA.room.g.phase) === "setup");
+chk("поле расстановки 10×10", await A.page.locator("#mb-setup .sea-c").count() === 100,
+  `клеток ${await A.page.locator("#mb-setup .sea-c").count()}`);
+chk("буквы и цифры по краям", await A.page.locator("#mb-setup .sea-h").count() === 21,
+  `подписей ${await A.page.locator("#mb-setup .sea-h").count()}`);
+chk("пока ничего не расставлено", await A.page.locator("#mb-setup .sea-c.ship").count() === 0);
+chk("кнопка «готов» заблокирована", await A.page.locator("#mb-ready").isDisabled());
+
+// ставим линкор руками и проверяем, что рядом ничего не встанет
+await A.page.evaluate(() => { seaClear(); seaPick(4); seaRot(1); });
+await A.page.waitForTimeout(200);
+await A.page.evaluate(() => seaPut(0, 0));
+await A.page.waitForTimeout(250);
+chk("линкор встал на четыре клетки", await A.page.locator("#mb-setup .sea-c.ship").count() === 4,
+  `закрашено ${await A.page.locator("#mb-setup .sea-c.ship").count()}`);
+chk("следующим предлагается крейсер", await A.page.evaluate(() => seaSize) === 3,
+  String(await A.page.evaluate(() => seaSize)));
+await A.page.evaluate(() => seaPut(0, 1));            // вплотную снизу — нельзя
+await A.page.waitForTimeout(300);
+chk("вплотную корабль не ставится", await A.page.locator("#mb-setup .sea-c.ship").count() === 4,
+  await A.page.locator("#mb-err").textContent());
+chk("сказали, почему", /касат/i.test(await A.page.locator("#mb-err").textContent()));
+await A.page.evaluate(() => seaPut(0, 0));            // тап по кораблю — снять
+await A.page.waitForTimeout(250);
+chk("тап по кораблю снимает его", await A.page.locator("#mb-setup .sea-c.ship").count() === 0);
+
+for (const p of [A.page, B.page]) {
+  await p.evaluate(() => seaAuto());
+  await p.waitForTimeout(350);
+  const cells = await p.locator("#mb-setup .sea-c.ship").count();
+  chk("авторасстановка ставит 20 клеток", cells === 20, `клеток ${cells}`);
+  chk("«готов» разблокировался", !(await p.locator("#mb-ready").isDisabled()));
+}
+await A.page.click("#mb-ready");
+await A.page.waitForTimeout(800);
+chk("после «готов» ждём соперника",
+  /ждём/i.test(await A.page.locator("#mb-p-main").textContent()),
+  (await A.page.locator("#mb-p-main").textContent()).trim().slice(-40));
+await B.page.click("#mb-ready");
+await B.page.waitForTimeout(900);
+await A.page.waitForTimeout(2600);
+chk("оба готовы — бой пошёл", await A.page.evaluate(() => SEA.room.g.phase) === "play");
+
+// стреляет тот, чей ход; проверяем, что второй не может
+const seaPages = [A.page, B.page];
+const shooter = await A.page.evaluate(() => SEA.room.g.turn === SEA.room.g.me) ? 0 : 1;
+const sP = seaPages[shooter], sO = seaPages[1 - shooter];
+await sP.waitForTimeout(400);
+chk("у стреляющего поле кликабельно", await sP.locator("#mb-body .sea-c.aim").count() === 100,
+  `целей ${await sP.locator("#mb-body .sea-c.aim").count()}`);
+chk("у ждущего — нет", await sO.locator("#mb-body .sea-c.aim").count() === 0);
+chk("своё поле показано мелко", await sP.locator(".sea-mini").count() === 1);
+chk("свои корабли на своём поле видны", await sP.locator(".sea-mini .sea-c.ship").count() === 20,
+  `видно ${await sP.locator(".sea-mini .sea-c.ship").count()}`);
+chk("чужих кораблей в состоянии нет", await sP.evaluate(() => {
+  const g = SEA.room.g, foe = 1 - g.me;
+  return g.boards[foe].ships.length === 0;
+}));
+
+const before = await sP.evaluate(() => SEA.room.g.ver);
+await sP.evaluate(() => { const g = SEA.room.g; seaFire(1 - g.me, 0, 0); });
+await sP.waitForTimeout(900);
+chk("выстрел прошёл", await sP.evaluate(() => SEA.room.g.ver) > before);
+const mark = await sP.evaluate(() => { const g = SEA.room.g; return g.boards[1 - g.me].marks[0]; });
+chk("клетка отмечена", mark === 1 || mark === 2 || mark === 3, `метка ${mark}`);
+chk("правило «попал — стреляй снова» соблюдено", await sP.evaluate(() => {
+  const g = SEA.room.g, foe = 1 - g.me;
+  return g.boards[foe].marks[0] === 1 ? g.turn !== g.me : g.turn === g.me;
+}), `метка ${mark}, ход ${await sP.evaluate(() => SEA.room.g.turn)}`);
+await sP.waitForTimeout(300);
+chk("в ту же клетку больше не ткнуть", await sP.evaluate(() => {
+  const g = SEA.room.g, foe = 1 - g.me;
+  const cells = [...document.querySelectorAll("#mb-body .sea-box .sea-c")];
+  return !cells[0] || !cells[0].classList.contains("aim");
+}));
+chk("в журнале записан выстрел",
+  /мимо|ранил|убил/.test(await sP.locator("#mb-p-log").textContent()),
+  (await sP.locator("#mb-p-log").textContent()).trim().slice(0, 60));
+
+console.log("\n── «что нового» ──");
+{
+  const N = await openApp({ id: 777, first_name: "Новичок" }, { news: false });
+  await N.page.waitForTimeout(1500);
+  chk("открывашка показалась сама", await N.page.locator("#news-modal.on").count() === 1);
+  chk("строк столько же, сколько новостей",
+    await N.page.locator("#news-it, .news-it").count() === await N.page.evaluate(() => NEWS.length),
+    `${await N.page.locator(".news-it").count()}`);
+  const txt = await N.page.locator("#news-list").textContent();
+  chk("морской бой и рейтинг в списке", /Морской бой/.test(txt) && /Рейтинг/.test(txt));
+  chk("новинки помечены", await N.page.locator(".news-new").count() >= 1);
+  chk("строки появляются по очереди", await N.page.evaluate(() => {
+    const d = [...document.querySelectorAll(".news-it")].map(e => parseFloat(e.style.animationDelay));
+    return d.length > 1 && d.every((v, i) => i === 0 || v > d[i - 1]);
+  }));
+  chk("пока не закрыли — отметки нет", await N.page.evaluate(() => DB.newsSeen) === null);
+  await N.page.click(".news-btn");
+  await N.page.waitForTimeout(300);
+  chk("закрылась по кнопке", await N.page.locator("#news-modal.on").count() === 0);
+  chk("отметка записана", await N.page.evaluate(() => DB.newsSeen) === await N.page.evaluate(() => NEWS_V));
+
+  // второй заход тем же человеком — уже не показываем
+  const again = await N.ctx.newPage();
+  await again.goto(base + "/", { waitUntil: "domcontentloaded" });
+  await again.waitForTimeout(1500);
+  chk("второй раз не всплывает", await again.locator("#news-modal.on").count() === 0);
+
+  // а по строке можно провалиться прямо в игру
+  await again.evaluate(() => { DB.newsSeen = null; showNews(); });
+  await again.waitForTimeout(300);
+  await again.click(".news-it");
+  await again.waitForTimeout(500);
+  chk("клик по строке ведёт в игру",
+    await again.locator("#page-cards.on").count() === 1 && await again.evaluate(() => cardsTab) === "mb",
+    await again.evaluate(() => cardsTab));
+  chk("и закрывает окно", await again.locator("#news-modal.on").count() === 0);
+  await N.ctx.close();
+}
+
 console.log("\n── правила для новичков ──");
 for (const [tab, mustHave] of [["pk", "Стрит-флеш"], ["bj", "Блэкджек"], ["dk", "козырь"],
-                               ["sol", "короля"], ["dm", "дубль-шесть"]]) {
+                               ["sol", "короля"], ["dm", "дубль-шесть"], ["mb", "10×10"]]) {
   await A.page.evaluate(t => showRules(t), tab);
   await A.page.waitForTimeout(250);
   const open = await A.page.locator("#rules-modal.on").count() === 1;
@@ -604,14 +748,15 @@ console.log("\n── рейтинг по картам ──");
 await A.page.evaluate(() => { showPage("page-rating"); setNav("n-rank"); switchRank("cards"); });
 await A.page.waitForTimeout(600);
 chk("вкладка называется «Карты»", (await A.page.locator("#rk-tab-cards").textContent()).includes("КАРТЫ"));
-chk("подвкладок ровно пять", await A.page.locator("#rk-games .hs-tab").count() === 5,
+chk("подвкладок ровно шесть", await A.page.locator("#rk-games .hs-tab").count() === 6,
   (await A.page.locator("#rk-games .hs-tab").allTextContents()).join(" | "));
 chk("косынка открыта первой", await A.page.locator("#rk-g-sol.act").count() === 1);
 chk("топ косынки отрисован", await A.page.locator("#rk-list .strow").count() === 2,
   `строк ${await A.page.locator("#rk-list .strow").count()}`);
 
 for (const [g, wins, unit] of [["durak", "12", "побед"], ["pk", "2", "столов"],
-                               ["dm", "4", "партий"], ["bj", "7", "раундов"]]) {
+                               ["dm", "4", "партий"], ["mb", "5", "побед"],
+                               ["bj", "7", "раундов"]]) {
   await A.page.evaluate(x => switchRkGame(x), g);
   await A.page.waitForTimeout(500);
   const rows = await A.page.locator("#rk-list .strow").count();

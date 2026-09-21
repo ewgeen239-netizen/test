@@ -1,4 +1,4 @@
-// Edge Function: игровые столы — «дурак», холдем, «21» и домино.
+// Edge Function: игровые столы — «дурак», холдем, «21», домино и морской бой.
 // Всё состояние партии живёт здесь: клиент не может увидеть чужие карты и
 // не может сходить не по правилам — каждый ход проверяется движком.
 // Обе игры в одной функции нарочно: так на проекте достаточно одного деплоя.
@@ -18,6 +18,10 @@ import {
   dmApply, dmDeal, dmStart, dmView,
   D_MAX_SEATS, D_MIN_SEATS, type DMove, type DSt,
 } from "./domino.ts";
+import {
+  sApply, sStart, sView,
+  S_MAX_SEATS, S_MIN_SEATS, type SMove, type SSt,
+} from "./sea.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const PROJECT_URL = Deno.env.get("PROJECT_URL")!;
@@ -72,7 +76,7 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 
 // Сообщение в личку через Bot API: хозяин узнаёт о сопернике, даже если
 // свернул приложение. Кнопка открывает мини-апп сразу в нужной комнате.
-async function tgNotify(chatId: string, text: string, code: string, link: "dk" | "pk" | "bj" | "dm" = "dk") {
+async function tgNotify(chatId: string, text: string, code: string, link: "dk" | "pk" | "bj" | "dm" | "mb" = "dk") {
   if (!BOT_TOKEN || !chatId) return;
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -96,23 +100,28 @@ const code4 = () => {
 type Seat = { uid: string; name: string; emoji: string };
 const seatsOf = (room: any): Seat[] => (Array.isArray(room.players) ? room.players : []);
 const seatIx = (room: any, uid: string) => seatsOf(room).findIndex(p => String(p.uid) === uid);
-type Game = "durak" | "poker" | "bj" | "dom";
-const GAMES: Game[] = ["durak", "poker", "bj", "dom"];
+type Game = "durak" | "poker" | "bj" | "dom" | "sea";
+const GAMES: Game[] = ["durak", "poker", "bj", "dom", "sea"];
 const gameOf = (room: any): Game => GAMES.includes(room?.game) ? room.game : "durak";
 const limits = (g: string) =>
   g === "poker" ? { min: P_MIN_SEATS, max: P_MAX_SEATS }
   : g === "bj"  ? { min: B_MIN_SEATS, max: B_MAX_SEATS }
   : g === "dom" ? { min: D_MIN_SEATS, max: D_MAX_SEATS }
+  : g === "sea" ? { min: S_MIN_SEATS, max: S_MAX_SEATS }
   : { min: MIN_SEATS, max: MAX_SEATS };
+// морской бой бывает только один на один или двое на двое — троих за стол не сажаем
+const snapSeats = (g: Game, n: number) => (g === "sea" ? (n >= 3 ? 4 : 2) : n);
 // новая партия выбранной игры
 const startGame = (g: Game, size: number) =>
   g === "poker" ? pokerStart(size)
   : g === "bj"  ? bStart(size)
   : g === "dom" ? dmStart(size)
+  : g === "sea" ? sStart(size)
   : deal(size);
 const roomSize = (room: any) => {
-  const l = limits(gameOf(room));
-  return Math.max(l.min, Math.min(l.max, Number(room.seats) || 2));
+  const g = gameOf(room);
+  const l = limits(g);
+  return snapSeats(g, Math.max(l.min, Math.min(l.max, Number(room.seats) || 2)));
 };
 
 // ── кошелёк для «21» ──
@@ -190,6 +199,16 @@ function statRows(game: Game, room: any, before: any, after: any): Record<string
       return row(i, gain > 0 ? 1 : 0, after.out?.[i] ? 0 : 1, gain);
     });
   }
+  if (game === "sea") {
+    // победа командная; в score кладём, сколько своих кораблей уцелело
+    if (before?.over || !after?.over) return [];
+    const win = after.over.team;
+    return seats.map((_, i) => {
+      const b = after.boards?.[i];
+      const alive = b ? b.ships.filter((sh: any) => sh.hits < sh.cells.length).length : 0;
+      return row(i, after.team?.[i] === win ? 1 : 0, 1, alive);
+    });
+  }
   if (game === "dom") {
     // считаем по партии целиком, а не по кону: победа — это 101 очко
     if (before?.over || !after?.over) return [];
@@ -213,6 +232,7 @@ function room2client(room: any, uid: string) {
     out.g = g === "poker" ? pokerView(room.st as PSt, me)
           : g === "bj"    ? bView(room.st as BSt, me)
           : g === "dom"   ? dmView(room.st as DSt, me)
+          : g === "sea"   ? sView(room.st as SSt, me)
           : view(room.st as St, me);
   }
   return out;
@@ -236,7 +256,7 @@ Deno.serve(async (req: Request) => {
 
   if (action === "create") {
     const l = limits(wantGame);
-    const seats = Math.max(l.min, Math.min(l.max, Number(body.seats) || 2));
+    const seats = snapSeats(wantGame, Math.max(l.min, Math.min(l.max, Number(body.seats) || 2)));
     const code = code4();
     const me: Seat = { uid, name, emoji };
     // стол на одного («21» против дилера) начинается сразу, ждать некого
@@ -311,7 +331,7 @@ Deno.serve(async (req: Request) => {
     const what = full
       ? `${emoji} <b>${esc(name)}</b> зашёл — стол собрался, партия началась!`
       : `${emoji} <b>${esc(name)}</b> сел за стол <code>${code}</code> — ждём ещё ${size - players.length}.`;
-    const link = ({ poker: "pk", bj: "bj", dom: "dm", durak: "dk" } as const)[gameOf(room)];
+    const link = ({ poker: "pk", bj: "bj", dom: "dm", sea: "mb", durak: "dk" } as const)[gameOf(room)];
     for (const p of list) await tgNotify(String(p.uid), what, code, link);
 
     return json(room2client({ ...room, players, st: st ?? room.st, status }, uid));
@@ -340,6 +360,7 @@ Deno.serve(async (req: Request) => {
     const res = g === "poker" ? pokerApply(room.st as PSt, me, body.move as PMove)
               : g === "bj"    ? bApply(room.st as BSt, me, body.move as BMove)
               : g === "dom"   ? dmApply(room.st as DSt, me, body.move as DMove)
+              : g === "sea"   ? sApply(room.st as SSt, me, body.move as SMove)
               : apply(room.st as St, me, body.move as Move);
     if (typeof res === "string") return json({ error: res, ...room2client(room, uid) }, 200);
     let next: any = res;
@@ -362,7 +383,8 @@ Deno.serve(async (req: Request) => {
     const me = seatIx(room, uid);
     if (me < 0) return json({ error: "ты не за этим столом" }, 403);
     const g = gameOf(room);
-    if (g === "durak") return json({ error: "в дураке это «ещё партию»" }, 400);
+    if (g === "durak" || g === "sea")
+      return json({ error: `в этой игре это «ещё партию»` }, 400);
     if (!room.st) return json({ error: "партия ещё не началась" }, 409);
     let st: PSt | BSt | DSt;
     if (g === "dom") {

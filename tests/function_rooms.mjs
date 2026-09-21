@@ -318,6 +318,81 @@ console.log("\n── домино: стол на троих ──");
     nx.opts.spots.R.every(c => Math.abs(c.x - 5) + Math.abs(c.y - 5) === 1));
 }
 
+console.log("\n── морской бой: один на один ──");
+{
+  rows.length = 0; globalThis.stats.length = 0;
+  // флот по столбцам через один — ничего не соприкасается
+  const FLEET = [
+    [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 }],
+    [{ x: 2, y: 0 }, { x: 2, y: 1 }, { x: 2, y: 2 }],
+    [{ x: 4, y: 0 }, { x: 4, y: 1 }, { x: 4, y: 2 }],
+    [{ x: 6, y: 0 }, { x: 6, y: 1 }], [{ x: 8, y: 0 }, { x: 8, y: 1 }],
+    [{ x: 0, y: 5 }, { x: 0, y: 6 }],
+    [{ x: 2, y: 5 }], [{ x: 4, y: 5 }], [{ x: 6, y: 5 }], [{ x: 8, y: 5 }],
+  ];
+  const c = await call({ initData: ids[1], action: "create", game: "sea", seats: 2, name: "A", emoji: "🚢" });
+  const code = c.body.code;
+  chk("стол морского боя создан", c.body.game === "sea" && c.body.seats === 2, c.body.error || "");
+  const j = await call({ initData: ids[2], action: "join", code, name: "B", emoji: "⚓" });
+  chk("собрались — идёт расстановка", j.body.status === "play" && j.body.g.phase === "setup",
+    j.body.error || `фаза ${j.body.g?.phase}`);
+  chk("поле 10×10", j.body.g.n === 10 && j.body.g.boards[0].marks.length === 100);
+
+  const bad = await call({ initData: ids[1], action: "move", code,
+    move: { t: "place", ships: FLEET.slice(1) } });
+  chk("неполный флот сервер не принимает", !!bad.body.error, bad.body.error);
+  const touch = JSON.parse(JSON.stringify(FLEET)); touch[6] = [{ x: 1, y: 0 }];
+  const bad2 = await call({ initData: ids[1], action: "move", code, move: { t: "place", ships: touch } });
+  chk("касающиеся корабли — тоже", /касат|налеза/.test(bad2.body.error || ""), bad2.body.error);
+
+  const p1 = await call({ initData: ids[1], action: "move", code, move: { t: "place", ships: FLEET } });
+  chk("флот принят", !p1.body.error && p1.body.g.ready[0] === true, p1.body.error || "");
+  chk("до выстрела чужие корабли не приходят", p1.body.g.boards[1].ships.length === 0);
+  const early = await call({ initData: ids[1], action: "move", code, move: { t: "shot", at: 1, x: 0, y: 0 } });
+  chk("стрелять до готовности соперника нельзя", !!early.body.error, early.body.error);
+
+  const p2 = await call({ initData: ids[2], action: "move", code, move: { t: "place", ships: FLEET } });
+  chk("оба расставились — бой начался", p2.body.g.phase === "play", p2.body.error || p2.body.g.phase);
+
+  const st = (await call({ initData: ids[1], action: "state", code })).body.g;
+  const me = st.turn, foe = 1 - me;
+  const wrong = await call({ initData: ids[foe + 1], action: "move", code, move: { t: "shot", at: me, x: 1, y: 1 } });
+  chk("чужой выстрел отбивается", !!wrong.body.error, wrong.body.error);
+
+  const miss = await call({ initData: ids[me + 1], action: "move", code, move: { t: "shot", at: foe, x: 1, y: 1 } });
+  chk("промах отмечен, ход ушёл", miss.body.g.boards[foe].marks[11] === 1 && miss.body.g.turn === foe,
+    miss.body.error || `метка ${miss.body.g.boards[foe].marks[11]}, ход ${miss.body.g.turn}`);
+
+  const back = await call({ initData: ids[foe + 1], action: "move", code, move: { t: "shot", at: me, x: 0, y: 0 } });
+  chk("попал — стреляет снова", back.body.g.turn === foe, `ход ${back.body.g.turn}`);
+  chk("попадание отмечено", back.body.g.boards[me].marks[0] === 2, String(back.body.g.boards[me].marks[0]));
+  chk("клетки чужих кораблей наружу не ушли",
+    !JSON.stringify(back.body).includes('"hits"'));
+
+  const again = await call({ initData: ids[foe + 1], action: "move", code, move: { t: "shot", at: me, x: 0, y: 0 } });
+  chk("в ту же клетку второй раз нельзя", !!again.body.error, again.body.error);
+  const nxt = await call({ initData: ids[foe + 1], action: "next", code });
+  chk("«следующая раздача» тут не при делах", !!nxt.body.error, nxt.body.error);
+}
+
+console.log("\n── морской бой: двое на двое ──");
+{
+  rows.length = 0;
+  const c = await call({ initData: ids[1], action: "create", game: "sea", seats: 4, name: "A", emoji: "🚢" });
+  const code = c.body.code;
+  chk("стол на четверых", c.body.seats === 4, String(c.body.seats));
+  await call({ initData: ids[2], action: "join", code, name: "B", emoji: "⚓" });
+  await call({ initData: ids[3], action: "join", code, name: "C", emoji: "🛥" });
+  const j = await call({ initData: ids[4], action: "join", code, name: "D", emoji: "🚤" });
+  chk("четверо собрались", j.body.status === "play" && j.body.g.boards.length === 4,
+    j.body.error || `${j.body.g?.boards?.length}`);
+  chk("команды через одного", j.body.g.team.join() === "0,1,0,1", (j.body.g.team || []).join());
+  chk("поля напарника видно, чужие — нет",
+    j.body.g.boards.filter((b, i) => j.body.g.team[i] === j.body.g.myTeam).length === 2);
+  const three = await call({ initData: ids[1], action: "create", game: "sea", seats: 3, name: "A", emoji: "🚢" });
+  chk("троих за стол не сажают — округляется", three.body.seats === 4, String(three.body.seats));
+}
+
 console.log("\n── фишки «21» живут в кошельке, а не в партии ──");
 {
   rows.length = 0; globalThis.wallets.clear();

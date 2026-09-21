@@ -100,5 +100,43 @@ B.cmd_broadcast(M("/broadcast тест"))
 B.bot.fail = {}
 chk("временная ошибка — из реестра не удаляем", deactivated == [], f"пометили: {deactivated}")
 
+# 7. «что нового» — по разу на человека
+B.bot.sent.clear(); B.bot.fail = {}
+u = {"name": "", "entries": [], "state": None, "draft": {}}
+first = B.send_news_once(7, u)
+chk("новость пришла новичку", first and any("Что нового" in t for _, t in B.bot.sent))
+chk("в новости есть морской бой и рейтинг",
+    any("Морской бой" in t and "Рейтинг" in t for _, t in B.bot.sent))
+chk("отметка о показе записана", u.get("news") == B.NEWS_V, str(u.get("news")))
+B.bot.sent.clear()
+again = B.send_news_once(7, u)
+chk("второй раз не приходит", (not again) and not B.bot.sent, f"отправлено {len(B.bot.sent)}")
+B.bot.sent.clear()
+u["news"] = "старая-версия"
+chk("на новое обновление приходит снова", B.send_news_once(7, u) and len(B.bot.sent) == 1)
+
+# 8. заблокировавший бота новость не роняет
+B.bot.sent.clear()
+B.bot.fail = {"8": ApiTelegramException(403, "Forbidden: bot was blocked by the user")}
+u2 = {"name": "", "entries": [], "state": None, "draft": {}}
+ok = True
+try:
+    B.send_news_once(8, u2)
+except Exception:
+    ok = False
+B.bot.fail = {}
+chk("блокировка не ломает /start", ok and u2.get("news") == B.NEWS_V)
+
+# 9. приглашения и команды новых игр на месте
+B.bot.sent.clear()
+B.cmd_sea(M("/sea", uid=5))
+chk("/sea открывает морской бой",
+    len(B.bot.sent) == 1 and "Морской бой" in B.bot.sent[0][1] and "10×10" in B.bot.sent[0][1])
+B.bot.sent.clear()
+B.cmd_start(M("/start mb_AB12X", uid=5))
+chk("ссылка-приглашение в морской бой понята",
+    len(B.bot.sent) == 1 and "AB12X" in B.bot.sent[0][1] and "морской бой" in B.bot.sent[0][1],
+    B.bot.sent[0][1][:70] if B.bot.sent else "пусто")
+
 print("\n" + (f"{bad} провал(ов)" if bad else "рассылка работает как надо"))
 sys.exit(1 if bad else 0)
