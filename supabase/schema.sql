@@ -351,6 +351,43 @@ alter table public.durak_rooms enable row level security;
 
 
 -- ─────────────────────────────────────────────────────────────
+-- 3b. СМЕНЫ. График живёт здесь: бот кладёт сюда смены (свои — по
+--     графику бригады, чужие может добавить админ), из этой же таблицы
+--     уходят напоминания и строится календарная лента .ics.
+--     Дата и время — местные, по Щецину. Ночная смена DARK 22:00–06:00
+--     переходит через полночь: ends < starts как раз это и значит.
+-- ─────────────────────────────────────────────────────────────
+create table if not exists public.shifts (
+  uid        text        not null,              -- telegram id сотрудника
+  day        date        not null,              -- дата начала смены
+  starts     time        not null,
+  ends       time        not null,              -- меньше starts → смена через полночь
+  kind       text        not null default 'DARK',
+  note       text,
+  source     text        not null default 'auto',   -- auto (по графику) | admin (вручную)
+  rem12_at   timestamptz,                       -- когда ушло напоминание за 12 часов
+  rem1_at    timestamptz,                       -- ... и за час
+  updated_at timestamptz default now(),
+  primary key (uid, day)
+);
+create index if not exists shifts_day_idx on public.shifts (day);
+create index if not exists shifts_uid_day_idx on public.shifts (uid, day);
+
+alter table public.shifts enable row level security;
+-- ни одной политики → анон без доступа; бот и функция ходят service-ролью.
+
+-- Ссылка на календарь: у каждого свой длинный токен. По нему Edge Function
+-- отдаёт .ics без всякого входа — иначе календарь телефона просто не сможет
+-- его забрать, он не умеет логиниться. Токен можно перевыпустить.
+create table if not exists public.ics_tokens (
+  uid        text        primary key,
+  token      text        not null unique,
+  created_at timestamptz default now()
+);
+alter table public.ics_tokens enable row level security;
+
+
+-- ─────────────────────────────────────────────────────────────
 -- 4. СИД: подтягиваем в реестр рассылки всех, кто уже попал в рейтинг.
 --    Безопасно при повторном запуске — существующие строки не трогаем.
 -- ─────────────────────────────────────────────────────────────
@@ -372,5 +409,5 @@ select
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
-  and c.relname in ('leaderboard', 'sol_leaderboard', 'game_stats', 'wallets', 'durak_rooms', 'consents', 'bot_users')
+  and c.relname in ('leaderboard', 'sol_leaderboard', 'game_stats', 'wallets', 'durak_rooms', 'consents', 'bot_users', 'shifts', 'ics_tokens')
 order by c.relname;

@@ -23,7 +23,7 @@ HEAD = """\
 
 """
 
-MODULES = ["engine.ts", "poker.ts", "blackjack.ts", "domino.ts", "sea.ts"]        # порядок = порядок в сборке
+MODULES = ["engine.ts", "poker.ts", "blackjack.ts", "domino.ts", "sea.ts", "ics.ts"]        # порядок = порядок в сборке
 
 parts = []
 index = (HERE / "index.ts").read_text(encoding="utf-8")

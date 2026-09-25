@@ -22,6 +22,7 @@ import {
   sApply, sStart, sView,
   S_MAX_SEATS, S_MIN_SEATS, type SMove, type SSt,
 } from "./sea.ts";
+import { icsCalendar, type IcsShift } from "./ics.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const PROJECT_URL = Deno.env.get("PROJECT_URL")!;
@@ -238,8 +239,57 @@ function room2client(room: any, uid: string) {
   return out;
 }
 
+// ── лента смен в календарь ──
+// Единственный GET у этой функции. Календарь телефона логиниться не умеет,
+// поэтому доступ по длинному токену из таблицы ics_tokens: знаешь ссылку —
+// видишь свои смены. Токен можно перевыпустить в боте.
+const ICS_BACK_DAYS = 30, ICS_AHEAD_DAYS = 240;
+
+function dayShift(days: number): string {
+  const t = new Date(Date.now() + days * 86400000);
+  return t.toISOString().slice(0, 10);
+}
+
+async function icsFeed(token: string): Promise<Response> {
+  const bad = (code: number, text: string) =>
+    new Response(text, { status: code, headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8" } });
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return bad(400, "плохой токен");
+
+  const tr = await q(`ics_tokens?token=eq.${encodeURIComponent(token)}&select=uid&limit=1`);
+  if (!tr.ok) return bad(500, "база недоступна");
+  const owner = (await tr.json())[0];
+  if (!owner) return bad(404, "ссылка не найдена — перевыпусти её в боте");
+  const uid = String(owner.uid);
+
+  const range = `(day.gte.${dayShift(-ICS_BACK_DAYS)},day.lte.${dayShift(ICS_AHEAD_DAYS)})`;
+  const sr = await q(`shifts?uid=eq.${encodeURIComponent(uid)}&and=${encodeURIComponent(range)}` +
+                     `&select=uid,day,starts,ends,kind,note,updated_at&order=day.asc&limit=500`);
+  if (!sr.ok) return bad(500, "база недоступна");
+  const rows = (await sr.json()) as IcsShift[];
+
+  let who = "";
+  try {
+    const ur = await q(`bot_users?uid=eq.${encodeURIComponent(uid)}&select=name&limit=1`);
+    if (ur.ok) who = (await ur.json())[0]?.name || "";
+  } catch { /* имя — украшение, без него тоже сойдёт */ }
+
+  const body = icsCalendar(rows, who ? `Смены AutoDoc · ${who}` : "Смены AutoDoc");
+  return new Response(body, {
+    headers: {
+      ...CORS,
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": 'inline; filename="autodoc-shifts.ics"',
+      "Cache-Control": "public, max-age=900",
+    },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method === "GET") {
+    const token = new URL(req.url).searchParams.get("ics");
+    if (token) return await icsFeed(token);
+  }
   if (req.method !== "POST") return new Response("method", { status: 405, headers: CORS });
 
   let body: any;

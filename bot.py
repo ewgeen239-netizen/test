@@ -11,7 +11,8 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from telebot.apihelper import ApiTelegramException
 from datetime import datetime, timedelta
-import json, os, re, math, html, requests, time
+import json, os, re, math, html, requests, time, threading
+import shifts as SH
 
 # ── Читаем из переменных окружения (Railway → Variables) ──────
 # TOKEN задаётся ТОЛЬКО через переменную окружения — не хардкодить (публичный репозиторий!)
@@ -239,6 +240,7 @@ def main_kb():
         InlineKeyboardButton("🚢 Морской бой",  web_app=WebAppInfo(url=f"{WEBAPP_URL}#mb")),
     )
     kb.add(
+        InlineKeyboardButton("📅 Мои смены",        callback_data="sh_my"),
         InlineKeyboardButton("🏆 Рейтинг",          callback_data="rating"),
         InlineKeyboardButton("➕ Добавить запись",  callback_data="add"),
         InlineKeyboardButton("📅 Сегодня",          callback_data="today"),
@@ -272,6 +274,210 @@ def confirm_kb():
         InlineKeyboardButton("❌ Отмена",    callback_data="back"),
     )
     return kb
+
+# ── ГРАФИК СМЕН ──────────────────────────────────────────────
+# Смены лежат в Supabase (таблица shifts), считаются из графика бригады в
+# schedule.json, оттуда же уходят напоминания и строится лента .ics.
+# Функция .ics живёт в той же Edge Function, что и игры, — отдельный деплой
+# ради календаря заводить не стали.
+FN_BASE  = os.environ.get("FN_BASE", f"{SUPABASE_URL}/functions/v1")
+FN_SLUG  = os.environ.get("FN_SLUG", "smooth-task")
+STORE    = SH.Store(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+try:
+    SCHED = SH.load_schedule()
+except Exception as e:                      # без файла график просто не работает
+    SCHED = None
+    print(f"⚠️  расписание не прочиталось: {e}")
+
+DEF_TEAM, DEF_GROUP = "dark", "A"
+SHIFT_MONTHS = 3                            # на сколько месяцев вперёд заполняем
+
+
+def user_team(user):
+    t = user.get("team") or DEF_TEAM
+    g = (user.get("group") or DEF_GROUP).upper()
+    if SCHED and t in SCHED["teams"] and g not in SCHED["teams"][t]["groups"]:
+        g = SCHED["teams"][t]["groups"][0]
+    return t, g
+
+
+def team_label(t):
+    return (SCHED or {}).get("teams", {}).get(t, {}).get("label", t.upper())
+
+
+def rebuild_shifts(uid, user):
+    """Пересобрать график человека на ближайшие месяцы из расписания бригады.
+
+    Смены, поставленные админом вручную, остаются как есть: их не удаляем и
+    поверх них ничего не кладём — иначе подмена или обучение пропали бы при
+    первой же смене бригады."""
+    if not (SCHED and STORE.ok()):
+        return 0
+    team, group = user_team(user)
+    since = SH.today().isoformat()
+    try:
+        manual = {str(r["day"])[:10] for r in STORE.get_shifts(uid=uid, since=since)
+                  if r.get("source") == "admin"}
+    except Exception:
+        manual = set()
+    rows = []
+    for m in SH.months_ahead(count=SHIFT_MONTHS):
+        rows += [r for r in SH.gen_shifts(SCHED, uid, team, group, m)
+                 if r["day"] not in manual]
+    STORE.del_auto(uid, since)
+    return STORE.put_shifts(rows)
+
+
+def my_shifts(uid, since=None, until=None):
+    try:
+        return STORE.get_shifts(uid=uid, since=(since or SH.today()).isoformat() if since else None,
+                                until=until.isoformat() if until else None)
+    except Exception:
+        return []
+
+
+def shifts_kb(with_cal=True):
+    kb = InlineKeyboardMarkup(row_width=2)
+    kb.add(InlineKeyboardButton("📅 Сегодня", callback_data="sh_today"),
+           InlineKeyboardButton("🗓 Неделя",  callback_data="sh_week"))
+    kb.add(InlineKeyboardButton("📆 Месяц",   callback_data="sh_month"),
+           InlineKeyboardButton("🧾 Мои смены", callback_data="sh_my"))
+    if with_cal:
+        kb.add(InlineKeyboardButton("📲 В календарь телефона", callback_data="sh_cal"))
+    kb.add(InlineKeyboardButton("⚙️ Моя бригада", callback_data="sh_team"),
+           InlineKeyboardButton("↩️ Назад", callback_data="back"))
+    return kb
+
+
+def no_store_text():
+    return ("⚠️ График смен сейчас недоступен: боту не выдан ключ базы "
+            "(<code>SUPABASE_SERVICE_KEY</code>). Скажи администратору.")
+
+
+def shifts_today_text(uid):
+    d = SH.today()
+    rows = my_shifts(uid, d, d)
+    if rows:
+        r = rows[0]
+        start, end = SH.bounds(r)
+        left = (start - SH.now()).total_seconds()
+        when = SH.left_text(left) if left > 0 else "уже идёт"
+        return (f"📅 <b>Смена сегодня</b>\n\n{SH.line(r)}\n\n{when}")
+    nxt = my_shifts(uid, d, d + timedelta(days=45))
+    if nxt:
+        return ("📅 <b>Сегодня смены нет</b> — выходной.\n\n"
+                f"Ближайшая:\n{SH.line(nxt[0])}")
+    return "📅 <b>Сегодня смены нет</b>, и дальше в графике тоже пусто."
+
+
+def shifts_week_text(uid):
+    a, b = SH.week_range()
+    return SH.list_text(my_shifts(uid, a, b), "🗓 Смены на 7 дней",
+                        "Ближайшую неделю смен нет.")
+
+
+def shifts_month_text(uid):
+    m = SH.today().strftime("%Y-%m")
+    a, b = SH.month_range(m)
+    return SH.list_text(my_shifts(uid, a, b), f"📆 Смены · {m}", "В этом месяце смен нет.")
+
+
+def shifts_my_text(uid, limit=12):
+    rows = my_shifts(uid, SH.today(), SH.today() + timedelta(days=120))[:limit]
+    return SH.list_text(rows, "🧾 Ближайшие смены",
+                        "Смен нет. Проверь бригаду — кнопка «Моя бригада».")
+
+
+def ics_link(uid, renew=False):
+    token = STORE.ics_token(uid, renew=renew)
+    return f"{FN_BASE}/{FN_SLUG}?ics={token}" if token else None
+
+
+def calendar_text(link):
+    return (
+        "📲 <b>Смены в календаре телефона</b>\n\n"
+        "Это <b>подписка</b>: календарь сам перечитывает ссылку, и когда график "
+        "меняется, смены обновляются без твоего участия.\n\n"
+        f"<code>{html.escape(link)}</code>\n\n"
+        "<b>Android · Google Календарь</b>\n"
+        "Открой <b>calendar.google.com</b> с компьютера → слева «Другие календари» → "
+        "<b>+</b> → «Подписаться по URL» → вставь ссылку. Через несколько минут смены "
+        "появятся в приложении на телефоне и в виджете на экране.\n\n"
+        "<b>iPhone</b>\n"
+        "Настройки → Календарь → Учётные записи → Добавить → Другое → "
+        "<b>Подписной календарь</b> → вставь ссылку.\n\n"
+        "⚠️ Ссылка личная: у кого она есть, тот видит твои смены. "
+        "Утекла — перевыпусти кнопкой ниже, старая сразу перестанет работать."
+    )
+
+
+def calendar_kb():
+    kb = InlineKeyboardMarkup(row_width=1)
+    kb.add(InlineKeyboardButton("♻️ Перевыпустить ссылку", callback_data="sh_cal_new"))
+    kb.add(InlineKeyboardButton("↩️ К сменам", callback_data="sh_my"))
+    return kb
+
+
+def team_kb():
+    kb = InlineKeyboardMarkup(row_width=4)
+    if not SCHED:
+        return cancel_kb()
+    for t, meta in SCHED["teams"].items():
+        kb.add(InlineKeyboardButton(f"— {meta['label']} ({meta['legend']}) —", callback_data="sh_noop"))
+        kb.add(*[InlineKeyboardButton(g, callback_data=f"sh_set_{t}_{g}") for g in meta["groups"]])
+    kb.add(InlineKeyboardButton("↩️ Назад", callback_data="sh_my"))
+    return kb
+
+
+# ── напоминания ──────────────────────────────────────────────
+# Отдельный поток: раз в минуту смотрит ближайшие сутки и шлёт тем, кому пора.
+# Отметку об отправке пишем в базу, поэтому перезапуск не поднимает их заново.
+REMIND_EVERY = 60
+
+
+def remind_once():
+    if not STORE.ok():
+        return 0
+    try:
+        a = SH.today().isoformat()
+        b = (SH.today() + timedelta(days=2)).isoformat()
+        rows = STORE.get_shifts(since=a, until=b)
+    except Exception:
+        return 0
+    db = load_db()
+    sent = 0
+    for row, kind in SH.due(rows):
+        uid = str(row["uid"])
+        if get_user(db, uid).get("rem") is False:      # человек отписался
+            continue
+        start, _ = SH.bounds(row)
+        left = SH.left_text((start - SH.now()).total_seconds())
+        head = "⏰ <b>Смена через 12 часов</b>" if kind == "12h" else "⏰ <b>Смена скоро</b>"
+        try:
+            bot.send_message(uid, f"{head}\n\n{SH.line(row)}\n\n{left}", parse_mode="HTML")
+        except ApiTelegramException as e:
+            if _is_gone(e):
+                set_inactive(uid)
+            continue
+        except Exception:
+            continue
+        try:
+            STORE.mark_reminded(uid, str(row["day"])[:10], kind)
+        except Exception:
+            pass
+        sent += 1
+    save_db(db)
+    return sent
+
+
+def reminder_loop():
+    while True:
+        try:
+            remind_once()
+        except Exception as e:
+            print(f"напоминания: {e}")
+        time.sleep(REMIND_EVERY)
+
 
 # ── «что нового»: один раз на обновление, каждому ────────────
 # Отметку храним в своём же JSON рядом с остальными данными человека —
@@ -435,6 +641,172 @@ def cmd_domino(msg):
         parse_mode="HTML", reply_markup=kb)
 
 
+# ── смены: /today /week /month /myshifts /calendar ───────────
+def _shift_reply(msg, text, kb=None):
+    register_user(msg.from_user)
+    if not STORE.ok():
+        bot.send_message(msg.chat.id, no_store_text(), parse_mode="HTML")
+        return
+    bot.send_message(msg.chat.id, text, parse_mode="HTML",
+                     reply_markup=kb if kb is not None else shifts_kb())
+
+
+@bot.message_handler(commands=["today", "segodnya"])
+def cmd_today(msg):
+    _shift_reply(msg, shifts_today_text(msg.from_user.id))
+
+
+@bot.message_handler(commands=["week", "nedelya"])
+def cmd_week(msg):
+    _shift_reply(msg, shifts_week_text(msg.from_user.id))
+
+
+@bot.message_handler(commands=["month", "mesyac"])
+def cmd_month(msg):
+    _shift_reply(msg, shifts_month_text(msg.from_user.id))
+
+
+@bot.message_handler(commands=["myshifts", "shifts", "smeny"])
+def cmd_myshifts(msg):
+    _shift_reply(msg, shifts_my_text(msg.from_user.id))
+
+
+@bot.message_handler(commands=["calendar", "ics"])
+def cmd_calendar(msg):
+    register_user(msg.from_user)
+    if not STORE.ok():
+        bot.send_message(msg.chat.id, no_store_text(), parse_mode="HTML")
+        return
+    link = ics_link(msg.from_user.id)
+    if not link:
+        bot.send_message(msg.chat.id, "Не вышло выдать ссылку — попробуй позже.")
+        return
+    bot.send_message(msg.chat.id, calendar_text(link), parse_mode="HTML",
+                     reply_markup=calendar_kb(), disable_web_page_preview=True)
+
+
+@bot.message_handler(commands=["myteam", "brigada"])
+def cmd_myteam(msg):
+    """/myteam dark A — выбрать бригаду и подгруппу, график соберётся сам."""
+    register_user(msg.from_user)
+    db = load_db(); user = get_user(db, msg.from_user.id)
+    parts = (msg.text or "").split()
+    if len(parts) >= 3 and SCHED:
+        t, g = parts[1].lower(), parts[2].upper()
+        if t in SCHED["teams"] and g in SCHED["teams"][t]["groups"]:
+            user["team"], user["group"] = t, g
+            save_db(db)
+            n = rebuild_shifts(msg.from_user.id, user)
+            bot.send_message(msg.chat.id,
+                             f"✅ Бригада <b>{team_label(t)}</b>, подгруппа <b>{g}</b>.\n"
+                             f"В график записано смен: <b>{n}</b>.",
+                             parse_mode="HTML", reply_markup=shifts_kb())
+            return
+    t, g = user_team(user)
+    bot.send_message(msg.chat.id,
+                     f"Сейчас: <b>{team_label(t)} · {g}</b>. Выбери свою:",
+                     parse_mode="HTML", reply_markup=team_kb())
+
+
+@bot.message_handler(commands=["reminders"])
+def cmd_reminders(msg):
+    """/reminders off — выключить напоминания, /reminders on — включить."""
+    db = load_db(); user = get_user(db, msg.from_user.id)
+    arg = (msg.text or "").split()
+    if len(arg) > 1 and arg[1].lower() in ("off", "выкл", "0"):
+        user["rem"] = False; save_db(db)
+        bot.send_message(msg.chat.id, "🔕 Напоминания о сменах выключены. Вернуть: /reminders on")
+    elif len(arg) > 1 and arg[1].lower() in ("on", "вкл", "1"):
+        user["rem"] = True; save_db(db)
+        bot.send_message(msg.chat.id, "🔔 Напоминания включены: за 12 часов и за час до смены.")
+    else:
+        st = "выключены" if user.get("rem") is False else "включены"
+        bot.send_message(msg.chat.id,
+                         f"🔔 Напоминания сейчас <b>{st}</b>: за 12 часов и за час до смены.\n"
+                         f"Поменять: /reminders on | /reminders off", parse_mode="HTML")
+
+
+# ── админ: правка чужого графика ─────────────────────────────
+@bot.message_handler(commands=["shift_add"])
+def cmd_shift_add(msg):
+    """/shift_add <id> <ГГГГ-ММ-ДД> <ЧЧ:ММ> <ЧЧ:ММ> [тип] [заметка]"""
+    if not_admin(msg):
+        return
+    p = (msg.text or "").split(maxsplit=6)
+    if len(p) < 5:
+        bot.send_message(msg.chat.id,
+                         "Как добавить смену:\n"
+                         "<code>/shift_add 123456789 2026-10-05 22:00 06:00 DARK подмена</code>\n\n"
+                         "Тип и заметка необязательны.", parse_mode="HTML")
+        return
+    uid, day, a, b = p[1], p[2], p[3], p[4]
+    kind = p[5] if len(p) > 5 else "DARK"
+    note = p[6] if len(p) > 6 else None
+    try:
+        SH.parse_span(f"{a}–{b}")
+        datetime.strptime(day, "%Y-%m-%d")
+    except Exception:
+        bot.send_message(msg.chat.id, "Не разобрал дату или время. Формат: 2026-10-05 22:00 06:00")
+        return
+    row = {"uid": str(uid), "day": day, "starts": f"{a}:00", "ends": f"{b}:00",
+           "kind": kind, "source": "admin"}
+    if note:
+        row["note"] = note
+    try:
+        STORE.put_shifts([row])
+    except Exception as e:
+        bot.send_message(msg.chat.id, f"База не приняла: {html.escape(str(e))[:200]}")
+        return
+    bot.send_message(msg.chat.id, f"✅ Записано:\n{SH.line(row)}", parse_mode="HTML")
+    try:
+        bot.send_message(uid, f"📅 <b>Тебе поставили смену</b>\n\n{SH.line(row)}", parse_mode="HTML")
+    except Exception:
+        pass
+
+
+@bot.message_handler(commands=["shift_del"])
+def cmd_shift_del(msg):
+    """/shift_del <id> <ГГГГ-ММ-ДД>"""
+    if not_admin(msg):
+        return
+    p = (msg.text or "").split()
+    if len(p) < 3:
+        bot.send_message(msg.chat.id, "Формат: <code>/shift_del 123456789 2026-10-05</code>",
+                         parse_mode="HTML")
+        return
+    try:
+        STORE.del_shift(p[1], p[2])
+    except Exception as e:
+        bot.send_message(msg.chat.id, f"База не приняла: {html.escape(str(e))[:200]}")
+        return
+    bot.send_message(msg.chat.id, f"🗑 Смена {p[2]} у {p[1]} убрана.")
+
+
+@bot.message_handler(commands=["shift_who"])
+def cmd_shift_who(msg):
+    """/shift_who <ГГГГ-ММ-ДД> — кто работает в этот день."""
+    if not_admin(msg):
+        return
+    p = (msg.text or "").split()
+    day = p[1] if len(p) > 1 else SH.today().isoformat()
+    try:
+        rows = STORE.get_shifts(since=day, until=day)
+    except Exception as e:
+        bot.send_message(msg.chat.id, f"База не ответила: {html.escape(str(e))[:200]}")
+        return
+    if not rows:
+        bot.send_message(msg.chat.id, f"На {day} смен ни у кого нет.")
+        return
+    names = {}
+    db = load_db()
+    for r in rows:
+        names[str(r["uid"])] = get_user(db, r["uid"]).get("name") or str(r["uid"])
+    body = "\n".join(f"• {html.escape(names[str(r['uid'])])} — {SH.span_text(r)} · {r.get('kind') or ''}"
+                      for r in rows)
+    bot.send_message(msg.chat.id, f"👷 <b>{day}</b> · работают {len(rows)}\n\n{body}",
+                     parse_mode="HTML")
+
+
 # ── /rating ──────────────────────────────────────────────────
 @bot.message_handler(commands=["rating", "top"])
 def cmd_rating(msg):
@@ -581,6 +953,55 @@ def on_callback(call):
     user = get_user(db, call.from_user.id)
     cid  = call.message.chat.id
     data = call.data
+
+    # ── смены ────────────────────────────────────────────────
+    if data.startswith("sh_"):
+        if data == "sh_noop":
+            bot.answer_callback_query(call.id)
+            return
+        if not STORE.ok():
+            bot.answer_callback_query(call.id)
+            bot.send_message(cid, no_store_text(), parse_mode="HTML")
+            return
+        uid = call.from_user.id
+        if data == "sh_cal" or data == "sh_cal_new":
+            link = ics_link(uid, renew=(data == "sh_cal_new"))
+            bot.answer_callback_query(call.id, "Ссылка перевыпущена" if data == "sh_cal_new" else "")
+            if not link:
+                bot.send_message(cid, "Не вышло выдать ссылку — попробуй позже.")
+                return
+            bot.send_message(cid, calendar_text(link), parse_mode="HTML",
+                             reply_markup=calendar_kb(), disable_web_page_preview=True)
+            return
+        if data == "sh_team":
+            t, g = user_team(user)
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(f"Сейчас: <b>{team_label(t)} · {g}</b>. Выбери свою:",
+                                  cid, call.message.message_id,
+                                  parse_mode="HTML", reply_markup=team_kb())
+            return
+        if data.startswith("sh_set_"):
+            _, _, rest = data.partition("sh_set_")
+            t, _, g = rest.partition("_")
+            if SCHED and t in SCHED["teams"] and g in SCHED["teams"][t]["groups"]:
+                user["team"], user["group"] = t, g
+                save_db(db)
+                n = rebuild_shifts(uid, user)
+                bot.answer_callback_query(call.id, "График собран")
+                bot.edit_message_text(
+                    f"✅ Бригада <b>{team_label(t)}</b>, подгруппа <b>{g}</b>.\n"
+                    f"В график записано смен: <b>{n}</b>.",
+                    cid, call.message.message_id, parse_mode="HTML", reply_markup=shifts_kb())
+            else:
+                bot.answer_callback_query(call.id, "Такой подгруппы нет")
+            return
+        text = {"sh_today": shifts_today_text, "sh_week": shifts_week_text,
+                "sh_month": shifts_month_text, "sh_my": shifts_my_text}.get(data)
+        if text:
+            bot.answer_callback_query(call.id)
+            bot.edit_message_text(text(uid), cid, call.message.message_id,
+                                  parse_mode="HTML", reply_markup=shifts_kb())
+        return
 
     # ── меню / назад ─────────────────────────────────────────
     if data in ("back", "menu"):
@@ -891,4 +1312,9 @@ def on_text(msg):
 
 if __name__ == "__main__":
     print("✅ AutoDoc OS Bot запущен...")
+    if STORE.ok() and SCHED:
+        threading.Thread(target=reminder_loop, daemon=True).start()
+        print("⏰ напоминания о сменах включены")
+    else:
+        print("⏰ напоминания выключены: нет SUPABASE_SERVICE_KEY или schedule.json")
     bot.infinity_polling()

@@ -26,6 +26,19 @@ globalThis.fetch = async (url, init = {}) => {
   const R = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
   if (u.hostname === "api.telegram.org") { globalThis.tg.push(JSON.parse(init.body)); return R({ ok: true }); }
   const m = init.method || "GET";
+  // таблицы календаря: стенд держит их в globalThis, чтобы тест мог наполнить
+  if (u.pathname.endsWith("/rest/v1/ics_tokens")) {
+    const t = (u.search.match(/token=eq\.([^&]+)/) || [])[1];
+    return R((globalThis.icsTokens || []).filter(x => x.token === decodeURIComponent(t || "")));
+  }
+  if (u.pathname.endsWith("/rest/v1/shifts")) {
+    const uid = decodeURIComponent((u.search.match(/uid=eq\.([^&]+)/) || [])[1] || "");
+    return R((globalThis.shifts || []).filter(x => String(x.uid) === uid));
+  }
+  if (u.pathname.endsWith("/rest/v1/bot_users")) {
+    const uid = decodeURIComponent((u.search.match(/uid=eq\.([^&]+)/) || [])[1] || "");
+    return R((globalThis.botUsers || []).filter(x => String(x.uid) === uid));
+  }
   const code = (u.search.match(/code=eq\.([^&]+)/) || [])[1];
   const game = (u.search.match(/game=eq\.([^&]+)/) || [])[1];
   if (m === "GET") {
@@ -84,6 +97,43 @@ console.log("── общее ──");
   chk("preflight отдаёт CORS", pf.headers.get("Access-Control-Allow-Origin") === "*");
   const badSig = await call({ initData: "user=%7B%22id%22%3A1%7D&hash=deadbeef", action: "create" });
   chk("поддельная подпись → 401", badSig.status === 401);
+}
+
+console.log("\n── лента смен в календарь ──");
+{
+  globalThis.icsTokens = [{ uid: "101", token: "aaaabbbbccccddddeeeeffff" }];
+  globalThis.botUsers = [{ uid: "101", name: "Антон" }];
+  globalThis.shifts = [
+    { uid: "101", day: "2026-10-05", starts: "22:00:00", ends: "06:00:00", kind: "DARK" },
+    { uid: "101", day: "2026-10-07", starts: "22:00:00", ends: "06:00:00", kind: "DARK", note: "подмена" },
+  ];
+  const get = (qs) => handler(new Request("https://f/durak" + qs, { method: "GET" }));
+
+  const ok = await get("?ics=aaaabbbbccccddddeeeeffff");
+  const body = await ok.text();
+  chk("лента отдаётся", ok.status === 200, String(ok.status));
+  chk("тип — календарь", (ok.headers.get("Content-Type") || "").startsWith("text/calendar"),
+    ok.headers.get("Content-Type"));
+  chk("внутри настоящий календарь",
+    body.startsWith("BEGIN:VCALENDAR") && body.trimEnd().endsWith("END:VCALENDAR"));
+  chk("обе смены на месте", (body.match(/BEGIN:VEVENT/g) || []).length === 2,
+    String((body.match(/BEGIN:VEVENT/g) || []).length));
+  chk("ночная смена кончается назавтра", body.includes("DTEND;TZID=Europe/Warsaw:20261006T060000"));
+  chk("имя подставлено в название", body.includes("Антон"));
+  chk("напоминания внутри", body.includes("TRIGGER:-PT12H") && body.includes("TRIGGER:-PT1H"));
+
+  const nf = await get("?ics=zzzzyyyyxxxxwwwwvvvvuuuu");
+  chk("чужой токен — 404", nf.status === 404, String(nf.status));
+  const junk = await get("?ics=%3Cscript%3E");
+  chk("мусор вместо токена — 400", junk.status === 400, String(junk.status));
+  const plain = await handler(new Request("https://f/durak", { method: "GET" }));
+  chk("GET без токена по-прежнему 405", plain.status === 405, String(plain.status));
+
+  globalThis.shifts = [];
+  const empty = await get("?ics=aaaabbbbccccddddeeeeffff");
+  chk("нет смен — пустой, но валидный календарь",
+    empty.status === 200 && !(await empty.text()).includes("BEGIN:VEVENT"));
+  globalThis.icsTokens = []; globalThis.botUsers = []; globalThis.shifts = [];
 }
 
 console.log("\n── дурак: стол на четверых ──");
