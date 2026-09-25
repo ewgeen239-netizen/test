@@ -89,6 +89,7 @@ node tests/run-poker.mjs                   # холдем + перебор вс�
 node tests/run-blackjack.mjs               # «21»: выплаты, сплит, дилер
 node tests/run-domino.mjs                  # домино: раздача, базар, рыба, счёт
 node tests/run-sea.mjs                     # морской бой: флот, стрельба, 1×1 и 2×2
+node tests/run-rates.mjs                   # ставки: приложение и бот не разъехались
 node tests/run-function.mjs                # Edge Function целиком, пять игр
 PYTHONPATH=. python3 tests/test_broadcast.py   # рассылка объявлений
 npm i playwright && node tests/run-app.mjs  # столы в настоящем браузере
