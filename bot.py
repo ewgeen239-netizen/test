@@ -194,6 +194,29 @@ def today_iso():
 def yesterday_iso():
     return (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
+# ── смена-день ───────────────────────────────────────────────
+# Ночная смена 22:00–06:00 — одна смена, а не две половинки по разные стороны
+# полуночи, и принадлежит она дню, в который началась. Поэтому учётные сутки
+# начинаются в 06:00: всё, начатое раньше, относится к предыдущему дню. Отсюда
+# же берётся месяц для премии. То же правило зашито в index.html — за тем,
+# чтобы они не разъехались, следит tests/run-shiftday.mjs.
+SHIFT_CUT_H = 6
+
+def shift_day(at=None):
+    """Какой рабочий день идёт сейчас (или шёл в момент at).
+
+    Считаем по Щецину, а не по часам сервера: Railway живёт в UTC, и летом
+    это на два часа раньше — бот и приложение разошлись бы ровно в ночные
+    часы, когда это важнее всего."""
+    d = at or SH.now()
+    if d.hour < SHIFT_CUT_H:
+        d = d - timedelta(days=1)
+    return d.strftime("%Y-%m-%d")
+
+def shift_day_prev(at=None):
+    """Предыдущий рабочий день — то, что человек называет «вчера»."""
+    return shift_day((at or SH.now()) - timedelta(days=1))
+
 def month_iso():
     return datetime.now().strftime("%Y-%m")
 
@@ -1027,22 +1050,22 @@ def on_callback(call):
         )
 
     elif data == "date_today":
-        user["draft"]["shift_date"] = today_iso()
+        user["draft"]["shift_date"] = shift_day()
         user["state"] = "enter_peaks"
         save_db(db)
         bot.edit_message_text(
-            f"✅ Дата смены: <b>{fmt_date(today_iso())}</b>\n\n"
+            f"✅ Дата смены: <b>{fmt_date(shift_day())}</b>\n\n"
             f"✏️ Введи <b>количество пиков</b> (целое число):",
             cid, call.message.message_id,
             parse_mode="HTML", reply_markup=cancel_kb()
         )
 
     elif data == "date_yesterday":
-        user["draft"]["shift_date"] = yesterday_iso()
+        user["draft"]["shift_date"] = shift_day_prev()
         user["state"] = "enter_peaks"
         save_db(db)
         bot.edit_message_text(
-            f"✅ Дата смены: <b>{fmt_date(yesterday_iso())}</b>\n\n"
+            f"✅ Дата смены: <b>{fmt_date(shift_day_prev())}</b>\n\n"
             f"✏️ Введи <b>количество пиков</b> (целое число):",
             cid, call.message.message_id,
             parse_mode="HTML", reply_markup=cancel_kb()
@@ -1063,7 +1086,7 @@ def on_callback(call):
         d = user.get("draft", {})
         peaks = d.get("peaks")
         hours = d.get("hours")
-        shift = d.get("shift_date", today_iso())
+        shift = d.get("shift_date", shift_day())
         if peaks and hours:
             c = calc(peaks, hours)
             now = datetime.now()
@@ -1104,8 +1127,8 @@ def on_callback(call):
 
     # ── сегодня ──────────────────────────────────────────────
     elif data == "today":
-        es = [e for e in user["entries"] if e.get("shift_date") == today_iso()]
-        txt = summary_text(es, fmt_date(today_iso()))
+        es = [e for e in user["entries"] if e.get("shift_date") == shift_day()]
+        txt = summary_text(es, fmt_date(shift_day()))
         kb = InlineKeyboardMarkup()
         kb.add(InlineKeyboardButton("↩️ Меню", callback_data="menu"))
         bot.edit_message_text(txt, cid, call.message.message_id, parse_mode="HTML", reply_markup=kb)

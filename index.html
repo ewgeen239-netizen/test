@@ -2073,14 +2073,58 @@ DB.dk=DB.dk||null;              // код комнаты «дурака», чт�
 DB.cardsTab=DB.cardsTab||'sol'; // какая игра открыта во вкладке «Карты»
 DB.solStats=DB.solStats||{played:0,won:0,best:null,bestScore:0};
 DB.newsSeen=DB.newsSeen||null;  // какую версию «что нового» человек уже видел
+DB.shiftDayFix=DB.shiftDayFix||null;  // разовый перенос ночных смен на день начала
 const sv=()=>{ try{localStorage.setItem('ad_db',JSON.stringify(DB));}catch{} };
 
 let curSt='os', ws='mon';
 const _n=new Date(); let cY=_n.getFullYear(), cM=_n.getMonth();
 
-const iso=d=>d.toISOString().slice(0,10);
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const todayISO=()=>iso(new Date());
 const yestISO=()=>{ const d=new Date();d.setDate(d.getDate()-1);return iso(d); };
+
+// ══ СМЕНА-ДЕНЬ ═══════════════════════════════════════════════
+// Ночная смена 22:00–06:00 — это одна смена, а не две половинки по разные
+// стороны полуночи. Поэтому смена принадлежит тому дню, в который она
+// НАЧАЛАСЬ, а учётные сутки начинаются в 06:00: всё, что начато раньше,
+// относится к предыдущему дню. Отсюда же берётся месяц для премии — смена
+// в ночь с 30-го на 1-е целиком идёт в месяц, где она началась.
+const SHIFT_CUT_H = 6;
+
+const shiftDayFrom = d => { const x=new Date(d); if(x.getHours()<SHIFT_CUT_H) x.setDate(x.getDate()-1); return iso(x); };
+const shiftToday = (now=new Date()) => shiftDayFrom(now);
+const shiftYest  = (now=new Date()) => { const d=new Date(now); d.setDate(d.getDate()-1); return shiftDayFrom(d); };
+const addDays = (dateISO,n) => { const [y,m,d]=dateISO.split('-').map(Number); const x=new Date(y,m-1,d+n); return iso(x); };
+const hmMin = t => { const [h,m]=String(t||'').split(':').map(Number); return Number.isFinite(h)&&Number.isFinite(m) ? h*60+m : null; };
+
+// Начало и конец смены как настоящие даты-время: конец раньше начала —
+// значит смена перешла через полночь и кончилась назавтра.
+function shiftBounds(dateISO, from, to){
+  const a=hmMin(from), b=hmMin(to);
+  if(a===null||b===null) return null;
+  const [y,m,d]=dateISO.split('-').map(Number);
+  const st=new Date(y,m-1,d,Math.floor(a/60),a%60);
+  const en=new Date(y,m-1,d,Math.floor(b/60),b%60);
+  if(b<=a) en.setDate(en.getDate()+1);
+  return {st,en};
+}
+
+// Канонический день записи. Дата в форме — это дата НАЧАЛА смены; если
+// человек указал утреннюю дату ночной смены, поправляем на день назад.
+function shiftDayOf(dateISO, from, to, now=new Date()){
+  if(!dateISO) return dateISO;
+  const a=hmMin(from);
+  // работа, начатая после полуночи, — это ещё вчерашняя смена
+  if(a!==null && a < SHIFT_CUT_H*60) dateISO = addDays(dateISO,-1);
+  const b=shiftBounds(dateISO, from, to);
+  // запись всегда о уже отработанной смене: если по указанной дате она ещё не
+  // кончилась, а по вчерашней кончилась — значит имелась в виду вчерашняя
+  if(b && b.en > now){
+    const prev=shiftBounds(addDays(dateISO,-1), from, to);
+    if(prev && prev.en <= now) dateISO = addDays(dateISO,-1);
+  }
+  return dateISO;
+}
 const mISO=()=>new Date().toISOString().slice(0,7);
 const fmt=s=>{ if(!s)return''; const[y,m,d]=s.split('-');return`${d}.${m}.${y}`; };
 const rate=(st,pph)=>{ for(const[lo,hi,r] of ST[st].tr) if(pph>=lo&&pph<=hi) return r; return ST[st].tr.at(-1)[2]; };
@@ -2123,6 +2167,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     img.src=DB.photoUrl; img.style.display='block';
     document.getElementById('av-em').style.display='none';
   }
+  fixShiftDays();                             // разово: ночные смены — на день начала
   pruneOldMonths();                           // авто-очистка пиков за прошлые месяцы
   document.getElementById('hdr-date').textContent=fmt(todayISO());
   Object.keys(ST).forEach(renderQuickAdd);   // инлайн-формы записи смены
@@ -2136,6 +2181,27 @@ document.addEventListener('DOMContentLoaded',()=>{
   else setTimeout(showNews, 650);             // что нового — один раз на обновление
 });
 function rAll(){ rName(); rProfile(); rAllDash(); rHist(); rRates(); rNotes(); rCal(); rSalary(); }
+
+// Разовый перенос: записи, сделанные до правила «смена-день», лежат на той
+// дате, которую человек выбрал руками. Работа, начатая после полуночи, — это
+// ещё вчерашняя смена, и на границе месяца она уезжала в чужой месяц вместе с
+// премией. Двигаем такие записи на день назад. Трогаем только сырые записи —
+// итоги прошлых месяцев уже посчитаны и лежат в архиве, их не переписываем.
+const SHIFT_DAY_FIX = '2026-09-shiftday';
+function fixShiftDays(){
+  if(DB.shiftDayFix === SHIFT_DAY_FIX) return;
+  let moved = 0;
+  DB.entries.forEach(e => {
+    if(!e.shiftDate || !e.from) return;
+    const a = hmMin(e.from);
+    if(a === null || a >= SHIFT_CUT_H*60) return;   // начата в 06:00 или позже — всё верно
+    e.shiftDate = addDays(e.shiftDate, -1);
+    moved++;
+  });
+  DB.shiftDayFix = SHIFT_DAY_FIX;
+  sv();
+  if(moved) console.log(`смена-день: перенесено записей — ${moved}`);
+}
 
 // Каждый новый месяц пики за прошлые месяцы удаляются — остаётся только текущий месяц.
 // Итоги прошлых месяцев сохранены в рейтинге (Supabase, ключ по месяцу).
@@ -2156,7 +2222,7 @@ function pruneOldMonths(){
 
 // ══ PROFILE ═══════════════════════════════════
 function rProfile(){
-  const m=mISO(), t=todayISO();
+  const m=mISO(), t=shiftToday();   // в 2 ночи «сегодня» — это ещё вчерашняя смена
   document.getElementById('av-em').textContent=DB.emoji||'👷';
   document.getElementById('u-name').textContent=DB.name||'Сотрудник';
   document.getElementById('u-role').textContent=DB.role||'Outbound';
@@ -2230,7 +2296,7 @@ function switchSt(st){
 }
 function rAllDash(){ Object.keys(ST).forEach(rDash); }
 function rDash(st){
-  const t=todayISO(),m=mISO(),cfg=ST[st];
+  const t=shiftToday(),m=mISO(),cfg=ST[st];
   const tEs=DB.entries.filter(e=>e.station===st&&e.shiftDate===t);
   const mEs=DB.entries.filter(e=>e.station===st&&e.shiftDate?.slice(0,7)===m);
   const tp=tEs.reduce((s,e)=>s+e.peaks,0),th=tEs.reduce((s,e)=>s+e.hours,0);
@@ -2371,7 +2437,7 @@ function rRates(){
   const stC={os:'#e8ff00',pa:'#3b82f6',sio:'#a855f7',pc:'#f97316'};
   let h='';
   for(const[st,cfg] of Object.entries(ST)){
-    const c=stC[st],tEs=DB.entries.filter(e=>e.station===st&&e.shiftDate===todayISO());
+    const c=stC[st],tEs=DB.entries.filter(e=>e.station===st&&e.shiftDate===shiftToday());
     const tp=tEs.reduce((s,e)=>s+e.peaks,0),th=tEs.reduce((s,e)=>s+e.hours,0);
     const cur=th>0?Math.round(tp/th):0;
     h+=`<div class="rb"><div class="rb-hd"><div class="rb-chip" style="background:${c}12;color:${c}">${st.toUpperCase()}</div><div><div style="font-size:13px;font-weight:700">${ST_N[st]}</div><div class="rb-norm">норма ${cfg.norm} ppc/h</div></div></div><div class="rb-rows">`;
@@ -2867,7 +2933,9 @@ function qaDate(st,mode){
   qaMode[st]=mode;
   qaEl(st,'t').classList.toggle('sel',mode==='today');
   qaEl(st,'y').classList.toggle('sel',mode==='yesterday');
-  qaEl(st,'d').value = mode==='yesterday' ? yestISO() : todayISO();
+  // «сегодня» — это текущая смена, а не календарный день: в 2 часа ночи
+  // идёт ещё вчерашняя смена, и запись должна лечь на неё
+  qaEl(st,'d').value = mode==='yesterday' ? shiftYest() : shiftToday();
   qaUp(st);
 }
 function qaCustom(st){
@@ -2878,6 +2946,12 @@ function qaCustom(st){
 }
 
 function qaUp(st){
+  // Ввели время — сразу показываем настоящий день смены. Свою дату,
+  // выбранную руками, не трогаем: раз указал, значит знает, что делает.
+  if(qaMode[st]!=='custom'){
+    const f=qaEl(st,'f').value, o=qaEl(st,'o').value, cur=qaEl(st,'d').value;
+    if(f&&o&&cur){ const fix=shiftDayOf(cur,f,o); if(fix!==cur) qaEl(st,'d').value=fix; }
+  }
   const min=qaMinutes(qaEl(st,'f').value, qaEl(st,'o').value), h=min/60;
   const p=Number(qaEl(st,'p').value);
   const dur=qaEl(st,'dur');
@@ -2906,7 +2980,13 @@ function qaSave(st){
     return;
   }
   const c=calc(st,p,h), now=new Date();
-  DB.entries.push({id:Date.now(),station:st,peaks:p,hours:h,minutes:min,from,to,shiftDate:d,note:'',c,
+  // Смена принадлежит дню, в который началась. Границы кладём целиком —
+  // по ним потом видно, что ночная смена одна, а не две половинки.
+  const day=qaMode[st]==='custom' ? d : shiftDayOf(d,from,to,now);
+  const b=shiftBounds(day,from,to);
+  DB.entries.push({id:Date.now(),station:st,peaks:p,hours:h,minutes:min,from,to,shiftDate:day,note:'',c,
+    night:!!(b&&b.en.getDate()!==b.st.getDate()),
+    startsAt:b?b.st.toISOString():null, endsAt:b?b.en.toISOString():null,
     addedAt:now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})});
   sv();
   btn.textContent='✓ Сохранено'; btn.classList.add('ok');
