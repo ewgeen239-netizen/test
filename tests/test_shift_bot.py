@@ -211,8 +211,25 @@ chk("в выборе есть обе бригады и все подгруппы
 B.bot.edits.clear(); B.on_callback(C("sh_set_orange_D"))
 chk("выбор ORANGE D пересобирает график", "ORANGE" in lastedit() and "<b>D</b>" in lastedit(),
     lastedit()[:60])
-chk("смены стали дневными",
-    any(r["kind"] == "ORANGE" for r in SB.shifts.values() if r["uid"] == "101"))
+# Сколько дневных смен получится, зависит от того, на какие месяцы вперёд
+# заполнен график ORANGE, — а это зависит от сегодняшней даты. Проверяем то,
+# что от даты не зависит: старые ночные автосмены ушли, а всё, что пришло
+# взамен, — ORANGE.
+# прошедшие смены пересборка не трогает — историю не переписываем, — поэтому
+# смотрим только на сегодня и дальше
+mine = [r for r in SB.shifts.values() if r["uid"] == "101" and r.get("source") == "auto"
+        and r["day"] >= SH.today().isoformat()]
+past_dark = [r for r in SB.shifts.values() if r["uid"] == "101" and r["kind"] == "DARK"
+             and r["day"] < SH.today().isoformat()]
+orange_months = [m for m in SH.months_ahead(count=B.SHIFT_MONTHS) if m in B.SCHED["orange"]]
+chk("будущие ночные автосмены после смены бригады убраны",
+    not any(r["kind"] == "DARK" for r in mine), f"осталось DARK: {sum(r['kind']=='DARK' for r in mine)}")
+chk("всё, что записано взамен, — ORANGE" if orange_months else
+    "график ORANGE на ближайшие месяцы пуст — смен и нет",
+    all(r["kind"] == "ORANGE" for r in mine) and (bool(mine) == bool(orange_months)),
+    f"месяцев ORANGE впереди: {len(orange_months)}, смен {len(mine)}")
+chk("прошедшие смены остались как были", all(r["day"] < SH.today().isoformat() for r in past_dark),
+    f"прошедших DARK: {len(past_dark)}")
 B.on_callback(C("sh_set_dark_A"))     # возвращаем обратно
 
 print("\n── напоминания ──")

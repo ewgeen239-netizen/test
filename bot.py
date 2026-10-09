@@ -115,17 +115,38 @@ THRESHOLDS = [
 ]
 
 # ── хранилище (JSON-файл, один файл = все пользователи) ──────
-DB_FILE = "os_data.json"
+# Путь задаётся переменной DB_FILE. На Railway файловая система контейнера
+# временная: без тома этот файл стирается при каждом редеплое, а вместе с ним
+# имена, записи смен, отметки «что нового» и отписки от напоминаний. Поэтому
+# в проде сюда подставляют путь внутри подключённого Volume, например
+# /data/os_data.json. Локально и без тома всё работает как раньше.
+DB_FILE = os.environ.get("DB_FILE", "os_data.json")
 
 def load_db():
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            # битый или недочитанный файл не повод уронить бота: начинаем с
+            # пустой базы, а испорченный откладываем — вдруг пригодится
+            print(f"⚠️  {DB_FILE} не прочитался ({e}) — начинаю с пустой базы")
+            try:
+                os.replace(DB_FILE, DB_FILE + ".broken")
+            except OSError:
+                pass
     return {}
 
 def save_db(db):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
+    d = os.path.dirname(DB_FILE)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    # пишем через временный файл: если контейнер умрёт на середине записи,
+    # старая база останется целой, а не превратится в обрезок
+    tmp = DB_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(db, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, DB_FILE)
 
 def get_user(db, uid):
     key = str(uid)
